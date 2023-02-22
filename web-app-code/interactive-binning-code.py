@@ -101,6 +101,27 @@ grey_panel_style = {
     "borderRadius": dimens["panel-border-radius"],
     "backgroundColor": "#DDDDDD",
 }
+white_panel_style = {
+    "float": "left",
+    "width": "58%",
+    "padding": "2%",
+    "marginRight": "2%",
+    "borderRadius": dimens["panel-border-radius"],
+    "border": "2px #DDDDDD solid",
+    "backgroundColor": "#FFFFFF",
+}
+grey_full_width_panel_style = {
+    "width": "96%",
+    "padding": "2%",
+    "borderRadius": dimens["panel-border-radius"],
+    "backgroundColor": "#DDDDDD",
+}
+green_full_width_panel_style = {
+    "width": "96%",
+    "padding": "2%",
+    "borderRadius": dimens["panel-border-radius"],
+    "backgroundColor": "#C7DDB5",
+}
 
 ###########################################################################
 ######################### Prepare Components Here #########################
@@ -297,6 +318,66 @@ def compute_default_weight_of_good(indeterminate_range):
         return 1  # avoid division by zero error
 
 
+"""
+Interactive Binning Page
+"""
+import plotly.graph_objects as go
+
+
+def generate_mixed_chart_fig(clicked_bar_index=None):
+    fig = go.Figure()
+
+    good_marker_color = ["#8097e6"] * 5
+    if clicked_bar_index is not None:
+        good_marker_color[clicked_bar_index] = "#3961ee"
+
+    bad_marker_color = ["#8bd58b"] * 5
+    if clicked_bar_index is not None:
+        bad_marker_color[clicked_bar_index] = "#55a755"
+
+    fig.add_trace(
+        go.Bar(
+            x=["Bin-One", "Bin-Two", "Bin-Three", "Bin-Four", "Bin-Five"],
+            y=[13, 16, 13, 32, 11],
+            name="Good",
+            marker_color=good_marker_color,
+            offsetgroup=0,
+        )
+    )
+
+    fig.add_trace(
+        go.Bar(
+            x=["Bin-One", "Bin-Two", "Bin-Three", "Bin-Four", "Bin-Five"],
+            y=[3, 1, 10, 12, 9],
+            name="Bad",
+            marker_color=bad_marker_color,
+            offsetgroup=0,
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            mode="lines+markers",
+            x=["Bin-One", "Bin-Two", "Bin-Three", "Bin-Four", "Bin-Five"],
+            y=[-5, -2, 1, 7, 11],
+            name="WOE",
+            marker_color="red",
+        )
+    )
+
+    fig.update_layout(
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01,
+        ),
+        margin=go.layout.Margin(l=0, r=0, b=0, t=0),
+    )
+
+    return fig
+
+
 ###########################################################################
 ######################### Setup Page Layouts Here #########################
 ###########################################################################
@@ -472,45 +553,131 @@ interactive_binning_page_layout = html.Div(
         Heading("Interactive Binning Interface"),
         html.Div(
             [
-                SectionHeading("I. Select a predictor variable to bin"),
-                dcc.Dropdown(
-                    options=convert_column_list_to_dropdown_options(
-                        get_predictor_var_list(df.columns.to_list())
-                    ),
-                    value=df.columns.to_list()[0],
-                    style={"marginBottom": 30},
-                    clearable=False,
-                    searchable=False,
-                    id="predictor_var_ib_dropdown",
+                html.Div(
+                    [
+                        SectionHeading("I. Select a predictor variable to bin"),
+                        dcc.Dropdown(
+                            options=convert_column_list_to_dropdown_options(
+                                get_predictor_var_list(df.columns.to_list())
+                            ),
+                            value=df.columns.to_list()[0],
+                            style={"marginBottom": 30},
+                            clearable=False,
+                            searchable=False,
+                            id="predictor_var_ib_dropdown",
+                        ),
+                    ],
+                    style=purple_panel_style,
                 ),
-            ],
-            style=purple_panel_style,
+                html.Div(
+                    [
+                        SectionHeading(
+                            "II. Select the automated binning algorithm for initial binning"
+                        ),
+                        dcc.Dropdown(
+                            options=convert_column_list_to_dropdown_options(
+                                [
+                                    "None",
+                                    "Equal width",
+                                    "Equal frequency",
+                                    "Import settings",
+                                ]
+                            ),
+                            value="None",
+                            clearable=False,
+                            searchable=False,
+                            style={"marginBottom": 20, "width": "60%"},
+                            id="auto_bin_algo_dropdown",
+                        ),
+                        html.Div(
+                            [
+                                html.P("Width:"),
+                                dcc.Input(type="number", value=1, min=1),
+                                html.P("Number of bins:", style={"marginTop": 10}),
+                                dcc.Input(
+                                    type="number",
+                                    value=10,
+                                    min=1,
+                                    style={"display": "block"},
+                                ),
+                            ],
+                            style={"display": "none", "marginBottom": 25},
+                        ),
+                        SaveButton("Refresh"),
+                        html.P(
+                            style={"marginTop": 20},
+                            id="auto_bin_algo_description",
+                        ),
+                    ],
+                    style=grey_panel_style,
+                ),
+            ]
         ),
+        html.Div([], style={"width": "100%", "height": 25, "clear": "left"}),
         html.Div(
             [
-                SectionHeading(
-                    "II. Select the automated binning algorithm for initial binning"
+                html.Div(
+                    [
+                        SectionHeading("III. Perform Interactive Binning"),
+                        dcc.Graph(
+                            figure=generate_mixed_chart_fig(),
+                            id="mixed_chart",
+                        ),
+                    ],
+                    style=white_panel_style,
                 ),
-                dcc.Dropdown(
-                    options=convert_column_list_to_dropdown_options(
-                        ["None", "Equal width", "Equal frequency", "Import settings"]
-                    ),
-                    value="Equal width",
-                    clearable=False,
-                    searchable=False,
-                    style={"marginBottom": 30, "width": "60%"},
+                html.Div(
+                    [
+                        # html.P("Split/Add bin: Click on the bar representing the bin you would like to split > choose the split point > click the 'split' button"),
+                        # html.P("Remove bin: Click on the bar representing the bin you would like to remove > click on 'Remove' button"),
+                        # html.P("Adjust bin boundaries: Click on the bar to be adjusted > adjust through slider > click on 'Adjust' button"),
+                        html.P("Bin Name: ", id="selected_bin_name"),
+                        html.P("Bin Index: ", id="selected_bin_index"),
+                        html.P("Bin Count: ", id="selected_bin_count"),
+                        html.Div(
+                            [],
+                            style={
+                                "width": "100%",
+                                "height": 0,
+                                "border": "1px solid black",
+                            },
+                        ),
+                        SectionHeading("Split Selected Bin"),
+                        SaveButton(title="Split"),
+                        SectionHeading("Merge Selected Bin"),
+                        SaveButton(title="Merge"),
+                        SectionHeading("Remove Selected Bin"),
+                        SaveButton(title="Remove"),
+                        SectionHeading("Adjust Selected Bin Boundaries"),
+                        SaveButton(title="Adjust"),
+                    ],
+                    style=purple_panel_style,
                 ),
-                html.P("Width:"),
-                dcc.Input(type="number", value=1, min=1),
-                html.P("Number of bins:", style={"marginTop": 10}),
-                dcc.Input(type="number", value=10, min=1, style={"display": "block"}),
-                SaveButton("Refresh", marginTop=30),
-                html.P(
-                    "*Divides the range of value with predetermined width OR into predetermined number of equal width bins",
-                    style={"marginTop": 30},
-                ),
+            ]
+        ),
+        html.Div([], style={"width": "100%", "height": 25, "clear": "left"}),
+        html.Div(
+            [
+                SectionHeading("IV. Monitor Bins Performance (Before)"),
             ],
-            style=grey_panel_style,
+            style=grey_full_width_panel_style,
+        ),
+        html.Div([], style={"width": "100%", "height": 25, "clear": "left"}),
+        html.Div(
+            [
+                SectionHeading("V. Monitor Bins Performance (After)"),
+            ],
+            style=green_full_width_panel_style,
+        ),
+        SectionHeading(
+            "VI. Save & Confirm Your Bins Settings for the Chosen Predictor Variable:",
+            inline=True,
+        ),
+        SaveButton(
+            title="Save & Confirm Interactive Binning",
+            marginLeft=15,
+            marginTop=55,
+            id="confirm_ib_button",
         ),
     ]
 )
@@ -727,6 +894,72 @@ def update_ib_predictor_var_dropdown(data):
     return convert_column_list_to_dropdown_options(col_to_be_binned_list)
 
 
+"""
+Interactive Binning Page:
+Change the automated binning algorithm description based on 
+the user-selected algorithm
+"""
+
+
+@app.callback(
+    dash.dependencies.Output("auto_bin_algo_description", "children"),
+    dash.dependencies.Input("auto_bin_algo_dropdown", "value"),
+)
+def update_auto_bin_algo_description(selected_algo):
+    if selected_algo == "None":
+        return "*Regards each unique value in the dataset as a bin"
+    elif selected_algo == "Equal width":
+        return "*Divides the range of value with predetermined width OR into predetermined number of equal width bins"
+    elif selected_algo == "Equal frequency":
+        return "*Divides the data into a predetermined number of bins containing approximately the same number of observations"
+    else:
+        return "*Upload the bins_settings.json downloaded before as the initial binning"
+
+
+"""
+Interactive Binning Page:
+Update user clicked bin's information
+"""
+
+
+@app.callback(
+    [
+        dash.dependencies.Output("selected_bin_name", "children"),
+        dash.dependencies.Output("selected_bin_index", "children"),
+        dash.dependencies.Output("selected_bin_count", "children"),
+    ],
+    dash.dependencies.Input("mixed_chart", "clickData"),
+)
+def update_clicked_bar_info(data):
+    if data is not None and data["points"][0]["curveNumber"] != 2:
+        return (
+            "Bin Name: " + str(data["points"][0]["x"]),
+            "Bin Index: " + str(data["points"][0]["pointIndex"]),
+            "Bin Count: " + str(data["points"][0]["y"]),
+        )
+    else:
+        return "Bin Name: ", "Bin Index: ", "Bin Count: "
+
+
+"""
+Interactive Binning Page:
+Update the color of the bar clicked by the user
+"""
+
+
+@app.callback(
+    dash.dependencies.Output("mixed_chart", "figure"),
+    dash.dependencies.Input("mixed_chart", "clickData"),
+)
+def update_bar_selected_color(data):
+    clicked_bar_index = None
+
+    if data is not None and data["points"][0]["curveNumber"] != 2:
+        clicked_bar_index = data["points"][0]["pointIndex"]
+
+    return generate_mixed_chart_fig(clicked_bar_index)
+
+
 ###########################################################################
 ############################ Debugging Purpose ############################
 ###########################################################################
@@ -824,6 +1057,6 @@ def display_page(root_url, pathname):
     elif root_url + "preview-download-page" == pathname:
         return preview_download_page_layout
     elif root_url == pathname:
-        return confirm_input_dataset_page_layout
+        return interactive_binning_page_layout
     else:
         return "404"
