@@ -17,6 +17,7 @@ def SharedDataStorage():
         [
             dcc.Store(id="bins_settings"),
             dcc.Store(id="good_bad_def"),
+            dcc.Store(id="binned_df"),
         ]
     )
 
@@ -41,7 +42,7 @@ dimens = {
     "navbar-background-padding": 12,
     "page-bottom-margin": 100,
     "heading-margin": 30,
-    "table-column-width": 200,
+    "table-column-width": 250,
     "panel-border-radius": 5,
 }
 
@@ -378,6 +379,31 @@ def generate_mixed_chart_fig(clicked_bar_index=None):
     return fig
 
 
+"""
+All
+"""
+
+
+def compute_binned_dataset(bins_settings_list):
+    binned_df = df[df.columns.to_list()]
+
+    for predictor_var_info in bins_settings_list:
+        new_col_name = predictor_var_info["column"] + "_binned"
+        if predictor_var_info["bins"] == "none":
+            binned_df[new_col_name] = df[predictor_var_info["column"]]
+        elif predictor_var_info["bins"] == "equal width":
+            pass
+            # binned_df[new_col_name] = generate_binned_col_with_equal_width_algo(predictor_var_info)
+        elif predictor_var_info["bins"] == "equal frequency":
+            pass
+            # binned_df[new_col_name] = generate_binned_col_with_equal_frequency_algo(predictor_var_info)
+        else:
+            pass
+            # binned_df[new_col_name] = generate_binned_col_with_custom_binning(predictor_var_info)
+
+    return binned_df
+
+
 ###########################################################################
 ######################### Setup Page Layouts Here #########################
 ###########################################################################
@@ -577,13 +603,13 @@ interactive_binning_page_layout = html.Div(
                         dcc.Dropdown(
                             options=convert_column_list_to_dropdown_options(
                                 [
-                                    "None",
-                                    "Equal width",
-                                    "Equal frequency",
-                                    "Import settings",
+                                    "none",
+                                    "equal width",
+                                    "equal frequency",
+                                    "import settings",
                                 ]
                             ),
-                            value="None",
+                            value="none",
                             clearable=False,
                             searchable=False,
                             style={"marginBottom": 20, "width": "60%"},
@@ -687,6 +713,18 @@ preview_download_page_layout = html.Div(
     [
         NavBar(),
         Heading("Preview & Download Bins Settings"),
+        SectionHeading("I. Preview Output Dataset"),
+        DataTable(df, id="preview_binned_df"),
+        html.Div(style={"height": 55}),
+        SectionHeading("II. Download Bins Settings"),
+        html.P(
+            "After downloading, import the json file into the Dataiku project... XXX"
+        ),
+        SaveButton(
+            title="Export Bins Settings",
+            id="export_bin_settings_button",
+        ),
+        html.Div(style={"height": 100}),
     ]
 )
 
@@ -753,9 +791,8 @@ def save_initial_bin_settings_to_shared_storage(
             {
                 "column": pred,
                 "type": pred_var_type,
-                "default": True,
                 "infoVal": -1,
-                "bins": None,
+                "bins": "none",
             }
         )
     return json.dumps(bins_settings)
@@ -906,11 +943,11 @@ the user-selected algorithm
     dash.dependencies.Input("auto_bin_algo_dropdown", "value"),
 )
 def update_auto_bin_algo_description(selected_algo):
-    if selected_algo == "None":
+    if selected_algo == "none":
         return "*Regards each unique value in the dataset as a bin"
-    elif selected_algo == "Equal width":
+    elif selected_algo == "equal width":
         return "*Divides the range of value with predetermined width OR into predetermined number of equal width bins"
-    elif selected_algo == "Equal frequency":
+    elif selected_algo == "equal frequency":
         return "*Divides the data into a predetermined number of bins containing approximately the same number of observations"
     else:
         return "*Upload the bins_settings.json downloaded before as the initial binning"
@@ -958,6 +995,67 @@ def update_bar_selected_color(data):
         clicked_bar_index = data["points"][0]["pointIndex"]
 
     return generate_mixed_chart_fig(clicked_bar_index)
+
+
+"""
+Preview & Download Settings:
+update binned dataframe for preview
+"""
+
+
+@app.callback(
+    dash.dependencies.Output("preview_binned_df", "data"),
+    dash.dependencies.Input("binned_df", "data"),
+)
+def update_preview_output_dataset(data):
+    adict = json.loads(data)
+    binned_df = pd.DataFrame.from_dict(adict)
+    return binned_df.to_dict("records")
+
+
+@app.callback(
+    dash.dependencies.Output("preview_binned_df", "columns"),
+    dash.dependencies.Input("binned_df", "data"),
+)
+def update_preview_output_dataset2(data):
+    adict = json.loads(data)
+    binned_df = pd.DataFrame.from_dict(adict)
+    return [{"name": i, "id": i} for i in binned_df.columns]
+
+
+"""
+Preview & Download Settings:
+export bins settings in JSON for download
+"""
+
+
+@app.callback(
+    dash.dependencies.Input("export_bin_settings_button", "n_clicks"),
+    dash.dependencies.State("bins_settings", "data"),
+)
+def export_bins_settings_in_json(bins_settings_data):
+    pass
+
+
+"""
+All:
+When bins_settings in shared storage is changed, re-bin
+all var based on the new settings, and save the binned dataframe
+to shared storage
+"""
+
+
+@app.callback(
+    dash.dependencies.Output("binned_df", "data"),
+    dash.dependencies.Input("bins_settings", "data"),
+)
+def bin_df_and_save_to_shared_storage(bins_settings_data):
+    bins_settings_dict = json.loads(bins_settings_data)
+    bins_settings_list = bins_settings_dict["variable"]
+
+    binned_df = compute_binned_dataset(bins_settings_list)
+
+    return json.dumps(binned_df.to_dict())
 
 
 ###########################################################################
