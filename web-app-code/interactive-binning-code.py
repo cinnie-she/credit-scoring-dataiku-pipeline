@@ -715,16 +715,24 @@ preview_download_page_layout = html.Div(
         Heading("Preview & Download Bins Settings"),
         SectionHeading("I. Preview Output Dataset"),
         DataTable(df, id="preview_binned_df"),
-        html.Div(style={"height": 55}),
-        SectionHeading("II. Download Bins Settings"),
+        html.Div(style={"height": 25}),
+        SectionHeading("II. Preview Summary Statistics Table"),
+        html.P("TBC"),
+        html.Div(style={"height": 25}),
+        SectionHeading("III. Preview Mixed Chart"),
+        html.P("TBC"),
+        html.Div(style={"height": 25}),
+        SectionHeading("IV. Download Bins Settings", inline=True),
+        SaveButton(
+            title="Download Bins Settings:",
+            marginLeft=15,
+            id="download_bin_settings_button",
+        ),
+        dcc.Download(id="download_json"),
+        html.Div(style={"height": 25}),
         html.P(
             "After downloading, import the json file into the Dataiku project... XXX"
         ),
-        SaveButton(
-            title="Export Bins Settings",
-            id="export_bin_settings_button",
-        ),
-        dcc.Download(id="download_json"),
         html.Div(style={"height": 100}),
     ]
 )
@@ -1031,7 +1039,7 @@ export bins settings as json file
 
 @app.callback(
     Output("download_json", "data"),
-    Input("export_bin_settings_button", "n_clicks"),
+    Input("download_bin_settings_button", "n_clicks"),
     State("bins_settings", "data"),
     prevent_initial_call=True,
 )
