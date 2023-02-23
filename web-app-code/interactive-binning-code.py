@@ -724,10 +724,10 @@ preview_download_page_layout = html.Div(
             title="Export Bins Settings",
             id="export_bin_settings_button",
         ),
+        dcc.Download(id="download_json"),
         html.Div(style={"height": 100}),
     ]
 )
-
 
 ###########################################################################
 #################### Implement Callback Functions Here ####################
@@ -741,8 +741,8 @@ columns they would like to bin
 
 
 @app.callback(
-    dash.dependencies.Output("input_dataset_preview_table", "hidden_columns"),
-    dash.dependencies.Input("predictor_var_dropdown", "value"),
+    Output("input_dataset_preview_table", "hidden_columns"),
+    Input("predictor_var_dropdown", "value"),
 )
 def hide_confirm_input_dataset_column_on_dropdown_change(predictor_var_dropdown_values):
     hide_columns = get_predictor_var_list(df.columns.to_list())
@@ -758,8 +758,8 @@ whenever the user changes the columns selected to be bin in Section 1
 
 
 @app.callback(
-    dash.dependencies.Output("select_predictor_type_list", "children"),
-    dash.dependencies.Input("predictor_var_dropdown", "value"),
+    Output("select_predictor_type_list", "children"),
+    Input("predictor_var_dropdown", "value"),
 )
 def update_confirm_predictor_type_list(predictor_var_dropdown_values):
     return generate_predictor_type_list(predictor_var_dropdown_values)
@@ -773,11 +773,11 @@ settings to shared storage
 
 
 @app.callback(
-    dash.dependencies.Output("bins_settings", "data"),
-    dash.dependencies.Input("confirm_predictor_var_button", "n_clicks"),
+    Output("bins_settings", "data"),
+    Input("confirm_predictor_var_button", "n_clicks"),
     [
-        dash.dependencies.State("predictor_var_dropdown", "value"),
-        dash.dependencies.State("select_predictor_type_list", "children"),
+        State("predictor_var_dropdown", "value"),
+        State("select_predictor_type_list", "children"),
     ],
 )
 def save_initial_bin_settings_to_shared_storage(
@@ -806,13 +806,13 @@ the definitions defined by the users in json format to the shared storage
 
 
 @app.callback(
-    dash.dependencies.Output("good_bad_def", "data"),
-    dash.dependencies.Input("confirm_good_bad_def_button", "n_clicks"),
+    Output("good_bad_def", "data"),
+    Input("confirm_good_bad_def_button", "n_clicks"),
     [
-        dash.dependencies.State("good_bad_def_dropdown", "value"),
-        dash.dependencies.State("weight_of_good_input", "value"),
-        dash.dependencies.State("weight_of_bad_input", "value"),
-        dash.dependencies.State("indeterminate_range_slider", "value"),
+        State("good_bad_def_dropdown", "value"),
+        State("weight_of_good_input", "value"),
+        State("weight_of_bad_input", "value"),
+        State("indeterminate_range_slider", "value"),
     ],
 )
 def save_good_bad_definition_to_shared_storage(
@@ -834,13 +834,13 @@ computes the good & bad count of the whole dataset, and updates the historgram
 
 
 @app.callback(
-    dash.dependencies.Output("dataset_total_good_bad_histogram", "figure"),
-    dash.dependencies.Input("confirm_good_bad_def_button", "n_clicks"),
+    Output("dataset_total_good_bad_histogram", "figure"),
+    Input("confirm_good_bad_def_button", "n_clicks"),
     [
-        dash.dependencies.State("good_bad_def_dropdown", "value"),
-        dash.dependencies.State("weight_of_good_input", "value"),
-        dash.dependencies.State("weight_of_bad_input", "value"),
-        dash.dependencies.State("indeterminate_range_slider", "value"),
+        State("good_bad_def_dropdown", "value"),
+        State("weight_of_good_input", "value"),
+        State("weight_of_bad_input", "value"),
+        State("indeterminate_range_slider", "value"),
     ],
 )
 def update_dataset_total_good_bad_histogram(
@@ -872,12 +872,12 @@ input box
 
 
 @app.callback(
-    dash.dependencies.Output("weight_of_good_input", "value"),
+    Output("weight_of_good_input", "value"),
     [
-        dash.dependencies.Input("good_bad_def_dropdown", "value"),
-        dash.dependencies.Input("indeterminate_range_slider", "value"),
+        Input("good_bad_def_dropdown", "value"),
+        Input("indeterminate_range_slider", "value"),
     ],
-    dash.dependencies.State("weight_of_good_input", "value"),
+    State("weight_of_good_input", "value"),
 )
 def update_default_weight_of_good_for_paid_past_due(
     def_column, indeterminate_range, good_weight
@@ -897,8 +897,8 @@ automatically show the range slider, otherwise, hide the slider
 
 
 @app.callback(
-    dash.dependencies.Output("select_indeterminate_range_section", "style"),
-    dash.dependencies.Input("good_bad_def_dropdown", "value"),
+    Output("select_indeterminate_range_section", "style"),
+    Input("good_bad_def_dropdown", "value"),
 )
 def show_or_hide_indeterminate_range_slider(def_column):
     if def_column == "loan_status":
@@ -917,8 +917,8 @@ Binning page is updated
 
 
 @app.callback(
-    dash.dependencies.Output("predictor_var_ib_dropdown", "options"),
-    dash.dependencies.Input("bins_settings", "data"),
+    Output("predictor_var_ib_dropdown", "options"),
+    Input("bins_settings", "data"),
 )
 def update_ib_predictor_var_dropdown(data):
     data_dict = json.loads(data)
@@ -939,8 +939,8 @@ the user-selected algorithm
 
 
 @app.callback(
-    dash.dependencies.Output("auto_bin_algo_description", "children"),
-    dash.dependencies.Input("auto_bin_algo_dropdown", "value"),
+    Output("auto_bin_algo_description", "children"),
+    Input("auto_bin_algo_dropdown", "value"),
 )
 def update_auto_bin_algo_description(selected_algo):
     if selected_algo == "none":
@@ -961,11 +961,11 @@ Update user clicked bin's information
 
 @app.callback(
     [
-        dash.dependencies.Output("selected_bin_name", "children"),
-        dash.dependencies.Output("selected_bin_index", "children"),
-        dash.dependencies.Output("selected_bin_count", "children"),
+        Output("selected_bin_name", "children"),
+        Output("selected_bin_index", "children"),
+        Output("selected_bin_count", "children"),
     ],
-    dash.dependencies.Input("mixed_chart", "clickData"),
+    Input("mixed_chart", "clickData"),
 )
 def update_clicked_bar_info(data):
     if data is not None and data["points"][0]["curveNumber"] != 2:
@@ -985,8 +985,8 @@ Update the color of the bar clicked by the user
 
 
 @app.callback(
-    dash.dependencies.Output("mixed_chart", "figure"),
-    dash.dependencies.Input("mixed_chart", "clickData"),
+    Output("mixed_chart", "figure"),
+    Input("mixed_chart", "clickData"),
 )
 def update_bar_selected_color(data):
     clicked_bar_index = None
@@ -1004,8 +1004,8 @@ update binned dataframe for preview
 
 
 @app.callback(
-    dash.dependencies.Output("preview_binned_df", "data"),
-    dash.dependencies.Input("binned_df", "data"),
+    Output("preview_binned_df", "data"),
+    Input("binned_df", "data"),
 )
 def update_preview_output_dataset(data):
     adict = json.loads(data)
@@ -1014,8 +1014,8 @@ def update_preview_output_dataset(data):
 
 
 @app.callback(
-    dash.dependencies.Output("preview_binned_df", "columns"),
-    dash.dependencies.Input("binned_df", "data"),
+    Output("preview_binned_df", "columns"),
+    Input("binned_df", "data"),
 )
 def update_preview_output_dataset2(data):
     adict = json.loads(data)
@@ -1025,16 +1025,18 @@ def update_preview_output_dataset2(data):
 
 """
 Preview & Download Settings:
-export bins settings in JSON for download
+export bins settings as json file
 """
 
 
 @app.callback(
-    dash.dependencies.Input("export_bin_settings_button", "n_clicks"),
-    dash.dependencies.State("bins_settings", "data"),
+    Output("download_json", "data"),
+    Input("export_bin_settings_button", "n_clicks"),
+    State("bins_settings", "data"),
+    prevent_initial_call=True,
 )
-def export_bins_settings_in_json(bins_settings_data):
-    pass
+def export_bin_settings(n_clicks, bins_settings_data):
+    return dict(content=bins_settings_data, filename="bins_settings.json")
 
 
 """
@@ -1046,8 +1048,8 @@ to shared storage
 
 
 @app.callback(
-    dash.dependencies.Output("binned_df", "data"),
-    dash.dependencies.Input("bins_settings", "data"),
+    Output("binned_df", "data"),
+    Input("bins_settings", "data"),
 )
 def bin_df_and_save_to_shared_storage(bins_settings_data):
     bins_settings_dict = json.loads(bins_settings_data)
@@ -1064,8 +1066,8 @@ def bin_df_and_save_to_shared_storage(bins_settings_data):
 
 # Get bins settings
 @app.callback(
-    dash.dependencies.Output("text", "children"),
-    dash.dependencies.Input("bins_settings", "data"),
+    Output("text", "children"),
+    Input("bins_settings", "data"),
 )
 def update_bins_settings(data):
     adict = json.loads(data)
@@ -1075,8 +1077,8 @@ def update_bins_settings(data):
 
 # Get good/bad definitions
 @app.callback(
-    dash.dependencies.Output("text3", "children"),
-    dash.dependencies.Input("good_bad_def", "data"),
+    Output("text3", "children"),
+    Input("good_bad_def", "data"),
 )
 def update_good_bad_def(data):
     return data
@@ -1122,11 +1124,11 @@ app.validation_layout = html.Div(
 # The following callback is used to dynamically instantiate the root-url
 @app.callback(
     [
-        dash.dependencies.Output("root-url", "children"),
-        dash.dependencies.Output("first-loading", "children"),
+        Output("root-url", "children"),
+        Output("first-loading", "children"),
     ],
-    dash.dependencies.Input("url", "pathname"),
-    dash.dependencies.State("first-loading", "children"),
+    Input("url", "pathname"),
+    State("first-loading", "children"),
 )
 def update_root_url(pathname, first_loading):
     if first_loading is None:
@@ -1137,10 +1139,10 @@ def update_root_url(pathname, first_loading):
 
 # This is the callback doing the routing
 @app.callback(
-    dash.dependencies.Output("page-content", "children"),
+    Output("page-content", "children"),
     [
-        dash.dependencies.Input("root-url", "children"),
-        dash.dependencies.Input("url", "pathname"),
+        Input("root-url", "children"),
+        Input("url", "pathname"),
     ],
 )
 def display_page(root_url, pathname):
@@ -1155,6 +1157,6 @@ def display_page(root_url, pathname):
     elif root_url + "preview-download-page" == pathname:
         return preview_download_page_layout
     elif root_url == pathname:
-        return interactive_binning_page_layout
+        return home_page_layout
     else:
         return "404"
