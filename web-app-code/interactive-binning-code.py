@@ -1,5 +1,6 @@
 import dataiku
 import pandas as pd
+import numpy as np
 import dash
 import dash_table
 import dash_core_components as dcc
@@ -324,6 +325,50 @@ Interactive Binning Page
 """
 
 
+def get_list_of_total_count(var_df, unique_bin_name_list, good_bad_def):
+    total_count_list = list()
+    for unique_bin_name in unique_bin_name_list:
+        bin_df = var_df[var_df.iloc[:, 0] == unique_bin_name]
+        if (
+            good_bad_def == None
+        ):  # If-else statement put outside for loop would be better
+            total_count_list.append(len(bin_df))
+        else:
+            good_bad_def_dict = json.loads(good_bad_def)
+            if good_bad_def_dict["column"] == "loan_status":
+                good_count = good_bad_def_dict["weights"]["good"] * len(
+                    bin_df[bin_df["loan_status"] == 0]
+                )
+                bad_count = good_bad_def_dict["weights"]["bad"] * len(
+                    bin_df[bin_df["loan_status"] == 1]
+                )
+                total_count_list.append(good_count + bad_count)
+            else:
+                good_count = good_bad_def_dict["weights"]["good"] * len(
+                    bin_df.loc[
+                        (
+                            bin_df["paid_past_due"]
+                            < good_bad_def_dict["indeterminate"][0]
+                        )
+                        & (bin_df["loan_status"] == 0)
+                    ]
+                )
+                bad_count = good_bad_def_dict["weights"]["bad"] * (
+                    len(
+                        bin_df.loc[
+                            (
+                                bin_df["paid_past_due"]
+                                > good_bad_def_dict["indeterminate"][1]
+                            )
+                            & (bin_df["loan_status"] == 0)
+                        ]
+                    )
+                    + len(bin_df[bin_df["loan_status"] == 1])
+                )
+                total_count_list.append(good_count + bad_count)
+    return total_count_list
+
+
 def get_list_of_bad_count(var_df, unique_bin_name_list, good_bad_def):
     bad_count_list = list()
     for unique_bin_name in unique_bin_name_list:
@@ -332,17 +377,52 @@ def get_list_of_bad_count(var_df, unique_bin_name_list, good_bad_def):
             bad_count = len(bin_df[bin_df["loan_status"] == 1])
             bad_count_list.append(bad_count)
         else:
-            pass
+            good_bad_def_dict = json.loads(good_bad_def)
+            if good_bad_def_dict["column"] == "loan_status":
+                bad_count = good_bad_def_dict["weights"]["bad"] * len(
+                    bin_df[bin_df["loan_status"] == 1]
+                )
+                bad_count_list.append(bad_count)
+            else:
+                bad_count = good_bad_def_dict["weights"]["bad"] * (
+                    len(
+                        bin_df.loc[
+                            (
+                                bin_df["paid_past_due"]
+                                > good_bad_def_dict["indeterminate"][1]
+                            )
+                            & (bin_df["loan_status"] == 0)
+                        ]
+                    )
+                    + len(bin_df[bin_df["loan_status"] == 1])
+                )
+                bad_count_list.append(bad_count)
     return bad_count_list
 
 
+def get_list_of_woe(total_count_list, bad_count_list):
+    woe_list = list()
+    for i in range(len(total_count_list)):
+        if total_count_list[i] == 0:
+            bad_pct = 0
+        else:
+            bad_pct = bad_count_list[i]/total_count_list[i]
+        good_pct = 1 - bad_pct
+        if bad_pct == 0:
+            woe_list.append(None)
+        else:
+            woe_list.append(np.log(good_pct / bad_pct))
+    return woe_list
+
+
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 
 def generate_mixed_chart_fig(
     var_df=df[[df.columns[0], "loan_status"]], clicked_bar_index=None, good_bad_def=None
 ):
-    fig = go.Figure()
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     good_marker_color = ["#8097e6"] * (len(var_df.iloc[:, 0].unique().tolist()))
     if clicked_bar_index is not None:
@@ -352,38 +432,45 @@ def generate_mixed_chart_fig(
     if clicked_bar_index is not None:
         bad_marker_color[clicked_bar_index] = "#55a755"
 
-    fig.add_trace(
-        go.Bar(
-            x=list(var_df.iloc[:, 0].value_counts().to_dict().keys()),
-            y=list(var_df.iloc[:, 0].value_counts().to_dict().values()),
-            name="Good",
-            marker_color=good_marker_color,
-            offsetgroup=0,
-        )
+    unique_bins = sorted(var_df.iloc[:, 0].unique().tolist())
+    total_count_list = get_list_of_total_count(var_df, unique_bins, good_bad_def)
+    bad_count_list = get_list_of_bad_count(
+        var_df,
+        unique_bins,
+        good_bad_def,
     )
 
     fig.add_trace(
         go.Bar(
-            x=list(var_df.iloc[:, 0].value_counts().to_dict().keys()),
-            y=get_list_of_bad_count(
-                var_df,
-                list(var_df.iloc[:, 0].value_counts().to_dict().keys()),
-                good_bad_def,
-            ),
+            x=unique_bins,
+            y=total_count_list,
+            name="Good",
+            marker_color=good_marker_color,
+            offsetgroup=0,
+        ),
+        secondary_y=False,
+    )
+
+    fig.add_trace(
+        go.Bar(
+            x=unique_bins,
+            y=bad_count_list,  # TODO: need sum good & bad multplied by weights instead
             name="Bad",
             marker_color=bad_marker_color,
             offsetgroup=0,
-        )
+        ),
+        secondary_y=False,
     )
 
     fig.add_trace(
         go.Scatter(
             mode="lines+markers",
-            x=["Bin-One", "Bin-Two", "Bin-Three", "Bin-Four", "Bin-Five"],
-            y=[-5, -2, 1, 7, 11],
+            x=unique_bins,
+            y=get_list_of_woe(total_count_list, bad_count_list),
             name="WOE",
             marker_color="red",
-        )
+        ),
+        secondary_y=True,
     )
 
     fig.update_layout(
@@ -395,6 +482,13 @@ def generate_mixed_chart_fig(
         ),
         margin=go.layout.Margin(l=0, r=0, b=0, t=0),
     )
+
+    # Set x-axis title
+    fig.update_xaxes(title_text="Bins")
+
+    # Set y-axes titles
+    fig.update_yaxes(title_text="Bin Frequency", secondary_y=False)
+    fig.update_yaxes(title_text="WOE", secondary_y=True)
 
     return fig
 
@@ -436,8 +530,6 @@ home_page_layout = html.Div(
         html.P("Number of rows: " + str(df.shape[0])),
         html.P("Number of columns: " + str(df.shape[1]), style={"marginBottom": 30}),
         DataTable(df=df),
-        html.P(id="text1"),
-        html.P(id="text2"),
     ]
 )
 
@@ -597,6 +689,7 @@ interactive_binning_page_layout = html.Div(
     [
         NavBar(),
         Heading("Interactive Binning Interface"),
+        html.P(id="text_omg"),
         html.Div(
             [
                 html.Div(
@@ -1017,16 +1110,53 @@ Update the color of the bar clicked by the user
 
 @app.callback(
     Output("mixed_chart", "figure"),
-    Input("mixed_chart", "clickData"),
+    [
+        Input("mixed_chart", "clickData"),
+        Input("predictor_var_ib_dropdown", "value"),
+    ],
     State("good_bad_def", "data"),
 )
-def update_bar_selected_color(data, good_bad_def_data):
+def update_bar_selected_color(data, var_to_bin, good_bad_def_data):
+    if good_bad_def_data == None:
+        var_df = df[
+            [var_to_bin, "loan_status"]
+        ]  # TODO: var_to_bin need to check null too
+    else:
+        good_bad_def = json.loads(good_bad_def_data)
+        if good_bad_def["column"] == "loan_status":
+            var_df = df[[var_to_bin, "loan_status"]]
+        else:
+            var_df = df[[var_to_bin, "loan_status", "paid_past_due"]]
+
     clicked_bar_index = None
 
     if data is not None and data["points"][0]["curveNumber"] != 2:
         clicked_bar_index = data["points"][0]["pointIndex"]
 
-    return generate_mixed_chart_fig(clicked_bar_index=clicked_bar_index)
+    return generate_mixed_chart_fig(
+        var_df=var_df,
+        clicked_bar_index=clicked_bar_index,
+        good_bad_def=good_bad_def_data,
+    )
+
+
+@app.callback(
+    Output("text_omg", "children"),
+    Input("mixed_chart", "clickData"),
+    [
+        State("good_bad_def", "data"),
+        State("predictor_var_ib_dropdown", "value"),
+    ],
+)
+def hi(data, good_bad_def_data, var_to_bin):
+    if good_bad_def_data == None:
+        return "none"
+    else:
+        good_bad_def = json.loads(good_bad_def_data)
+        if good_bad_def["column"] == "loan_status":
+            return "loan_status"
+        else:
+            return "paid_past_due"
 
 
 """
