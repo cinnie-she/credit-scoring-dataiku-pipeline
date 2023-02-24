@@ -322,24 +322,40 @@ def compute_default_weight_of_good(indeterminate_range):
 """
 Interactive Binning Page
 """
+
+
+def get_list_of_bad_count(var_df, unique_bin_name_list, good_bad_def):
+    bad_count_list = list()
+    for unique_bin_name in unique_bin_name_list:
+        bin_df = var_df[var_df.iloc[:, 0] == unique_bin_name]
+        if good_bad_def == None:  # use 'loan_status'
+            bad_count = len(bin_df[bin_df["loan_status"] == 1])
+            bad_count_list.append(bad_count)
+        else:
+            pass
+    return bad_count_list
+
+
 import plotly.graph_objects as go
 
 
-def generate_mixed_chart_fig(clicked_bar_index=None):
+def generate_mixed_chart_fig(
+    var_df=df[[df.columns[0], "loan_status"]], clicked_bar_index=None, good_bad_def=None
+):
     fig = go.Figure()
 
-    good_marker_color = ["#8097e6"] * 5
+    good_marker_color = ["#8097e6"] * (len(var_df.iloc[:, 0].unique().tolist()))
     if clicked_bar_index is not None:
         good_marker_color[clicked_bar_index] = "#3961ee"
 
-    bad_marker_color = ["#8bd58b"] * 5
+    bad_marker_color = ["#8bd58b"] * (len(var_df.iloc[:, 0].unique().tolist()))
     if clicked_bar_index is not None:
         bad_marker_color[clicked_bar_index] = "#55a755"
 
     fig.add_trace(
         go.Bar(
-            x=["Bin-One", "Bin-Two", "Bin-Three", "Bin-Four", "Bin-Five"],
-            y=[13, 16, 13, 32, 11],
+            x=list(var_df.iloc[:, 0].value_counts().to_dict().keys()),
+            y=list(var_df.iloc[:, 0].value_counts().to_dict().values()),
             name="Good",
             marker_color=good_marker_color,
             offsetgroup=0,
@@ -348,8 +364,12 @@ def generate_mixed_chart_fig(clicked_bar_index=None):
 
     fig.add_trace(
         go.Bar(
-            x=["Bin-One", "Bin-Two", "Bin-Three", "Bin-Four", "Bin-Five"],
-            y=[3, 1, 10, 12, 9],
+            x=list(var_df.iloc[:, 0].value_counts().to_dict().keys()),
+            y=get_list_of_bad_count(
+                var_df,
+                list(var_df.iloc[:, 0].value_counts().to_dict().keys()),
+                good_bad_def,
+            ),
             name="Bad",
             marker_color=bad_marker_color,
             offsetgroup=0,
@@ -685,6 +705,7 @@ interactive_binning_page_layout = html.Div(
         html.Div(
             [
                 SectionHeading("IV. Monitor Bins Performance (Before)"),
+                DataTable(df),
             ],
             style=grey_full_width_panel_style,
         ),
@@ -692,6 +713,7 @@ interactive_binning_page_layout = html.Div(
         html.Div(
             [
                 SectionHeading("V. Monitor Bins Performance (After)"),
+                DataTable(df),
             ],
             style=green_full_width_panel_style,
         ),
@@ -705,6 +727,7 @@ interactive_binning_page_layout = html.Div(
             marginTop=55,
             id="confirm_ib_button",
         ),
+        html.Div(style={"height": 100}),
     ]
 )
 
@@ -995,14 +1018,15 @@ Update the color of the bar clicked by the user
 @app.callback(
     Output("mixed_chart", "figure"),
     Input("mixed_chart", "clickData"),
+    State("good_bad_def", "data"),
 )
-def update_bar_selected_color(data):
+def update_bar_selected_color(data, good_bad_def_data):
     clicked_bar_index = None
 
     if data is not None and data["points"][0]["curveNumber"] != 2:
         clicked_bar_index = data["points"][0]["pointIndex"]
 
-    return generate_mixed_chart_fig(clicked_bar_index)
+    return generate_mixed_chart_fig(clicked_bar_index=clicked_bar_index)
 
 
 """
