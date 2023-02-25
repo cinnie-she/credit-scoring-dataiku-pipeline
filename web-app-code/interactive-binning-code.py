@@ -671,7 +671,7 @@ good_bad_def_page_layout = html.Div(
                                         "marker": {"color": "#6B87AB"},
                                     },
                                 ],
-                                "layout": {"title": "Good & Bad Histogram"},
+                                "layout": {"title": "Good & Bad Count"},
                             },
                             id="dataset_total_good_bad_histogram",
                         ),
@@ -768,9 +768,6 @@ interactive_binning_page_layout = html.Div(
                 ),
                 html.Div(
                     [
-                        # html.P("Split/Add bin: Click on the bar representing the bin you would like to split > choose the split point > click the 'split' button"),
-                        # html.P("Remove bin: Click on the bar representing the bin you would like to remove > click on 'Remove' button"),
-                        # html.P("Adjust bin boundaries: Click on the bar to be adjusted > adjust through slider > click on 'Adjust' button"),
                         html.P("Bin Name: ", id="selected_bin_name"),
                         html.P("Bin Index: ", id="selected_bin_index"),
                         html.P("Bin Count: ", id="selected_bin_count"),
@@ -782,14 +779,14 @@ interactive_binning_page_layout = html.Div(
                                 "border": "1px solid black",
                             },
                         ),
+                        SectionHeading("Rename Selected Bin"),
+                        SaveButton(title="Rename"),
                         SectionHeading("Split Selected Bin"),
                         SaveButton(title="Split"),
-                        SectionHeading("Merge Selected Bin"),
+                        SectionHeading("Merge Selected Bins"),
                         SaveButton(title="Merge"),
-                        SectionHeading("Remove Selected Bin"),
+                        SectionHeading("Remove Selected Bin(s)"),
                         SaveButton(title="Remove"),
-                        SectionHeading("Adjust Selected Bin Boundaries"),
-                        SaveButton(title="Adjust"),
                     ],
                     style=purple_panel_style,
                 ),
@@ -799,7 +796,7 @@ interactive_binning_page_layout = html.Div(
         html.Div(
             [
                 SectionHeading("IV. Monitor Bins Performance (Before)"),
-                DataTable(df),
+                #DataTable(df),
             ],
             style=grey_full_width_panel_style,
         ),
@@ -807,7 +804,7 @@ interactive_binning_page_layout = html.Div(
         html.Div(
             [
                 SectionHeading("V. Monitor Bins Performance (After)"),
-                DataTable(df),
+                #DataTable(df),
             ],
             style=green_full_width_panel_style,
         ),
@@ -983,7 +980,7 @@ def update_dataset_total_good_bad_histogram(
                 "marker": {"color": "#6B87AB"},
             },
         ],
-        "layout": {"title": "Good & Bad Histogram"},
+        "layout": {"title": "Good & Bad Count"},
     }
     return fig
 
@@ -1114,20 +1111,24 @@ Update the color of the bar clicked by the user
     [
         Input("mixed_chart", "clickData"),
         Input("predictor_var_ib_dropdown", "value"),
+        Input("binned_df", "data"),
     ],
     State("good_bad_def", "data"),
 )
-def update_bar_selected_color(data, var_to_bin, good_bad_def_data):
+def update_bar_selected_color(data, var_to_bin, binned_df_data, good_bad_def_data):
+    adict = json.loads(binned_df_data)
+    binned_df = pd.DataFrame.from_dict(adict)
+    
     if good_bad_def_data == None:
-        var_df = df[
-            [var_to_bin, "loan_status"]
+        var_df = binned_df[
+            [var_to_bin+"_binned", "loan_status"]
         ]  # TODO: var_to_bin need to check null too
     else:
         good_bad_def = json.loads(good_bad_def_data)
         if good_bad_def["column"] == "loan_status":
-            var_df = df[[var_to_bin, "loan_status"]]
+            var_df = binned_df[[var_to_bin+"_binned", "loan_status"]]
         else:
-            var_df = df[[var_to_bin, "loan_status", "paid_past_due"]]
+            var_df = binned_df[[var_to_bin+"_binned", "loan_status", "paid_past_due"]]
 
     clicked_bar_index = None
 
