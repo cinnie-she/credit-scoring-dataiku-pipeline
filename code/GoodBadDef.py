@@ -51,6 +51,18 @@ good_bad_def = {
 class GoodBadDefValidator:
     # A method to validate if numerical definitions for bad/indeterminate has overlapped
     def validateIfNumericalDefOverlapped(self, bad_numeric_list, indeterminate_numeric_list):
+        for bad_numeric_def in bad_numeric_list:
+            column = bad_numeric_def["column"]
+            for indeterminate_numeric_def in indeterminate_numeric_list:
+                if indeterminate_numeric_def["column"] == column: # found matching column definition
+                    # Check if any overlapping definition
+                    for bad_range in bad_numeric_def["ranges"]:
+                        for indeterminate_range in indeterminate_numeric_def["ranges"]:
+                            if bad_range[0] < indeterminate_range[0] and bad_range[1] > indeterminate_range[0]:
+                                return False
+                            if bad_range[0] < indeterminate_range[1] and bad_range[1] > indeterminate_range[1]:
+                                return False
+                    break
         return True
     
     # A method to validate if categorical definitions for bad/indeterminate has overlapped
