@@ -330,6 +330,19 @@ Good/Bad Definition Page
 class GoodBadDefValidator:
     # A method to validate if numerical definitions for bad/indeterminate has overlapped
     def validateIfNumericalDefOverlapped(self, bad_numeric_list, indeterminate_numeric_list):
+        for bad_numeric_def in bad_numeric_list:
+            column = bad_numeric_def["column"]
+            for indeterminate_numeric_def in indeterminate_numeric_list:
+                # found matching column definition
+                if indeterminate_numeric_def["column"] == column:
+                    # Check if any overlapping definition
+                    for bad_range in bad_numeric_def["ranges"]:
+                        for indeterminate_range in indeterminate_numeric_def["ranges"]:
+                            if bad_range[0] < indeterminate_range[0] and bad_range[1] > indeterminate_range[0]:
+                                return False
+                            if bad_range[0] < indeterminate_range[1] and bad_range[1] > indeterminate_range[1]:
+                                return False
+                    break
         return True
 
     # A method to validate if categorical definitions for bad/indeterminate has overlapped
@@ -910,6 +923,8 @@ def save_good_bad_def_to_shared_storage(n_clicks, bad_def_sec, indeterminate_def
         section=indeterminate_def_sec)
 
     # Validate if there's overlapping between bad & indeterminate
+    if not validator.validateIfNumericalDefOverlapped(good_bad_def["bad"]["numerical"], good_bad_def["indeterminate"]["numerical"]):
+        return original_def_data
     if not validator.validateIfCategoricalDefOverlapped(good_bad_def["bad"]["categorical"], good_bad_def["indeterminate"]["categorical"]):
         return original_def_data
 
@@ -936,22 +951,36 @@ Show error message when:
 def show_good_bad_def_error_msg(n_clicks, bad_def_sec, indeterminate_def_sec):
     error_msg = ""
 
+    has_bound_error = False
     validator = GoodBadDefValidator()
     bad_numeric_info_list = bad_def_sec[0]['props']['children'][1]['props']['children']
     indeterminate_numeric_info_list = indeterminate_def_sec[
         0]['props']['children'][1]['props']['children']
     if not validator.validateNumericalBounds(bad_numeric_info_list):
+        has_bound_error = True
         error_msg += "Error (Invalid User Input): Some of the numerical range(s) for bad definition has lower bound >= upper bound which is invalid.\t"
     if not validator.validateNumericalBounds(indeterminate_numeric_info_list):
+        has_bound_error = True
         error_msg += "Error (Invalid User Input): Some of the numerical range(s) for indeterminate definition has lower bound >= upper bound which is invalid.\t"
 
     decoder = GoodBadDefDecoder()
+    if not has_bound_error:
+        bad_numeric_info_list = bad_def_sec[0]['props']['children'][1]['props']['children']
+        indeterminate_numeric_info_list = indeterminate_def_sec[
+            0]['props']['children'][1]['props']['children']
+        bad_numeric_list = decoder.getNumericDefListFromSection(
+            numeric_info_list=bad_numeric_info_list)
+        indeterminate_numeric_list = decoder.getNumericDefListFromSection(
+            numeric_info_list=indeterminate_numeric_info_list)
+        if not validator.validateIfNumericalDefOverlapped(bad_numeric_list, indeterminate_numeric_list):
+            error_msg += "Error (Invalid User Input): Some of the numerical definitions of bad & indeterminate have overlapped.\t"
+
     bad_categoric_list = decoder.getCategoricalDefListFromSection(
         section=bad_def_sec)
     indeterminate_categoric_list = decoder.getCategoricalDefListFromSection(
         section=indeterminate_def_sec)
     if not validator.validateIfCategoricalDefOverlapped(bad_categoric_list, indeterminate_categoric_list):
-        error_msg += "Error (Invalid User Input): Some of the categorical definition(s) of bad & indeterminate overlapped."
+        error_msg += "Error (Invalid User Input): Some of the categorical definitions of bad & indeterminate have overlapped.\t"
 
     return error_msg
 
