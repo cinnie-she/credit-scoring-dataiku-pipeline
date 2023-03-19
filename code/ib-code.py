@@ -329,7 +329,7 @@ Good/Bad Definition Page
 
 class GoodBadDefValidator:
     # A method to validate if numerical definitions for bad/indeterminate has overlapped
-    def validateIfNumericalDefOverlapped(self, bad_numeric_list, indeterminate_numeric_list):
+    def validate_if_numerical_def_overlapped(self, bad_numeric_list, indeterminate_numeric_list):
         for bad_numeric_def in bad_numeric_list:
             column = bad_numeric_def["column"]
             for indeterminate_numeric_def in indeterminate_numeric_list:
@@ -342,11 +342,15 @@ class GoodBadDefValidator:
                                 return False
                             if bad_range[0] < indeterminate_range[1] and bad_range[1] > indeterminate_range[1]:
                                 return False
+                            if bad_range[0] == indeterminate_range[0] and bad_range[1] <= indeterminate_range[1]:
+                                return False
+                            if bad_range[1] == indeterminate_range[1] and bad_range[0] >= indeterminate_range[0]:
+                                return False
                     break
         return True
 
     # A method to validate if categorical definitions for bad/indeterminate has overlapped
-    def validateIfCategoricalDefOverlapped(self, bad_categoric_list, indeterminate_categoric_list):
+    def validate_if_categorical_def_overlapped(self, bad_categoric_list, indeterminate_categoric_list):
         for bad_categoric_def in bad_categoric_list:
             column = bad_categoric_def["column"]
             for indeterminate_categoric_def in indeterminate_categoric_list:
@@ -360,7 +364,7 @@ class GoodBadDefValidator:
         return True
 
     # A method to validate if all numerical definition range have upper bound > lower bound, if not, returns false
-    def validateNumericalBounds(self, numeric_info_list):
+    def validate_numerical_bounds(self, numeric_info_list):
         for numeric_info in numeric_info_list:
             a_range = [numeric_info["props"]["children"][3]['props']['value'],
                        numeric_info["props"]["children"][6]['props']['value']]
@@ -372,7 +376,7 @@ class GoodBadDefValidator:
 # A class for obtaining user inputs from the section UI info
 class GoodBadDefDecoder:
     # A method to translate section UI info to a list of numerical definition
-    def getNumericDefListFromSection(self, numeric_info_list):
+    def get_numeric_def_list_from_section(self, numeric_info_list):
         numeric_list = list()  # initialization
 
         for numeric_info in numeric_info_list:
@@ -413,7 +417,7 @@ class GoodBadDefDecoder:
         return numeric_list
     # A method to translate section UI info to a list of categorical definition
 
-    def getCategoricalDefListFromSection(self, section):
+    def get_categorical_def_list_from_section(self, section):
         categoric_info_list = section[0]['props']['children'][4]['props']['children']
         categoric_list = list()  # initialization
         for categoric_info in categoric_info_list:
@@ -441,6 +445,88 @@ class GoodBadDefDecoder:
 Interactive Binning Page
 """
 
+
+"""
+All
+"""
+# A class for performing binning based on bins settings & good bad definition
+
+
+class BinningMachine:
+    # A method for performing binning for the whole dataframe based on bins_settings, returns a binned_df
+    def perform_binning(self, bins_settings_list):
+        binned_df = df[df.columns.to_list()]
+
+        for predictor_var_info in bins_settings_list:
+            new_col_name = predictor_var_info["column"] + "_binned"
+            if predictor_var_info["bins"] == "none":
+                binned_df[new_col_name] = df[predictor_var_info["column"]]
+            elif predictor_var_info["bins"] == "equal width":
+                pass
+            elif predictor_var_info["bins"] == "equal frequency":
+                pass
+            else:
+                pass
+
+        return binned_df
+
+    # A method for performing equal width binning with a specified width
+    def perform_eq_width_binning_by_width(self):
+        pass
+    # A method for performing equal width binning with a specified number of fixed-width bins
+
+    def perform_eq_width_binning_by_num_bins(self):
+        pass
+    # A method for performing equal frequency binning with a specified frequency
+
+    def perform_eq_freq_binning_by_freq(self):
+        pass
+    # A method for performing equal frequency binning with a specified number of fixed-frequency bins
+
+    def perform_eq_freq_binning_by_num_bins(self):
+        pass
+    # A method for performing binning based on boundary points obtained from interactive binning
+
+    def perform_binning_by_import_settings(self):
+        pass
+
+
+# A class for counting the number of good and bad samples/population in the column
+class GoodBadCounter:
+    # A method to get the number of sample bad, sample indeterminate, sample good, population good, and population bad
+    def get_statistics(self, dframe, good_bad_def):
+        sample_bad_count = self.__count_sample_bad(dframe, good_bad_def["bad"])
+        sample_indeterminate_count = self.__count_sample_indeterminate(
+            dframe, good_bad_def["indeterminate"])
+        sample_good_count = self.__count_sample_good(
+            dframe, sample_bad_count, sample_indeterminate_count)
+        good_weight = good_bad_def["good"]["weight"]
+        bad_weight = good_bad_def["bad"]["weight"]
+        population_good_count = self.__get_population_good(
+            sample_good_count, good_weight)
+        population_bad_count = self.__get_population_bad(
+            sample_bad_count, bad_weight)
+        return (sample_bad_count, sample_indeterminate_count, sample_good_count, good_weight, bad_weight, population_good_count, population_bad_count)
+
+    # A method to count the number of sample bad
+    def __count_sample_bad(self, dframe, bad_def):
+        return 10
+
+    # A method to count the number of sample indeterminate
+    def __count_sample_indeterminate(self, dframe, indeterminate_def):
+        return 10
+
+    # A method to count the number of sample good
+    def __count_sample_good(self, dframe, sample_bad_count, sample_indeterminate_count):
+        return 10
+
+    # A method to count the number of population good
+    def __get_population_good(self, sample_good_count, good_weight):
+        return 20
+
+    # A method to count the number of population bad
+    def __get_population_bad(self, sample_bad_count, bad_weight):
+        return 10
 
 ###########################################################################
 ######################### Setup Page Layouts Here #########################
@@ -642,8 +728,10 @@ good_bad_def_page_layout = html.Div(
         html.Div([], style={"height": 50}),
         # Show Statistics
         html.Div([], id="good_bad_stat_section"),
+        html.Div([], style={"height": 50, "clear": "left"}),
         # Debug
         html.P("", id="test_good_bad_def"),
+        html.Div([], style={"height": 100}),
     ]
 )
 
@@ -651,6 +739,8 @@ good_bad_def_page_layout = html.Div(
 interactive_binning_page_layout = html.Div([
     NavBar(),
     Heading("Interactive Binning Interface"),
+    html.P(id="ib_show_bins_settings_text"),
+    html.P(id="ib_show_good_bad_def_text"),
 ])
 
 
@@ -658,6 +748,22 @@ preview_download_page_layout = html.Div(
     [
         NavBar(),
         Heading("Preview & Download Bins Settings"),
+        SectionHeading("I. Preview Output Dataset"),
+        DataTable(df, id="preview_binned_df"),
+        html.Div(style={"height": 25}),
+        SectionHeading("II. Preview Summary Statistics Table"),
+        html.P("TBC"),
+        html.Div(style={"height": 25}),
+        SectionHeading("III. Preview Mixed Chart"),
+        html.P("TBC"),
+        html.Div(style={"height": 25}),
+        SectionHeading("IV. Download Bins Settings", inline=True),
+        html.P("TBC"),
+        html.Div(style={"height": 25}),
+        html.P(
+            "After downloading, import the json file into the Dataiku project... XXX"
+        ),
+        html.Div(style={"height": 100}),
     ]
 )
 
@@ -794,6 +900,7 @@ Press add button to add a new definition row in bad numeric section
         State("bad_numeric_def_list", "children"),
         State("numerical_columns", "data"),
     ],
+    prevent_initial_call=True,
 )
 def add_bad_numeric_section_row(n_clicks, def_list, numeric_col_data):
     new_idx = len(def_list)+1
@@ -815,7 +922,8 @@ Press add button to add a new definition row in bad categorical section
     [
         State("bad_categoric_def_list", "children"),
         State("categorical_columns", "data"),
-    ]
+    ],
+    prevent_initial_call=True,
 )
 def add_bad_categoric_section_row(n_clicks, def_list, categoric_col_data):
     new_idx = len(def_list)+1
@@ -838,6 +946,7 @@ Press add button to add a new definition row in bad numeric section
         State("indeterminate_numeric_def_list", "children"),
         State("numerical_columns", "data"),
     ],
+    prevent_initial_call=True,
 )
 def add_bad_numeric_section_row(n_clicks, def_list, numeric_col_data):
     new_idx = len(def_list)+1
@@ -859,7 +968,8 @@ Press add button to add a new definition row in indeterminate categorical sectio
     [
         State("indeterminate_categoric_def_list", "children"),
         State("categorical_columns", "data"),
-    ]
+    ],
+    prevent_initial_call=True,
 )
 def add_bad_categoric_section_row(n_clicks, def_list, categoric_col_data):
     new_idx = len(def_list)+1
@@ -883,17 +993,16 @@ Press confirm button to save good bad defintiion to shared storage
         State("define_indeterminate_def_section", "children"),
         State("weight_of_bad_input", "value"),
         State("weight_of_good_input", "value"),
-        State("good_bad_def", "data"),
     ],
 )
-def save_good_bad_def_to_shared_storage(n_clicks, bad_def_sec, indeterminate_def_sec, bad_weight, good_weight, original_def_data):
+def save_good_bad_def_to_shared_storage(n_clicks, bad_def_sec, indeterminate_def_sec, bad_weight, good_weight):
     # Validate numerical boundaries of user input, if invalid, return original definition
     validator = GoodBadDefValidator()
     bad_numeric_info_list = bad_def_sec[0]['props']['children'][1]['props']['children']
     indeterminate_numeric_info_list = indeterminate_def_sec[
         0]['props']['children'][1]['props']['children']
-    if not validator.validateNumericalBounds(bad_numeric_info_list) or not validator.validateNumericalBounds(indeterminate_numeric_info_list):
-        return original_def_data
+    if not validator.validate_numerical_bounds(bad_numeric_info_list) or not validator.validate_numerical_bounds(indeterminate_numeric_info_list):
+        raise PreventUpdate
 
     # Numerical boundaries of user input are valid, prepare data here
     # Initialize the data
@@ -913,20 +1022,24 @@ def save_good_bad_def_to_shared_storage(n_clicks, bad_def_sec, indeterminate_def
     }
     decoder = GoodBadDefDecoder()
     # Update data
-    good_bad_def["bad"]["numerical"] = decoder.getNumericDefListFromSection(
+    good_bad_def["bad"]["numerical"] = decoder.get_numeric_def_list_from_section(
         numeric_info_list=bad_numeric_info_list)
-    good_bad_def["indeterminate"]["numerical"] = decoder.getNumericDefListFromSection(
+    good_bad_def["indeterminate"]["numerical"] = decoder.get_numeric_def_list_from_section(
         numeric_info_list=indeterminate_numeric_info_list)
-    good_bad_def["bad"]["categorical"] = decoder.getCategoricalDefListFromSection(
+    good_bad_def["bad"]["categorical"] = decoder.get_categorical_def_list_from_section(
         section=bad_def_sec)
-    good_bad_def["indeterminate"]["categorical"] = decoder.getCategoricalDefListFromSection(
+    good_bad_def["indeterminate"]["categorical"] = decoder.get_categorical_def_list_from_section(
         section=indeterminate_def_sec)
 
     # Validate if there's overlapping between bad & indeterminate
-    if not validator.validateIfNumericalDefOverlapped(good_bad_def["bad"]["numerical"], good_bad_def["indeterminate"]["numerical"]):
-        return original_def_data
-    if not validator.validateIfCategoricalDefOverlapped(good_bad_def["bad"]["categorical"], good_bad_def["indeterminate"]["categorical"]):
-        return original_def_data
+    if not validator.validate_if_numerical_def_overlapped(good_bad_def["bad"]["numerical"], good_bad_def["indeterminate"]["numerical"]):
+        raise PreventUpdate
+    if not validator.validate_if_categorical_def_overlapped(good_bad_def["bad"]["categorical"], good_bad_def["indeterminate"]["categorical"]):
+        raise PreventUpdate
+
+    # If no definitions defined, do not update
+    if len(good_bad_def["bad"]["numerical"]) == 0 and len(good_bad_def["indeterminate"]["numerical"]) == 0 and len(good_bad_def["bad"]["categorical"]) == 0 and len(good_bad_def["indeterminate"]["categorical"]) == 0:
+        raise PreventUpdate
 
     return json.dumps(good_bad_def)
 
@@ -956,10 +1069,10 @@ def show_good_bad_def_error_msg(n_clicks, bad_def_sec, indeterminate_def_sec):
     bad_numeric_info_list = bad_def_sec[0]['props']['children'][1]['props']['children']
     indeterminate_numeric_info_list = indeterminate_def_sec[
         0]['props']['children'][1]['props']['children']
-    if not validator.validateNumericalBounds(bad_numeric_info_list):
+    if not validator.validate_numerical_bounds(bad_numeric_info_list):
         has_bound_error = True
         error_msg += "Error (Invalid User Input): Some of the numerical range(s) for bad definition has lower bound >= upper bound which is invalid.\t"
-    if not validator.validateNumericalBounds(indeterminate_numeric_info_list):
+    if not validator.validate_numerical_bounds(indeterminate_numeric_info_list):
         has_bound_error = True
         error_msg += "Error (Invalid User Input): Some of the numerical range(s) for indeterminate definition has lower bound >= upper bound which is invalid.\t"
 
@@ -968,18 +1081,18 @@ def show_good_bad_def_error_msg(n_clicks, bad_def_sec, indeterminate_def_sec):
         bad_numeric_info_list = bad_def_sec[0]['props']['children'][1]['props']['children']
         indeterminate_numeric_info_list = indeterminate_def_sec[
             0]['props']['children'][1]['props']['children']
-        bad_numeric_list = decoder.getNumericDefListFromSection(
+        bad_numeric_list = decoder.get_numeric_def_list_from_section(
             numeric_info_list=bad_numeric_info_list)
-        indeterminate_numeric_list = decoder.getNumericDefListFromSection(
+        indeterminate_numeric_list = decoder.get_numeric_def_list_from_section(
             numeric_info_list=indeterminate_numeric_info_list)
-        if not validator.validateIfNumericalDefOverlapped(bad_numeric_list, indeterminate_numeric_list):
+        if not validator.validate_if_numerical_def_overlapped(bad_numeric_list, indeterminate_numeric_list):
             error_msg += "Error (Invalid User Input): Some of the numerical definitions of bad & indeterminate have overlapped.\t"
 
-    bad_categoric_list = decoder.getCategoricalDefListFromSection(
+    bad_categoric_list = decoder.get_categorical_def_list_from_section(
         section=bad_def_sec)
-    indeterminate_categoric_list = decoder.getCategoricalDefListFromSection(
+    indeterminate_categoric_list = decoder.get_categorical_def_list_from_section(
         section=indeterminate_def_sec)
-    if not validator.validateIfCategoricalDefOverlapped(bad_categoric_list, indeterminate_categoric_list):
+    if not validator.validate_if_categorical_def_overlapped(bad_categoric_list, indeterminate_categoric_list):
         error_msg += "Error (Invalid User Input): Some of the categorical definitions of bad & indeterminate have overlapped.\t"
 
     return error_msg
@@ -990,6 +1103,104 @@ Good/Bad Definition Page:
 Show statistics & bar chart to show total good/indeterminate/bad
 in the whole dataset after the user clicked on the confirm button
 """
+
+
+@app.callback(
+    Output("good_bad_stat_section", "children"),
+    Input("good_bad_def", "data"),
+)
+def show_good_bad_stats_and_bar_chart(good_bad_def_data):
+    # Get good bad definitions
+    good_bad_def = json.loads(good_bad_def_data)
+
+    # Check if there's definition defined, if not, return nothing
+    if len(good_bad_def["bad"]["numerical"]) == 0 and len(good_bad_def["bad"]["categorical"]) == 0 and len(good_bad_def["indeterminate"]["numerical"]) == 0 and len(good_bad_def["bad"]["categorical"]) == 0 and len(good_bad_def["indeterminate"]["categorical"]) == 0:
+        return []
+
+    # Compute statistics
+    counter = GoodBadCounter()
+    sample_bad_count, sample_indeterminate_count, sample_good_count, good_weight, bad_weight, population_good_count, population_bad_count = counter.get_statistics(
+        df, good_bad_def)
+
+    # Prepare bar chart
+    fig = {
+        "data": [
+            {
+                "x": ["Good", "Bad"],
+                "y": [population_good_count, population_bad_count],
+                "type": "bar",
+                "marker": {"color": "#6B87AB"},
+            },
+        ],
+        "layout": {"title": "Good & Bad Count"},
+    }
+
+    # Return layout
+    return html.Div([
+        SectionHeading("V. Monitor Total Good Bad Counts in the Dataset"),
+        html.Div([
+            html.P("Sample Good Count: " + str(sample_good_count)),
+            html.P("Sample Indeterminate Count: " +
+                   str(sample_indeterminate_count)),
+            html.P("Sample Bad Count: " + str(sample_bad_count)),
+            html.Div([], style={"height": 8}),
+            html.P("Weight of Good: " + str(good_weight)),
+            html.P("Weight of Bad: " + str(bad_weight)),
+            html.Div([], style={"height": 8}),
+            html.P("Population Good Count: " + str(population_good_count)),
+            html.P("Population Bad Count: " + str(population_bad_count)),
+        ], style=purple_panel_style),
+        html.Div([
+            dcc.Graph(figure=fig),
+        ], style=grey_panel_style),
+    ])
+
+
+"""
+Preview & Download Settings:
+update binned dataframe for preview
+"""
+
+
+@app.callback(
+    Output("preview_binned_df", "data"),
+    Input("binned_df", "data"),
+)
+def update_preview_output_dataset(data):
+    adict = json.loads(data)
+    binned_df = pd.DataFrame.from_dict(adict)
+    return binned_df.to_dict("records")
+
+
+@app.callback(
+    Output("preview_binned_df", "columns"),
+    Input("binned_df", "data"),
+)
+def update_preview_output_dataset2(data):
+    adict = json.loads(data)
+    binned_df = pd.DataFrame.from_dict(adict)
+    return [{"name": i, "id": i} for i in binned_df.columns]
+
+
+"""
+All:
+When bins_settings is updated, bin the dataframe, and 
+store in storage as binned_df
+"""
+
+
+@app.callback(
+    Output("binned_df", "data"),
+    Input("bins_settings", "data"),
+)
+def bin_dataset(bins_settings_data):
+    bins_settings_dict = json.loads(bins_settings_data)
+    bins_settings_list = bins_settings_dict["variable"]
+
+    binning_machine = BinningMachine()
+    binned_df = binning_machine.perform_binning(bins_settings_list)
+
+    return json.dumps(binned_df.to_dict())
 
 ###########################################################################
 ############################ Debugging Purpose ############################
@@ -1036,6 +1247,27 @@ def update_categorical_columns(data):
     Input("good_bad_def", "data"),
 )
 def update_good_bad_def_text(data):
+    return "good bad def = " + str(json.loads(data))
+
+# Get bins settings in ib page
+
+
+@app.callback(
+    Output("ib_show_bins_settings_text", "children"),
+    Input("bins_settings", "data"),
+)
+def update_bins_settings_text_in_ib(data):
+    adict = json.loads(data)
+    return "bins settings = " + str(adict)
+
+# Get good bad def in ib page
+
+
+@app.callback(
+    Output("ib_show_good_bad_def_text", "children"),
+    Input("good_bad_def", "data")
+)
+def update_good_bad_def_text_in_ib(data):
     return "good bad def = " + str(json.loads(data))
 
 ###########################################################################
