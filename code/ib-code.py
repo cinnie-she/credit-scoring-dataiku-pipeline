@@ -694,15 +694,26 @@ settings to shared storage
     [
         State("predictor_var_dropdown", "value"),
         State("select_predictor_type_list", "children"),
+        State("bins_settings", "data"),
+        State("numerical_columns", "data"),
+        State("categorical_columns", "data"),
     ],
 )
 def save_initial_bin_settings_to_shared_storage(
-    n_clicks, predictor_var_dropdown_values, predictor_type
+    n_clicks, predictor_var_dropdown_values, predictor_type, original_bins_settings_data, original_numerical_col_data, original_categorical_col_data
 ):
+    # Check if any non-numerical column marked as numerical, if yes, save the original data
+    for i in range(len(predictor_type)):
+        pred = predictor_var_dropdown_values[i]
+        pred_var_type = predictor_type[i]["props"]["children"][1]["props"]["value"]
+        if df[pred].dtype == "object" and pred_var_type == "numerical": # invalid user input, return original data
+            return original_bins_settings_data, original_numerical_col_data, original_categorical_col_data
+        
     bins_settings = {"variable": []}  # initialization
     numerical_columns = list()  # initialization
     categorical_columns = list()  # initialization
-
+        
+    # User input is valid, prepare data to save to storage
     for i in range(len(predictor_type)):
         pred = predictor_var_dropdown_values[i]
         pred_var_type = predictor_type[i]["props"]["children"][1]["props"]["value"]
