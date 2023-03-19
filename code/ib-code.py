@@ -329,15 +329,25 @@ Good/Bad Definition Page
 
 class GoodBadDefValidator:
     # A method to validate if numerical definitions for bad/indeterminate has overlapped
-    def validateIfNumericalDefOverlapped():
+    def validateIfNumericalDefOverlapped(self, bad_numeric_list, indeterminate_numeric_list):
         return True
+
     # A method to validate if categorical definitions for bad/indeterminate has overlapped
-
-    def validateIfCategoricalDefOverlapped():
+    def validateIfCategoricalDefOverlapped(self, bad_categoric_list, indeterminate_categoric_list):
+        for bad_categoric_def in bad_categoric_list:
+            column = bad_categoric_def["column"]
+            for indeterminate_categoric_def in indeterminate_categoric_list:
+                # found matching column definition
+                if indeterminate_categoric_def["column"] == column:
+                    # Check if any overlapping definition
+                    for element in bad_categoric_def["elements"]:
+                        if element in indeterminate_categoric_def["elements"]:
+                            return False
+                    break
         return True
-    # A method to validate if all numerical definition range have upper bound > lower bound, if not, returns false
 
-    def validateNumericalBounds(numeric_info_list):
+    # A method to validate if all numerical definition range have upper bound > lower bound, if not, returns false
+    def validateNumericalBounds(self, numeric_info_list):
         for numeric_info in numeric_info_list:
             a_range = [numeric_info["props"]["children"][3]['props']['value'],
                        numeric_info["props"]["children"][6]['props']['value']]
@@ -864,14 +874,15 @@ Press confirm button to save good bad defintiion to shared storage
     ],
 )
 def save_good_bad_def_to_shared_storage(n_clicks, bad_def_sec, indeterminate_def_sec, bad_weight, good_weight, original_def_data):
-    # Validate user input, if invalid, return original definition
+    # Validate numerical boundaries of user input, if invalid, return original definition
+    validator = GoodBadDefValidator()
     bad_numeric_info_list = bad_def_sec[0]['props']['children'][1]['props']['children']
     indeterminate_numeric_info_list = indeterminate_def_sec[
         0]['props']['children'][1]['props']['children']
-    if not GoodBadDefValidator.validateNumericalBounds(bad_numeric_info_list) or not GoodBadDefValidator.validateNumericalBounds(indeterminate_numeric_info_list):
+    if not validator.validateNumericalBounds(bad_numeric_info_list) or not validator.validateNumericalBounds(indeterminate_numeric_info_list):
         return original_def_data
 
-    # User input is valid, prepare data and save to storage
+    # Numerical boundaries of user input are valid, prepare data here
     # Initialize the data
     good_bad_def = {
         "bad": {
@@ -898,6 +909,10 @@ def save_good_bad_def_to_shared_storage(n_clicks, bad_def_sec, indeterminate_def
     good_bad_def["indeterminate"]["categorical"] = decoder.getCategoricalDefListFromSection(
         section=indeterminate_def_sec)
 
+    # Validate if there's overlapping between bad & indeterminate
+    if not validator.validateIfCategoricalDefOverlapped(good_bad_def["bad"]["categorical"], good_bad_def["indeterminate"]["categorical"]):
+        return original_def_data
+
     return json.dumps(good_bad_def)
 
 
@@ -921,13 +936,22 @@ Show error message when:
 def show_good_bad_def_error_msg(n_clicks, bad_def_sec, indeterminate_def_sec):
     error_msg = ""
 
+    validator = GoodBadDefValidator()
     bad_numeric_info_list = bad_def_sec[0]['props']['children'][1]['props']['children']
     indeterminate_numeric_info_list = indeterminate_def_sec[
         0]['props']['children'][1]['props']['children']
-    if not GoodBadDefValidator.validateNumericalBounds(bad_numeric_info_list):
-        error_msg += "Error: Some of the numerical range(s) for bad definition has lower bound >= upper bound which is invalid.\t"
-    if not GoodBadDefValidator.validateNumericalBounds(indeterminate_numeric_info_list):
-        error_msg += "Error: Some of the numerical range(s) for indeterminate definition has lower bound >= upper bound which is invalid.\t"
+    if not validator.validateNumericalBounds(bad_numeric_info_list):
+        error_msg += "Error (Invalid User Input): Some of the numerical range(s) for bad definition has lower bound >= upper bound which is invalid.\t"
+    if not validator.validateNumericalBounds(indeterminate_numeric_info_list):
+        error_msg += "Error (Invalid User Input): Some of the numerical range(s) for indeterminate definition has lower bound >= upper bound which is invalid.\t"
+
+    decoder = GoodBadDefDecoder()
+    bad_categoric_list = decoder.getCategoricalDefListFromSection(
+        section=bad_def_sec)
+    indeterminate_categoric_list = decoder.getCategoricalDefListFromSection(
+        section=indeterminate_def_sec)
+    if not validator.validateIfCategoricalDefOverlapped(bad_categoric_list, indeterminate_categoric_list):
+        error_msg += "Error (Invalid User Input): Some of the categorical definition(s) of bad & indeterminate overlapped."
 
     return error_msg
 

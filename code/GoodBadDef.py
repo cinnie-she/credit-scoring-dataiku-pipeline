@@ -4,11 +4,11 @@ good_bad_def = {
         "numerical": [
             {
                 "column": "person_age",
-                "range": [18, 22],  # 22 is exclusive
+                "ranges": [[18, 22]],  # 22 is exclusive
             },
             {
                 "column": "paid_past_due",
-                "range": [90, 121],  # 121 is exclusive
+                "ranges": [[90, 121], [70, 80]],  # 121 is exclusive
             }
         ],
         "categorical": [
@@ -27,11 +27,11 @@ good_bad_def = {
         "numerical": [
             {
                 "column": "person_age",
-                "range": [25, 30],  # 30 is exclusive
+                "ranges": [[25, 30]],  # 30 is exclusive
             },
             {
                 "column": "paid_past_due",
-                "range": [60, 90],  # 90 is exclusive
+                "ranges": [[60, 90]],  # 90 is exclusive
             }
         ],
         "categorical": [
@@ -50,15 +50,24 @@ good_bad_def = {
 # A class for validating user inputs for good bad definitions
 class GoodBadDefValidator:
     # A method to validate if numerical definitions for bad/indeterminate has overlapped
-    def validateIfNumericalDefOverlapped():
+    def validateIfNumericalDefOverlapped(self, bad_numeric_list, indeterminate_numeric_list):
         return True
+    
     # A method to validate if categorical definitions for bad/indeterminate has overlapped
-
-    def validateIfCategoricalDefOverlapped():
+    def validateIfCategoricalDefOverlapped(self, bad_categoric_list, indeterminate_categoric_list):
+        for bad_categoric_def in bad_categoric_list:
+            column = bad_categoric_def["column"]
+            for indeterminate_categoric_def in indeterminate_categoric_list:
+                if indeterminate_categoric_def["column"] == column: # found matching column definition
+                    # Check if any overlapping definition
+                    for element in bad_categoric_def["elements"]:
+                        if element in indeterminate_categoric_def["elements"]:
+                            return False
+                    break
         return True
+    
     # A method to validate if all numerical definition range have upper bound > lower bound, if not, returns false
-
-    def validateNumericalBounds(numeric_info_list):
+    def validateNumericalBounds(self, numeric_info_list):
         for numeric_info in numeric_info_list:
             a_range = [numeric_info["props"]["children"][3]['props']['value'],
                        numeric_info["props"]["children"][6]['props']['value']]
