@@ -706,13 +706,14 @@ def save_initial_bin_settings_to_shared_storage(
     for i in range(len(predictor_type)):
         pred = predictor_var_dropdown_values[i]
         pred_var_type = predictor_type[i]["props"]["children"][1]["props"]["value"]
-        if df[pred].dtype == "object" and pred_var_type == "numerical": # invalid user input, return original data
+        # invalid user input, return original data
+        if df[pred].dtype == "object" and pred_var_type == "numerical":
             return original_bins_settings_data, original_numerical_col_data, original_categorical_col_data
-        
+
     bins_settings = {"variable": []}  # initialization
     numerical_columns = list()  # initialization
     categorical_columns = list()  # initialization
-        
+
     # User input is valid, prepare data to save to storage
     for i in range(len(predictor_type)):
         pred = predictor_var_dropdown_values[i]
