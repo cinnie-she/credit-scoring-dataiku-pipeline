@@ -4,11 +4,11 @@ good_bad_def = {
         "numerical": [
             {
                 "column": "person_age",
-                "range": [18, 22], # 22 is exclusive
+                "range": [18, 22],  # 22 is exclusive
             },
             {
                 "column": "paid_past_due",
-                "range": [90, 121], # 121 is exclusive
+                "range": [90, 121],  # 121 is exclusive
             }
         ],
         "categorical": [
@@ -22,16 +22,16 @@ good_bad_def = {
             }
         ],
         "weight": 1.00
-    }, 
+    },
     "indeterminate": {
         "numerical": [
             {
                 "column": "person_age",
-                "range": [25, 30], # 30 is exclusive
+                "range": [25, 30],  # 30 is exclusive
             },
             {
                 "column": "paid_past_due",
-                "range": [60, 90], # 90 is exclusive
+                "range": [60, 90],  # 90 is exclusive
             }
         ],
         "categorical": [
@@ -51,35 +51,33 @@ good_bad_def = {
 class GoodBadDefValidator:
     # A method to validate if numerical definitions for bad/indeterminate has overlapped
     def validateIfNumericalDefOverlapped():
-        pass
+        return True
     # A method to validate if categorical definitions for bad/indeterminate has overlapped
+
     def validateIfCategoricalDefOverlapped():
-        pass
-    # A method to validate if for one numerical definition range, if upper bound > lower bound, if not, then it's invalid
-    def validateNumericalBounds(a_range):
-        if a_range[1] > a_range[0]:
-            return True
-        else:
-            return False
-         
+        return True
+    # A method to validate if all numerical definition range have upper bound > lower bound, if not, returns false
+
+    def validateNumericalBounds(numeric_info_list):
+        for numeric_info in numeric_info_list:
+            a_range = [numeric_info["props"]["children"][3]['props']['value'],
+                       numeric_info["props"]["children"][6]['props']['value']]
+            if a_range[1] <= a_range[0]:
+                return False
+        return True
+
 
 # A class for obtaining user inputs from the section UI info
 class GoodBadDefDecoder:
     # A method to translate section UI info to a list of numerical definition
-    def getNumericDefListFromSection(self, section, original_numeric_list):
-        numeric_info_list = section[0]['props']['children'][1]['props']['children']
-        numeric_list = list() # initialization
-        
-        # Check if upper bound > lower bound, if not, input is invalid, return orginal numerical list
-        for numeric_info in numeric_info_list:
-            a_range = [numeric_info["props"]["children"][3]['props']['value'], numeric_info["props"]["children"][6]['props']['value']]
-            if not GoodBadDefValidator.validateNumericalBounds(a_range):
-                return original_numeric_list
-            
+    def getNumericDefListFromSection(self, numeric_info_list):
+        numeric_list = list()  # initialization
+
         for numeric_info in numeric_info_list:
             single_def_dict = dict()
             column = numeric_info["props"]["children"][1]['props']['value']
-            a_range = [numeric_info["props"]["children"][3]['props']['value'], numeric_info["props"]["children"][6]['props']['value']]
+            a_range = [numeric_info["props"]["children"][3]['props']['value'],
+                       numeric_info["props"]["children"][6]['props']['value']]
             # The 2 bounds are valid, now check if any overlapping with previously saved data
             has_column_overlap = False
             for def_idx, saved_def in enumerate(numeric_list):
@@ -90,15 +88,18 @@ class GoodBadDefDecoder:
                     for def_range_idx, def_range in enumerate(saved_def["ranges"]):
                         if a_range[0] <= def_range[0] and a_range[1] >= def_range[1]:
                             has_range_overlap = True
-                            numeric_list[def_idx]["ranges"][def_range_idx] = [a_range[0], a_range[1]]
+                            numeric_list[def_idx]["ranges"][def_range_idx] = [
+                                a_range[0], a_range[1]]
                             break
                         elif a_range[0] <= def_range[0] and a_range[1] >= def_range[0] and a_range[1] <= def_range[1]:
                             has_range_overlap = True
-                            numeric_list[def_idx]["ranges"][def_range_idx] = [a_range[0], def_range[1]]
+                            numeric_list[def_idx]["ranges"][def_range_idx] = [
+                                a_range[0], def_range[1]]
                             break
                         elif a_range[0] >= def_range[0] and a_range[0] <= def_range[1] and a_range[1] >= def_range[1]:
                             has_range_overlap = True
-                            numeric_list[def_idx]["ranges"][def_range_idx] = [def_range[0], a_range[1]]
+                            numeric_list[def_idx]["ranges"][def_range_idx] = [
+                                def_range[0], a_range[1]]
                             break
                     if has_range_overlap == False:
                         numeric_list[def_idx]["ranges"].append(a_range)
@@ -109,9 +110,10 @@ class GoodBadDefDecoder:
                 numeric_list.append(single_def_dict)
         return numeric_list
     # A method to translate section UI info to a list of categorical definition
+
     def getCategoricalDefListFromSection(self, section):
         categoric_info_list = section[0]['props']['children'][4]['props']['children']
-        categoric_list = list() # initialization
+        categoric_list = list()  # initialization
         for categoric_info in categoric_info_list:
             single_def_dict = dict()
             column = categoric_info["props"]["children"][1]['props']['value']
@@ -131,4 +133,3 @@ class GoodBadDefDecoder:
                 single_def_dict["elements"] = elements
                 categoric_list.append(single_def_dict)
         return categoric_list
-    

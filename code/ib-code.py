@@ -330,33 +330,27 @@ Good/Bad Definition Page
 class GoodBadDefValidator:
     # A method to validate if numerical definitions for bad/indeterminate has overlapped
     def validateIfNumericalDefOverlapped():
-        pass
+        return True
     # A method to validate if categorical definitions for bad/indeterminate has overlapped
 
     def validateIfCategoricalDefOverlapped():
-        pass
-    # A method to validate if for one numerical definition range, if upper bound > lower bound, if not, then it's invalid
+        return True
+    # A method to validate if all numerical definition range have upper bound > lower bound, if not, returns false
 
-    def validateNumericalBounds(a_range):
-        if a_range[1] > a_range[0]:
-            return True
-        else:
-            return False
+    def validateNumericalBounds(numeric_info_list):
+        for numeric_info in numeric_info_list:
+            a_range = [numeric_info["props"]["children"][3]['props']['value'],
+                       numeric_info["props"]["children"][6]['props']['value']]
+            if a_range[1] <= a_range[0]:
+                return False
+        return True
 
 
 # A class for obtaining user inputs from the section UI info
 class GoodBadDefDecoder:
     # A method to translate section UI info to a list of numerical definition
-    def getNumericDefListFromSection(self, section, original_numeric_list):
-        numeric_info_list = section[0]['props']['children'][1]['props']['children']
+    def getNumericDefListFromSection(self, numeric_info_list):
         numeric_list = list()  # initialization
-
-        # Check if upper bound > lower bound, if not, input is invalid, return orginal numerical list
-        for numeric_info in numeric_info_list:
-            a_range = [numeric_info["props"]["children"][3]['props']['value'],
-                       numeric_info["props"]["children"][6]['props']['value']]
-            if not GoodBadDefValidator.validateNumericalBounds(a_range):
-                return original_numeric_list
 
         for numeric_info in numeric_info_list:
             single_def_dict = dict()
@@ -492,10 +486,12 @@ confirm_input_dataset_page_layout = html.Div(
             ],
             style={
                 "marginTop": 50,
-                "marginBottom": dimens["page-bottom-margin"],
                 "clear": "left",
             },
         ),
+        html.P("", id="confirm_input_dataset_error_msg",
+               style={"color": "red", "marginTop": 10}),
+        html.Div([], style={"height": 100}),
         html.P(id="text_bins_settings"),
         html.P(id="text_numerical_columns"),
         html.P(id="text_categorical_columns"),
@@ -618,6 +614,8 @@ good_bad_def_page_layout = html.Div(
         # Confirm Definitions
         SectionHeading("IV. Confirm the Definitions: ", inline=True),
         SaveButton("Confirm", marginLeft=15, id="confirm_good_bad_def_button"),
+        html.P("", id="good_bad_def_error_msg",
+               style={"color": "red", "marginTop": 10}),
         html.Div([], style={"height": 50}),
         # Show Statistics
         html.Div([], id="good_bad_stat_section"),
@@ -735,6 +733,32 @@ def save_initial_bin_settings_to_shared_storage(
 
 
 """
+Confirm Input Dataset Page:
+When user click on confirm button, if user input is invalid,
+show error message
+"""
+
+
+@app.callback(
+    Output("confirm_input_dataset_error_msg", "children"),
+    Input("confirm_predictor_var_button", "n_clicks"),
+    [
+        State("predictor_var_dropdown", "value"),
+        State("select_predictor_type_list", "children"),
+    ],
+)
+def show_confirm_input_datset_error_msg(n_clicks, predictor_var_dropdown_values, predictor_type):
+    # Check if any non-numerical column marked as numerical, if yes, save the original data
+    for i in range(len(predictor_type)):
+        pred = predictor_var_dropdown_values[i]
+        pred_var_type = predictor_type[i]["props"]["children"][1]["props"]["value"]
+        # invalid user input, return original data
+        if df[pred].dtype == "object" and pred_var_type == "numerical":
+            return "Error: some columns having categorical type is defined as numerical."
+    return ""
+
+
+"""
 Good/Bad Definition Page:
 Press add button to add a new definition row in bad numeric section
 """
@@ -840,30 +864,35 @@ Press confirm button to save good bad defintiion to shared storage
     ],
 )
 def save_good_bad_def_to_shared_storage(n_clicks, bad_def_sec, indeterminate_def_sec, bad_weight, good_weight, original_def_data):
-    if original_def_data != None:
-        good_bad_def = json.loads(original_def_data)
-    else:
-        # Initialize the data
-        good_bad_def = {
-            "bad": {
-                "numerical": [],
-                "categorical": [],
-                "weight": bad_weight,
-            },
-            "indeterminate": {
-                "numerical": [],
-                "categorical": [],
-            },
-            "good": {
-                "weight": good_weight,
-            }
+    # Validate user input, if invalid, return original definition
+    bad_numeric_info_list = bad_def_sec[0]['props']['children'][1]['props']['children']
+    indeterminate_numeric_info_list = indeterminate_def_sec[
+        0]['props']['children'][1]['props']['children']
+    if not GoodBadDefValidator.validateNumericalBounds(bad_numeric_info_list) or not GoodBadDefValidator.validateNumericalBounds(indeterminate_numeric_info_list):
+        return original_def_data
+
+    # User input is valid, prepare data and save to storage
+    # Initialize the data
+    good_bad_def = {
+        "bad": {
+            "numerical": [],
+            "categorical": [],
+            "weight": bad_weight,
+        },
+        "indeterminate": {
+            "numerical": [],
+            "categorical": [],
+        },
+        "good": {
+            "weight": good_weight,
         }
+    }
     decoder = GoodBadDefDecoder()
     # Update data
     good_bad_def["bad"]["numerical"] = decoder.getNumericDefListFromSection(
-        section=bad_def_sec, original_numeric_list=good_bad_def["bad"]["numerical"])
+        numeric_info_list=bad_numeric_info_list)
     good_bad_def["indeterminate"]["numerical"] = decoder.getNumericDefListFromSection(
-        section=indeterminate_def_sec, original_numeric_list=good_bad_def["indeterminate"]["numerical"])
+        numeric_info_list=indeterminate_numeric_info_list)
     good_bad_def["bad"]["categorical"] = decoder.getCategoricalDefListFromSection(
         section=bad_def_sec)
     good_bad_def["indeterminate"]["categorical"] = decoder.getCategoricalDefListFromSection(
@@ -874,20 +903,47 @@ def save_good_bad_def_to_shared_storage(n_clicks, bad_def_sec, indeterminate_def
 
 """
 Good/Bad Definition Page:
-Show statistics & bar chart to show total good/indeterminate/bad
-in the whole dataset after the user clicked on the confirm button
+Show error message when:
+(1) some upper bound < lower bound for bad & indeterminate numerical variables
+(2) overlapping between numerical definitions for bad & indeterminate
+(3) overlapping between categorical definitions for bad & indeterminate
 """
 
 
 @app.callback(
-    Output("good_bad_stat_section", "children"),
+    Output("good_bad_def_error_msg", "children"),
     Input("confirm_good_bad_def_button", "n_clicks"),
-
+    [
+        State("define_bad_def_section", "children"),
+        State("define_indeterminate_def_section", "children"),
+    ],
 )
+def show_good_bad_def_error_msg(n_clicks, bad_def_sec, indeterminate_def_sec):
+    error_msg = ""
+
+    bad_numeric_info_list = bad_def_sec[0]['props']['children'][1]['props']['children']
+    indeterminate_numeric_info_list = indeterminate_def_sec[
+        0]['props']['children'][1]['props']['children']
+    if not GoodBadDefValidator.validateNumericalBounds(bad_numeric_info_list):
+        error_msg += "Error: Some of the numerical range(s) for bad definition has lower bound >= upper bound which is invalid.\t"
+    if not GoodBadDefValidator.validateNumericalBounds(indeterminate_numeric_info_list):
+        error_msg += "Error: Some of the numerical range(s) for indeterminate definition has lower bound >= upper bound which is invalid.\t"
+
+    return error_msg
+
+
+"""
+Good/Bad Definition Page:
+Show statistics & bar chart to show total good/indeterminate/bad
+in the whole dataset after the user clicked on the confirm button
+"""
+
 ###########################################################################
 ############################ Debugging Purpose ############################
 ###########################################################################
 # Get bins settings
+
+
 @app.callback(
     Output("text_bins_settings", "children"),
     Input("bins_settings", "data"),
