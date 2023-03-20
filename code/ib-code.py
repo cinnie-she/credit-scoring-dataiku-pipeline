@@ -495,9 +495,10 @@ class BinningMachine:
 class GoodBadCounter:
     # A method to get the number of sample bad, sample indeterminate, sample good, population good, and population bad
     def get_statistics(self, dframe, good_bad_def):
-        sample_bad_count = self.__count_sample_bad(dframe, good_bad_def["bad"])
+        new_dframe, sample_bad_count = self.__count_sample_bad(
+            dframe, good_bad_def["bad"])
         sample_indeterminate_count = self.__count_sample_indeterminate(
-            dframe, good_bad_def["indeterminate"])
+            new_dframe, good_bad_def["indeterminate"])
         sample_good_count = self.__count_sample_good(
             dframe, sample_bad_count, sample_indeterminate_count)
         good_weight = good_bad_def["good"]["weight"]
@@ -509,24 +510,61 @@ class GoodBadCounter:
         return (sample_bad_count, sample_indeterminate_count, sample_good_count, good_weight, bad_weight, population_good_count, population_bad_count)
 
     # A method to count the number of sample bad
-    def __count_sample_bad(self, dframe, bad_def):
-        return 10
+    def __count_sample_bad(self, dframe, bad_defs):
+        bad_count = 0
+        for bad_numeric_def in bad_defs["numerical"]:
+            # count number of rows if dframe row is in bad_numeric_def range, and add to bad_count
+            for a_range in bad_numeric_def["ranges"]:
+                bad_count += len(dframe[(dframe[bad_numeric_def["column"]] >= a_range[0]) & (
+                    dframe[bad_numeric_def["column"]] < a_range[1])])
+                # delete rows if dframe row is in bad_numeric_def range
+                dframe = dframe.drop(dframe[(dframe[bad_numeric_def["column"]] >= a_range[0]) & (
+                    dframe[bad_numeric_def["column"]] < a_range[1])].index)
+
+        for bad_categoric_def in bad_defs["categorical"]:
+            # count number of rows if dframe row is having any one of the bad_categoric_def elements value
+            for element in bad_categoric_def["elements"]:
+                bad_count += len(dframe[(dframe[bad_categoric_def["column"]] == element)])
+                # delete rows if dframe row has value 'element'
+                dframe = dframe.drop(
+                    dframe[(dframe[bad_categoric_def["column"]] == element)].index)
+
+        return (dframe, bad_count)
 
     # A method to count the number of sample indeterminate
-    def __count_sample_indeterminate(self, dframe, indeterminate_def):
-        return 10
+    def __count_sample_indeterminate(self, dframe, indeterminate_defs):
+        indeterminate_count = 0
+        for indeterminate_numeric_def in indeterminate_defs["numerical"]:
+            # count number of rows if dframe row is in indeterminate_numeric_def range, and add to indeterminate_count
+            for a_range in indeterminate_numeric_def["ranges"]:
+                indeterminate_count += len(dframe[(dframe[indeterminate_numeric_def["column"]] >= a_range[0]) & (
+                    dframe[indeterminate_numeric_def["column"]] < a_range[1])])
+                # delete rows if dframe row is in indeterminate_numeric_def range
+                dframe = dframe.drop(dframe[(dframe[indeterminate_numeric_def["column"]] >= a_range[0]) & (
+                    dframe[indeterminate_numeric_def["column"]] < a_range[1])].index)
+
+        for indeterminate_categoric_def in indeterminate_defs["categorical"]:
+            # count number of rows if dframe row is having any one of the indeterminate_categoric_def elements value
+            for element in indeterminate_categoric_def["elements"]:
+                indeterminate_count += len(
+                    dframe[(dframe[indeterminate_categoric_def["column"]] == element)])
+                # delete rows if dframe row has value 'element'
+                dframe = dframe.drop(
+                    dframe[(dframe[indeterminate_categoric_def["column"]] == element)].index)
+
+        return indeterminate_count
 
     # A method to count the number of sample good
     def __count_sample_good(self, dframe, sample_bad_count, sample_indeterminate_count):
-        return 10
+        return (len(dframe) - sample_bad_count - sample_indeterminate_count)
 
     # A method to count the number of population good
     def __get_population_good(self, sample_good_count, good_weight):
-        return 20
+        return sample_good_count * good_weight
 
     # A method to count the number of population bad
     def __get_population_bad(self, sample_bad_count, bad_weight):
-        return 10
+        return sample_bad_count * bad_weight
 
 ###########################################################################
 ######################### Setup Page Layouts Here #########################
