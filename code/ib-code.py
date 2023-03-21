@@ -1190,9 +1190,16 @@ bad categorical definitions
         Output({"index": MATCH, "type": "bad_categorical_element"}, "value"),
     ],
     Input({"index": MATCH, "type": "bad_categorical_column"}, "value"),
+    State({"index": MATCH, "type": "bad_categorical_element"}, "value"),
 )
-def update_multi_value_dropdown_bad_categorical(column):
-    return [convert_column_list_to_dropdown_options(df[column].unique()), []]
+def update_multi_value_dropdown_bad_categorical(column, elements):
+    options = convert_column_list_to_dropdown_options(df[column].unique())
+    value = elements
+    for element in elements:
+        if element not in df[column].unique():
+            value = []
+            break
+    return [options, value]
 
 
 """
@@ -1209,9 +1216,16 @@ indeterminate categorical definitions
         Output({"index": MATCH, "type": "indeterminate_categorical_element"}, "value"),
     ],
     Input({"index": MATCH, "type": "indeterminate_categorical_column"}, "value"),
+    State({"index": MATCH, "type": "indeterminate_categorical_element"}, "value"),
 )
-def update_multi_value_dropdown_bad_categorical(column):
-    return [convert_column_list_to_dropdown_options(df[column].unique()), []]
+def update_multi_value_dropdown_bad_categorical(column, elements):
+    options = convert_column_list_to_dropdown_options(df[column].unique())
+    value = elements
+    for element in elements:
+        if element not in df[column].unique():
+            value = []
+            break
+    return [options, value]
 
 
 """
