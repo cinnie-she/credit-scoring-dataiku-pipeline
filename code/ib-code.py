@@ -721,6 +721,214 @@ interactive_binning_page_layout = html.Div([
     Heading("Interactive Binning Interface"),
     html.P(id="ib_show_bins_settings_text"),
     html.P(id="ib_show_good_bad_def_text"),
+
+    html.Div(
+        [
+            html.Div(
+                [
+                    SectionHeading(
+                        "I. Select a predictor variable to bin"),
+                    dcc.Dropdown(
+                        options=convert_column_list_to_dropdown_options(
+                            df.columns.to_list()
+                        ),
+                        value=df.columns.to_list()[0],
+                        style={"marginBottom": 30},
+                        clearable=False,
+                        searchable=False,
+                        id="predictor_var_ib_dropdown",
+                    ),
+                ],
+                style=purple_panel_style,
+            ),
+            html.Div(
+                [
+                    SectionHeading(
+                        "II. Select the automated binning algorithm for initial binning"
+                    ),
+                    dcc.Dropdown(
+                        options=[
+                            {"label": "No Binnings", "value": "none"},
+                            {"label": "Equal Width", "value": "equal width"},
+                            {
+                                "label": "Equal Frequency",
+                                "value": "equal frequency",
+                            },
+                            {
+                                "label": "Import Settings",
+                                "value": "import settings",
+                            },
+                        ],
+                        value="none",
+                        clearable=False,
+                        searchable=False,
+                        style={"marginBottom": 20, "width": 250},
+                        id="auto_bin_algo_dropdown",
+                    ),
+                    html.Div(
+                        children=[
+                            dcc.RadioItems(
+                                options=[
+                                    {"label": "Width", "value": "width"},
+                                    {
+                                        "label": "Number of Bins",
+                                        "value": "number of bins",
+                                    },
+                                ],
+                                value="width",
+                                inline=True,
+                                id="equal_width_radio_button",
+                            ),
+                            html.Div([], style={"height": 25}),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [],
+                                        style={
+                                            "display": "inline",
+                                            "marginLeft": 5,
+                                        },
+                                    ),
+                                    html.P("Width:", style={
+                                        "display": "inline"}),
+                                    dcc.Input(
+                                        type="number",
+                                        value=1,
+                                        min=1,
+                                        style={"marginLeft": 10},
+                                    ),
+                                ],
+                                id="equal_width_width_input_section",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [],
+                                        style={
+                                            "display": "inline",
+                                            "marginLeft": 5,
+                                        },
+                                    ),
+                                    html.P(
+                                        "Number of Bins:",
+                                        style={"display": "inline"},
+                                    ),
+                                    dcc.Input(
+                                        type="number",
+                                        value=10,
+                                        min=1,
+                                        style={"marginLeft": 10},
+                                    ),
+                                ],
+                                id="equal_width_num_bin_input_section",
+                                style={"display": "none"},
+                            ),
+                        ],
+                        id="equal_width_input_section",
+                        style={"display": "none"},
+                    ),
+                    html.Div(
+                        children=[
+                            dcc.RadioItems(
+                                options=[
+                                    {"label": "Frequency",
+                                     "value": "frequency"},
+                                    {
+                                        "label": "Number of Bins",
+                                        "value": "number of bins",
+                                    },
+                                ],
+                                value="frequency",
+                                inline=True,
+                                id="equal_freq_radio_button",
+                            ),
+                            html.Div([], style={"height": 25}),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [],
+                                        style={
+                                            "display": "inline",
+                                            "marginLeft": 5,
+                                        },
+                                    ),
+                                    html.P(
+                                        "Frequency:", style={"display": "inline"}
+                                    ),
+                                    dcc.Input(
+                                        type="number",
+                                        value=1000,
+                                        min=1,
+                                        style={"marginLeft": 10},
+                                    ),
+                                ],
+                                id="equal_freq_freq_input_section",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [],
+                                        style={
+                                            "display": "inline",
+                                            "marginLeft": 5,
+                                        },
+                                    ),
+                                    html.P(
+                                        "Number of Bins:",
+                                        style={"display": "inline"},
+                                    ),
+                                    dcc.Input(
+                                        type="number",
+                                        value=10,
+                                        min=1,
+                                        style={"marginLeft": 10},
+                                    ),
+                                ],
+                                id="equal_freq_num_bin_input_section",
+                                style={"display": "none"},
+                            ),
+                        ],
+                        id="equal_frequency_input_section",
+                        style={"display": "none"},
+                    ),
+                    html.Div(
+                        children=[
+                            html.Div(
+                                [], style={
+                                    "display": "inline", "marginLeft": 5}
+                            ),
+                            html.P("Upload a file: ", style={
+                                "display": "inline"}),
+                            SaveButton(
+                                "Upload", marginLeft=10, backgroundColor="#8097e6"
+                            ),
+                        ],
+                        id="import_settings_input_section",
+                        style={"display": "none"},
+                    ),
+                    html.Div([], style={"marginBottom": 25}),
+                    SaveButton("Refresh"),
+                    html.P(
+                        style={"marginTop": 20},
+                        id="auto_bin_algo_description",
+                    ),
+                ],
+                style=grey_panel_style,
+            ),
+        ]
+    ),
+    html.Div([], style={"width": "100%", "height": 25, "clear": "left"}),
+    SectionHeading(
+        "VI. Save & Confirm Your Bins Settings for the Chosen Predictor Variable:",
+        inline=True,
+    ),
+    SaveButton(
+        title="Save & Confirm Interactive Binning",
+        marginLeft=15,
+        marginTop=55,
+        id="confirm_ib_button",
+    ),
+    html.Div(style={"height": 100}),
 ])
 
 
@@ -1448,6 +1656,57 @@ def show_good_bad_stats_and_bar_chart(good_bad_def_data):
             dcc.Graph(figure=fig),
         ], style=grey_panel_style),
     ])
+
+
+"""
+Interactive Binning Page:
+Render the data stored in shared storage about the predictor variables to be 
+binned (which is set by user in the confirm input dataset page),
+the options available in the dropdown showing the predictor variable can be binned in the Interactive 
+Binning page is updated
+"""
+
+
+@app.callback(
+    [
+        Output("predictor_var_ib_dropdown", "options"),
+        Output("predictor_var_ib_dropdown", "value"),
+    ],
+    [
+        Input("numerical_columns", "data"),
+        Input("categorical_columns", "data"),
+    ]
+)
+def update_ib_predictor_var_dropdown(numerical_col, categorical_col):
+    var_to_be_bin_list = json.loads(
+        numerical_col) + json.loads(categorical_col)
+    return [convert_column_list_to_dropdown_options(var_to_be_bin_list), var_to_be_bin_list[0]]
+
+
+"""
+Interactive Binning Page:
+Update automated binning input section UI based on 
+dropdown value
+"""
+
+
+@app.callback(
+    [
+        Output("equal_width_input_section", "style"),
+        Output("equal_frequency_input_section", "style"),
+        Output("import_settings_input_section", "style"),
+    ],
+    Input("auto_bin_algo_dropdown", "value"),
+)
+def update_auto_bin_input_section_UI(auto_bin_algo):
+    if auto_bin_algo == "none":
+        return {"display": "none"}, {"display": "none"}, {"display": "none"}
+    elif auto_bin_algo == "equal width":
+        return {}, {"display": "none"}, {"display": "none"}
+    elif auto_bin_algo == "equal frequency":
+        return {"display": "none"}, {}, {"display": "none"}
+    else:
+        return {"display": "none"}, {"display": "none"}, {}
 
 
 """
