@@ -5,7 +5,7 @@ import dash
 import dash_table
 import dash_core_components as dcc
 import dash_html_components as html
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output, State, ALL, MATCH
 from dash.exceptions import PreventUpdate
 
 # Get data from dataiku
@@ -225,80 +225,6 @@ def SaveButton(title, marginLeft=0, marginTop=0, id="", backgroundColor="#6668A9
     )
 
 
-def GoodBadDefNumericalListItem(var_list, idx=1, lower=0, upper=1):
-    return html.Div(
-        [
-            html.P(str(idx) + ".", style={"float": "left", "marginRight": 5}),
-            dcc.Dropdown(
-                options=convert_column_list_to_dropdown_options(var_list),
-                value=var_list[0],
-                clearable=False,
-                searchable=False,
-                style={"width": 180},
-            ),
-            html.P(
-                " :", style={"float": "left", "marginLeft": 5, "fontWeight": "bold"}
-            ),
-            dcc.Input(
-                type="number",
-                min=0,
-                value=lower,
-                id="",
-                style={"width": 150, "float": "left", "marginLeft": 20},
-            ),
-            html.P(
-                "(inclusive)",
-                style={"float": "left", "marginLeft": 5, "marginBottom": 0},
-            ),
-            html.P(
-                "一", style={"float": "left", "marginLeft": 10, "fontWeight": "bold"}
-            ),
-            dcc.Input(
-                type="number",
-                min=0,
-                value=upper,
-                id="",
-                style={"width": 150, "float": "left", "marginLeft": 10},
-            ),
-            html.P(
-                "(exclusive)  ",
-                style={"float": "left", "marginLeft": 5, "marginBottom": 0},
-            ),
-            SaveButton("Remove", marginLeft=20, id={
-                       'type': 'bad_numeric_def_rm_button', 'index': idx}),
-        ],
-        style={"display": "flex", "alignItems": "flex-end", "marginTop": 10},
-    )
-
-
-def GoodBadDefCategoricalListItem(var_list, idx=1, value=[]):
-    return html.Div(
-        [
-            html.P(str(idx) + ".", style={"float": "left", "marginRight": 5}),
-            dcc.Dropdown(
-                options=convert_column_list_to_dropdown_options(var_list),
-                value=var_list[0],
-                clearable=False,
-                searchable=False,
-                style={"width": 180},
-            ),
-            html.P(
-                " :", style={"float": "left", "marginLeft": 5, "fontWeight": "bold"}
-            ),
-            dcc.Dropdown(
-                options=convert_column_list_to_dropdown_options(
-                    value
-                ),
-                value=value,
-                multi=True,
-                style={"width": 500, "marginLeft": 10},
-            ),
-            SaveButton("Remove", marginLeft=20),
-        ],
-        style={"display": "flex", "alignItems": "flex-end", "marginTop": 10},
-    )
-
-
 ###########################################################################
 ############################ Prepare Data Here ############################
 ###########################################################################
@@ -366,8 +292,7 @@ class GoodBadDefValidator:
     # A method to validate if all numerical definition range have upper bound > lower bound, if not, returns false
     def validate_numerical_bounds(self, numeric_info_list):
         for numeric_info in numeric_info_list:
-            a_range = [numeric_info["props"]["children"][3]['props']['value'],
-                       numeric_info["props"]["children"][6]['props']['value']]
+            a_range = [numeric_info[1], numeric_info[2]]
             if a_range[1] <= a_range[0]:
                 return False
         return True
@@ -381,32 +306,41 @@ class GoodBadDefDecoder:
 
         for numeric_info in numeric_info_list:
             single_def_dict = dict()
-            column = numeric_info["props"]["children"][1]['props']['value']
-            a_range = [numeric_info["props"]["children"][3]['props']['value'],
-                       numeric_info["props"]["children"][6]['props']['value']]
+            column = numeric_info[0]
+            a_range = [numeric_info[1], numeric_info[2]]
             # The 2 bounds are valid, now check if any overlapping with previously saved data
             has_column_overlap = False
             for def_idx, saved_def in enumerate(numeric_list):
                 if saved_def["column"] == column:
                     has_column_overlap = True
                     has_range_overlap = False
+                    overlapped_def_range_idxes = list()
                     # Merge range to element list
                     for def_range_idx, def_range in enumerate(saved_def["ranges"]):
+                        if len(overlapped_def_range_idxes) != 0:
+                            a_range = numeric_list[def_idx]["ranges"][overlapped_def_range_idxes[0]]
+
                         if a_range[0] <= def_range[0] and a_range[1] >= def_range[1]:
                             has_range_overlap = True
                             numeric_list[def_idx]["ranges"][def_range_idx] = [
                                 a_range[0], a_range[1]]
-                            break
+                            overlapped_def_range_idxes.insert(0, def_range_idx)
+                        elif def_range[0] <= a_range[0] and def_range[1] >= a_range[1]:
+                            has_range_overlap = True
                         elif a_range[0] <= def_range[0] and a_range[1] >= def_range[0] and a_range[1] <= def_range[1]:
                             has_range_overlap = True
                             numeric_list[def_idx]["ranges"][def_range_idx] = [
                                 a_range[0], def_range[1]]
-                            break
+                            overlapped_def_range_idxes.insert(0, def_range_idx)
                         elif a_range[0] >= def_range[0] and a_range[0] <= def_range[1] and a_range[1] >= def_range[1]:
                             has_range_overlap = True
                             numeric_list[def_idx]["ranges"][def_range_idx] = [
                                 def_range[0], a_range[1]]
-                            break
+                            overlapped_def_range_idxes.insert(0, def_range_idx)
+                    if len(overlapped_def_range_idxes) != 0:
+                        del overlapped_def_range_idxes[0]
+                        for i in sorted(overlapped_def_range_idxes, reverse=True):
+                            del numeric_list[def_idx]["ranges"][i]
                     if has_range_overlap == False:
                         numeric_list[def_idx]["ranges"].append(a_range)
                     break
@@ -417,13 +351,12 @@ class GoodBadDefDecoder:
         return numeric_list
     # A method to translate section UI info to a list of categorical definition
 
-    def get_categorical_def_list_from_section(self, section):
-        categoric_info_list = section[0]['props']['children'][4]['props']['children']
+    def get_categorical_def_list_from_section(self, categoric_info_list):
         categoric_list = list()  # initialization
         for categoric_info in categoric_info_list:
             single_def_dict = dict()
-            column = categoric_info["props"]["children"][1]['props']['value']
-            elements = categoric_info["props"]["children"][3]['props']['value']
+            column = categoric_info[0]
+            elements = categoric_info[1]
             # Check if any overlapping with previously saved data
             has_overlap = False
             for saved_def in categoric_list:
@@ -669,6 +602,8 @@ good_bad_def_page_layout = html.Div(
                             marginLeft=30,
                             id="add_bad_numeric_def_button",
                         ),
+                        SaveButton("Remove", marginLeft=10,
+                                   id="bad_numeric_def_remove_button"),
                         html.Li(
                             "Categorical Variables",
                             style={"fontSize": 16, "marginTop": 15},
@@ -685,6 +620,8 @@ good_bad_def_page_layout = html.Div(
                             marginLeft=30,
                             id="add_bad_categoric_def_button",
                         ),
+                        SaveButton("Remove", marginLeft=10,
+                                   id="bad_categoric_def_remove_button"),
                     ],
                     style={"listStyleType": "disc"},
                 ),
@@ -727,6 +664,8 @@ good_bad_def_page_layout = html.Div(
                             marginLeft=30,
                             id="add_indeterminate_numeric_def_button",
                         ),
+                        SaveButton("Remove", marginLeft=10,
+                                   id="indeterminate_numeric_def_remove_button"),
                         html.Li(
                             "Categorical Variables",
                             style={"fontSize": 16, "marginTop": 15},
@@ -743,6 +682,8 @@ good_bad_def_page_layout = html.Div(
                             marginLeft=30,
                             id="add_indeterminate_categoric_def_button",
                         ),
+                        SaveButton("Remove", marginLeft=10,
+                                   id="indeterminate_categoric_def_remove_button"),
                     ],
                     style={"listStyleType": "disc"},
                 ),
@@ -770,6 +711,7 @@ good_bad_def_page_layout = html.Div(
         # Debug
         html.P("", id="test_good_bad_def"),
         html.Div([], style={"height": 100}),
+        html.P(id="text_triggered"),
     ]
 )
 
@@ -926,100 +868,355 @@ def show_confirm_input_datset_error_msg(n_clicks, predictor_var_dropdown_values,
 
 
 """
-Good/Bad Definition Page:
-Press add button to add a new definition row in bad numeric section
+Good/Bad Definition:
+Add/Remove definition from bad numerical list
 """
 
 
 @app.callback(
     Output("bad_numeric_def_list", "children"),
-    Input("add_bad_numeric_def_button", "n_clicks"),
     [
-        State("bad_numeric_def_list", "children"),
+        Input("add_bad_numeric_def_button", "n_clicks"),
+        Input("bad_numeric_def_remove_button", "n_clicks"),
+    ],
+    [
         State("numerical_columns", "data"),
+        State({"index": ALL, "type": "bad_numerical_lower"}, "value"),
+        State({"index": ALL, "type": "bad_numerical_upper"}, "value"),
+        State({"index": ALL, "type": "bad_numerical_column"}, "value"),
+        State({"index": ALL, "type": "bad_numerical_checkbox"}, "value"),
     ],
-    prevent_initial_call=True,
 )
-def add_bad_numeric_section_row(n_clicks, def_list, numeric_col_data):
-    new_idx = len(def_list)+1
-    new_row = GoodBadDefNumericalListItem(
-        var_list=json.loads(numeric_col_data), idx=new_idx)
-    def_list.append(new_row)
-    return def_list
+def edit_bad_numeric_def_list(add_clicks, remove_clicks_list, numeric_col_data, lower_list, upper_list, column_list, checkbox_list):
+    triggered = [t["prop_id"] for t in dash.callback_context.triggered]
+    adding = len([i for i in triggered if i ==
+                 "add_bad_numeric_def_button.n_clicks"])
+    removing = len([i for i in triggered if i ==
+                   "bad_numeric_def_remove_button.n_clicks"])
+    new_spec = [
+        (column, lower, upper, selected) for column, lower, upper, selected in zip(column_list, lower_list, upper_list, checkbox_list)
+        if not (removing and selected)
+    ]
+    if adding:
+        new_spec.append((json.loads(numeric_col_data)[0], 0, 1, []))
+    new_list = [
+        html.Div(
+            [
+                html.P(str(idx+1) + ".",
+                       style={"float": "left", "marginRight": 5}),
+                dcc.Dropdown(
+                    options=convert_column_list_to_dropdown_options(
+                        json.loads(numeric_col_data)),
+                    value=column,
+                    clearable=False,
+                    searchable=False,
+                    style={"width": 180},
+                    id={"index": idx, "type": "bad_numerical_column"},
+                ),
+                html.P(
+                    " :", style={"float": "left", "marginLeft": 5, "fontWeight": "bold"}
+                ),
+                dcc.Input(
+                    type="number",
+                    min=0,
+                    value=lower,
+                    id={"index": idx, "type": "bad_numerical_lower"},
+                    style={"width": 150, "float": "left", "marginLeft": 20},
+                ),
+                html.P(
+                    "(inclusive)",
+                    style={"float": "left", "marginLeft": 5, "marginBottom": 0},
+                ),
+                html.P(
+                    "一", style={"float": "left", "marginLeft": 10, "fontWeight": "bold"}
+                ),
+                dcc.Input(
+                    type="number",
+                    min=0,
+                    value=upper,
+                    id={"index": idx, "type": "bad_numerical_upper"},
+                    style={"width": 150, "float": "left", "marginLeft": 10},
+                ),
+                html.P(
+                    "(exclusive)  ",
+                    style={"float": "left", "marginLeft": 5, "marginBottom": 0},
+                ),
+                dcc.Checklist(
+                    id={"index": idx, "type": "bad_numerical_checkbox"},
+                    options=[{"label": "", "value": "selected"}],
+                    value=selected,
+                    style={"display": "inline", "marginLeft": 15},
+                ),
+            ],
+            style={"display": "flex", "alignItems": "flex-end", "marginTop": 10},
+        )
+        for idx, (column, lower, upper, selected) in enumerate(new_spec)
+    ]
+    return new_list
 
 
 """
-Good/Bad Definition Page:
-Press add button to add a new definition row in bad categorical section
-"""
-
-
-@app.callback(
-    Output("bad_categoric_def_list", "children"),
-    Input("add_bad_categoric_def_button", "n_clicks"),
-    [
-        State("bad_categoric_def_list", "children"),
-        State("categorical_columns", "data"),
-    ],
-    prevent_initial_call=True,
-)
-def add_bad_categoric_section_row(n_clicks, def_list, categoric_col_data):
-    new_idx = len(def_list)+1
-    new_row = GoodBadDefCategoricalListItem(var_list=json.loads(
-        categoric_col_data), idx=new_idx, value=["own", "rent", "mortgage"])
-    def_list.append(new_row)
-    return def_list
-
-
-"""
-Good/Bad Definition Page:
-Press add button to add a new definition row in bad numeric section
+Good/Bad Definition:
+Add/Remove definition from indeterminate numerical list
 """
 
 
 @app.callback(
     Output("indeterminate_numeric_def_list", "children"),
-    Input("add_indeterminate_numeric_def_button", "n_clicks"),
     [
-        State("indeterminate_numeric_def_list", "children"),
-        State("numerical_columns", "data"),
+        Input("add_indeterminate_numeric_def_button", "n_clicks"),
+        Input("indeterminate_numeric_def_remove_button", "n_clicks"),
     ],
-    prevent_initial_call=True,
+    [
+        State("numerical_columns", "data"),
+        State({"index": ALL, "type": "indeterminate_numerical_lower"}, "value"),
+        State({"index": ALL, "type": "indeterminate_numerical_upper"}, "value"),
+        State({"index": ALL, "type": "indeterminate_numerical_column"}, "value"),
+        State({"index": ALL, "type": "indeterminate_numerical_checkbox"}, "value"),
+    ],
 )
-def add_bad_numeric_section_row(n_clicks, def_list, numeric_col_data):
-    new_idx = len(def_list)+1
-    new_row = GoodBadDefNumericalListItem(
-        var_list=json.loads(numeric_col_data), idx=new_idx)
-    def_list.append(new_row)
-    return def_list
+def edit_indeterminate_numeric_def_list(add_clicks, remove_clicks_list, numeric_col_data, lower_list, upper_list, column_list, checkbox_list):
+    triggered = [t["prop_id"] for t in dash.callback_context.triggered]
+    adding = len([i for i in triggered if i ==
+                 "add_indeterminate_numeric_def_button.n_clicks"])
+    removing = len([i for i in triggered if i ==
+                   "indeterminate_numeric_def_remove_button.n_clicks"])
+    new_spec = [
+        (column, lower, upper, selected) for column, lower, upper, selected in zip(column_list, lower_list, upper_list, checkbox_list)
+        if not (removing and selected)
+    ]
+    if adding:
+        new_spec.append((json.loads(numeric_col_data)[0], 0, 1, []))
+    new_list = [
+        html.Div(
+            [
+                html.P(str(idx+1) + ".",
+                       style={"float": "left", "marginRight": 5}),
+                dcc.Dropdown(
+                    options=convert_column_list_to_dropdown_options(
+                        json.loads(numeric_col_data)),
+                    value=column,
+                    clearable=False,
+                    searchable=False,
+                    style={"width": 180},
+                    id={"index": idx, "type": "indeterminate_numerical_column"},
+                ),
+                html.P(
+                    " :", style={"float": "left", "marginLeft": 5, "fontWeight": "bold"}
+                ),
+                dcc.Input(
+                    type="number",
+                    min=0,
+                    value=lower,
+                    id={"index": idx, "type": "indeterminate_numerical_lower"},
+                    style={"width": 150, "float": "left", "marginLeft": 20},
+                ),
+                html.P(
+                    "(inclusive)",
+                    style={"float": "left", "marginLeft": 5, "marginBottom": 0},
+                ),
+                html.P(
+                    "一", style={"float": "left", "marginLeft": 10, "fontWeight": "bold"}
+                ),
+                dcc.Input(
+                    type="number",
+                    min=0,
+                    value=upper,
+                    id={"index": idx, "type": "indeterminate_numerical_upper"},
+                    style={"width": 150, "float": "left", "marginLeft": 10},
+                ),
+                html.P(
+                    "(exclusive)  ",
+                    style={"float": "left", "marginLeft": 5, "marginBottom": 0},
+                ),
+                dcc.Checklist(
+                    id={"index": idx, "type": "indeterminate_numerical_checkbox"},
+                    options=[{"label": "", "value": "selected"}],
+                    value=selected,
+                    style={"display": "inline", "marginLeft": 15},
+                ),
+            ],
+            style={"display": "flex", "alignItems": "flex-end", "marginTop": 10},
+        )
+        for idx, (column, lower, upper, selected) in enumerate(new_spec)
+    ]
+    return new_list
 
 
 """
-Good/Bad Definition Page:
-Press add button to add a new definition row in indeterminate categorical section
+Good/Bad Definition:
+Add/Remove definition from bad categorical list
+"""
+
+
+@app.callback(
+    Output("bad_categoric_def_list", "children"),
+    [
+        Input("add_bad_categoric_def_button", "n_clicks"),
+        Input("bad_categoric_def_remove_button", "n_clicks"),
+    ],
+    [
+        State("categorical_columns", "data"),
+        State({"index": ALL, "type": "bad_categorical_element"}, "value"),
+        State({"index": ALL, "type": "bad_categorical_column"}, "value"),
+        State({"index": ALL, "type": "bad_categorical_checkbox"}, "value"),
+    ],
+)
+def edit_bad_categoric_def_list(add_clicks, remove_clicks_list, categoric_col_data, elements_list, column_list, checkbox_list):
+    triggered = [t["prop_id"] for t in dash.callback_context.triggered]
+    adding = len([i for i in triggered if i ==
+                 "add_bad_categoric_def_button.n_clicks"])
+    removing = len([i for i in triggered if i ==
+                   "bad_categoric_def_remove_button.n_clicks"])
+    new_spec = [
+        (column, elements, selected) for column, elements, selected in zip(column_list, elements_list, checkbox_list)
+        if not (removing and selected)
+    ]
+    if adding:
+        new_spec.append((json.loads(categoric_col_data)[0], [], []))
+    new_list = [
+        html.Div([
+            html.P(str(idx+1) + ".",
+                   style={"float": "left", "marginRight": 5}),
+            dcc.Dropdown(
+                options=convert_column_list_to_dropdown_options(
+                    json.loads(categoric_col_data)),
+                value=column,
+                clearable=False,
+                searchable=False,
+                style={"width": 180},
+                id={"index": idx, "type": "bad_categorical_column"},
+            ),
+            html.P(
+                " :", style={"float": "left", "marginLeft": 5, "fontWeight": "bold", "marginRight": 10}
+            ),
+            dcc.Dropdown(
+                options=convert_column_list_to_dropdown_options(
+                    df[column].unique()),
+                value=elements,
+                multi=True,
+                style={"width": 500},
+                id={"index": idx, "type": "bad_categorical_element"},
+            ),
+            dcc.Checklist(
+                id={"index": idx, "type": "bad_categorical_checkbox"},
+                options=[{"label": "", "value": "selected"}],
+                value=selected,
+                style={"display": "inline", "marginLeft": 15},
+            )
+        ], style={"display": "flex", "alignItems": "flex-end", "marginTop": 10})
+        for idx, (column, elements, selected) in enumerate(new_spec)
+    ]
+    return new_list
+
+
+"""
+Good/Bad Definition:
+Add/Remove definition from indeterminate categorical list
 """
 
 
 @app.callback(
     Output("indeterminate_categoric_def_list", "children"),
-    Input("add_indeterminate_categoric_def_button", "n_clicks"),
     [
-        State("indeterminate_categoric_def_list", "children"),
-        State("categorical_columns", "data"),
+        Input("add_indeterminate_categoric_def_button", "n_clicks"),
+        Input("indeterminate_categoric_def_remove_button", "n_clicks"),
     ],
-    prevent_initial_call=True,
+    [
+        State("categorical_columns", "data"),
+        State({"index": ALL, "type": "indeterminate_categorical_element"}, "value"),
+        State({"index": ALL, "type": "indeterminate_categorical_column"}, "value"),
+        State({"index": ALL, "type": "indeterminate_categorical_checkbox"}, "value"),
+    ],
 )
-def add_bad_categoric_section_row(n_clicks, def_list, categoric_col_data):
-    new_idx = len(def_list)+1
-    new_row = GoodBadDefCategoricalListItem(var_list=json.loads(
-        categoric_col_data), idx=new_idx, value=["own", "rent", "mortgage"])
-    def_list.append(new_row)
-    return def_list
+def edit_indeterminate_categoric_def_list(add_clicks, remove_clicks_list, categoric_col_data, elements_list, column_list, checkbox_list):
+    triggered = [t["prop_id"] for t in dash.callback_context.triggered]
+    adding = len([i for i in triggered if i ==
+                 "add_indeterminate_categoric_def_button.n_clicks"])
+    removing = len([i for i in triggered if i ==
+                   "indeterminate_categoric_def_remove_button.n_clicks"])
+    new_spec = [
+        (column, elements, selected) for column, elements, selected in zip(column_list, elements_list, checkbox_list)
+        if not (removing and selected)
+    ]
+    if adding:
+        new_spec.append((json.loads(categoric_col_data)[0], [], []))
+    new_list = [
+        html.Div([
+            html.P(str(idx+1) + ".",
+                   style={"float": "left", "marginRight": 5}),
+            dcc.Dropdown(
+                options=convert_column_list_to_dropdown_options(
+                    json.loads(categoric_col_data)),
+                value=column,
+                clearable=False,
+                searchable=False,
+                style={"width": 180},
+                id={"index": idx, "type": "indeterminate_categorical_column"},
+            ),
+            html.P(
+                " :", style={"float": "left", "marginLeft": 5, "fontWeight": "bold", "marginRight": 10}
+            ),
+            dcc.Dropdown(
+                options=convert_column_list_to_dropdown_options(
+                    df[column].unique()),
+                value=elements,
+                multi=True,
+                style={"width": 500},
+                id={"index": idx, "type": "indeterminate_categorical_element"},
+            ),
+            dcc.Checklist(
+                id={"index": idx, "type": "indeterminate_categorical_checkbox"},
+                options=[{"label": "", "value": "selected"}],
+                value=selected,
+                style={"display": "inline", "marginLeft": 15},
+            )
+        ], style={"display": "flex", "alignItems": "flex-end", "marginTop": 10})
+        for idx, (column, elements, selected) in enumerate(new_spec)
+    ]
+    return new_list
 
 
 """
-Good/Bad Definition Page:
-Press confirm button to save good bad defintiion to shared storage
+Good/Bad Definition:
+Change categorical multi-value dropdown based on changes in column choice for
+bad categorical definitions
+"""
+
+
+@app.callback(
+    [
+        Output({"index": MATCH, "type": "bad_categorical_element"}, "options"),
+        Output({"index": MATCH, "type": "bad_categorical_element"}, "value"),
+    ],
+    Input({"index": MATCH, "type": "bad_categorical_column"}, "value"),
+)
+def update_multi_value_dropdown_bad_categorical(column):
+    return [convert_column_list_to_dropdown_options(df[column].unique()), []]
+
+
+"""
+Good/Bad Definition:
+Change categorical multi-value dropdown based on changes in column choice for
+indeterminate categorical definitions
+"""
+
+
+@app.callback(
+    [
+        Output(
+            {"index": MATCH, "type": "indeterminate_categorical_element"}, "options"),
+        Output({"index": MATCH, "type": "indeterminate_categorical_element"}, "value"),
+    ],
+    Input({"index": MATCH, "type": "indeterminate_categorical_column"}, "value"),
+)
+def update_multi_value_dropdown_bad_categorical(column):
+    return [convert_column_list_to_dropdown_options(df[column].unique()), []]
+
+
+"""
+Good/Bad Definition
+Save good bad definition to storage when confirm button is clicked
 """
 
 
@@ -1027,18 +1224,32 @@ Press confirm button to save good bad defintiion to shared storage
     Output("good_bad_def", "data"),
     Input("confirm_good_bad_def_button", "n_clicks"),
     [
-        State("define_bad_def_section", "children"),
-        State("define_indeterminate_def_section", "children"),
+        State({"index": ALL, "type": "bad_numerical_column"}, "value"),
+        State({"index": ALL, "type": "bad_numerical_lower"}, "value"),
+        State({"index": ALL, "type": "bad_numerical_upper"}, "value"),
+        State({"index": ALL, "type": "indeterminate_numerical_column"}, "value"),
+        State({"index": ALL, "type": "indeterminate_numerical_lower"}, "value"),
+        State({"index": ALL, "type": "indeterminate_numerical_upper"}, "value"),
+        State({"index": ALL, "type": "bad_categorical_column"}, "value"),
+        State({"index": ALL, "type": "bad_categorical_element"}, "value"),
+        State({"index": ALL, "type": "indeterminate_categorical_column"}, "value"),
+        State({"index": ALL, "type": "indeterminate_categorical_element"}, "value"),
         State("weight_of_bad_input", "value"),
         State("weight_of_good_input", "value"),
     ],
 )
-def save_good_bad_def_to_shared_storage(n_clicks, bad_def_sec, indeterminate_def_sec, bad_weight, good_weight):
-    # Validate numerical boundaries of user input, if invalid, return original definition
+def save_good_bad_def_to_storage(n_clicks, bad_numerical_column_list, bad_numerical_lower_list, bad_numerical_upper_list, indeterminate_numerical_column_list, indeterminate_numerical_lower_list, indeterminate_numerical_upper_list, bad_categorical_column_list, bad_categorical_element_list, indeterminate_categorical_column_list, indeterminate_categorical_element_list, bad_weight, good_weight):
     validator = GoodBadDefValidator()
-    bad_numeric_info_list = bad_def_sec[0]['props']['children'][1]['props']['children']
-    indeterminate_numeric_info_list = indeterminate_def_sec[
-        0]['props']['children'][1]['props']['children']
+
+    # Validate if weights are numeric & non-negative
+    if bad_weight == None or good_weight == None:
+        raisePreventUpdate
+
+    # Validate numerical boundaries of user input, if invalid, return original definition
+    bad_numeric_info_list = tuple(zip(
+        bad_numerical_column_list, bad_numerical_lower_list, bad_numerical_upper_list))
+    indeterminate_numeric_info_list = tuple(zip(
+        indeterminate_numerical_column_list, indeterminate_numerical_lower_list, indeterminate_numerical_upper_list))
     if not validator.validate_numerical_bounds(bad_numeric_info_list) or not validator.validate_numerical_bounds(indeterminate_numeric_info_list):
         raise PreventUpdate
 
@@ -1058,16 +1269,23 @@ def save_good_bad_def_to_shared_storage(n_clicks, bad_def_sec, indeterminate_def
             "weight": good_weight,
         }
     }
+
     decoder = GoodBadDefDecoder()
+
+    bad_categorical_info_list = zip(
+        bad_categorical_column_list, bad_categorical_element_list)
+    indeterminate_categorical_info_list = zip(
+        indeterminate_categorical_column_list, indeterminate_categorical_element_list)
+
     # Update data
     good_bad_def["bad"]["numerical"] = decoder.get_numeric_def_list_from_section(
         numeric_info_list=bad_numeric_info_list)
     good_bad_def["indeterminate"]["numerical"] = decoder.get_numeric_def_list_from_section(
         numeric_info_list=indeterminate_numeric_info_list)
     good_bad_def["bad"]["categorical"] = decoder.get_categorical_def_list_from_section(
-        section=bad_def_sec)
+        categoric_info_list=bad_categorical_info_list)
     good_bad_def["indeterminate"]["categorical"] = decoder.get_categorical_def_list_from_section(
-        section=indeterminate_def_sec)
+        categoric_info_list=indeterminate_categorical_info_list)
 
     # Validate if there's overlapping between bad & indeterminate
     if not validator.validate_if_numerical_def_overlapped(good_bad_def["bad"]["numerical"], good_bad_def["indeterminate"]["numerical"]):
@@ -1095,18 +1313,36 @@ Show error message when:
     Output("good_bad_def_error_msg", "children"),
     Input("confirm_good_bad_def_button", "n_clicks"),
     [
-        State("define_bad_def_section", "children"),
-        State("define_indeterminate_def_section", "children"),
+        State({"index": ALL, "type": "bad_numerical_column"}, "value"),
+        State({"index": ALL, "type": "bad_numerical_lower"}, "value"),
+        State({"index": ALL, "type": "bad_numerical_upper"}, "value"),
+        State({"index": ALL, "type": "indeterminate_numerical_column"}, "value"),
+        State({"index": ALL, "type": "indeterminate_numerical_lower"}, "value"),
+        State({"index": ALL, "type": "indeterminate_numerical_upper"}, "value"),
+        State({"index": ALL, "type": "bad_categorical_column"}, "value"),
+        State({"index": ALL, "type": "bad_categorical_element"}, "value"),
+        State({"index": ALL, "type": "indeterminate_categorical_column"}, "value"),
+        State({"index": ALL, "type": "indeterminate_categorical_element"}, "value"),
+        State("weight_of_bad_input", "value"),
+        State("weight_of_good_input", "value"),
     ],
+    prevent_initial_call=True,
 )
-def show_good_bad_def_error_msg(n_clicks, bad_def_sec, indeterminate_def_sec):
+def show_good_bad_def_error_msg(n_clicks, bad_numerical_column_list, bad_numerical_lower_list, bad_numerical_upper_list, indeterminate_numerical_column_list, indeterminate_numerical_lower_list, indeterminate_numerical_upper_list, bad_categorical_column_list, bad_categorical_element_list, indeterminate_categorical_column_list, indeterminate_categorical_element_list, bad_weight, good_weight):
     error_msg = ""
+
+    # Validate if weights are numeric & non-negative
+    if bad_weight == None or good_weight == None:
+        error_msg += "Error (Invalid User Input): Weights have to be a non-negative number.\t"
 
     has_bound_error = False
     validator = GoodBadDefValidator()
-    bad_numeric_info_list = bad_def_sec[0]['props']['children'][1]['props']['children']
-    indeterminate_numeric_info_list = indeterminate_def_sec[
-        0]['props']['children'][1]['props']['children']
+
+    bad_numeric_info_list = tuple(zip(
+        bad_numerical_column_list, bad_numerical_lower_list, bad_numerical_upper_list))
+    indeterminate_numeric_info_list = tuple(zip(
+        indeterminate_numerical_column_list, indeterminate_numerical_lower_list, indeterminate_numerical_upper_list))
+
     if not validator.validate_numerical_bounds(bad_numeric_info_list):
         has_bound_error = True
         error_msg += "Error (Invalid User Input): Some of the numerical range(s) for bad definition has lower bound >= upper bound which is invalid.\t"
@@ -1115,23 +1351,28 @@ def show_good_bad_def_error_msg(n_clicks, bad_def_sec, indeterminate_def_sec):
         error_msg += "Error (Invalid User Input): Some of the numerical range(s) for indeterminate definition has lower bound >= upper bound which is invalid.\t"
 
     decoder = GoodBadDefDecoder()
-    if not has_bound_error:
-        bad_numeric_info_list = bad_def_sec[0]['props']['children'][1]['props']['children']
-        indeterminate_numeric_info_list = indeterminate_def_sec[
-            0]['props']['children'][1]['props']['children']
-        bad_numeric_list = decoder.get_numeric_def_list_from_section(
-            numeric_info_list=bad_numeric_info_list)
-        indeterminate_numeric_list = decoder.get_numeric_def_list_from_section(
-            numeric_info_list=indeterminate_numeric_info_list)
-        if not validator.validate_if_numerical_def_overlapped(bad_numeric_list, indeterminate_numeric_list):
-            error_msg += "Error (Invalid User Input): Some of the numerical definitions of bad & indeterminate have overlapped.\t"
+    bad_categorical_info_list = zip(
+        bad_categorical_column_list, bad_categorical_element_list)
+    indeterminate_categorical_info_list = zip(
+        indeterminate_categorical_column_list, indeterminate_categorical_element_list)
+
+    bad_numeric_list = decoder.get_numeric_def_list_from_section(
+        numeric_info_list=bad_numeric_info_list)
+    indeterminate_numeric_list = decoder.get_numeric_def_list_from_section(
+        numeric_info_list=indeterminate_numeric_info_list)
+
+    if not has_bound_error and not validator.validate_if_numerical_def_overlapped(bad_numeric_list, indeterminate_numeric_list):
+        error_msg += "Error (Invalid User Input): Some of the numerical definitions of bad & indeterminate have overlapped.\t"
 
     bad_categoric_list = decoder.get_categorical_def_list_from_section(
-        section=bad_def_sec)
+        categoric_info_list=bad_categorical_info_list)
     indeterminate_categoric_list = decoder.get_categorical_def_list_from_section(
-        section=indeterminate_def_sec)
+        categoric_info_list=indeterminate_categorical_info_list)
     if not validator.validate_if_categorical_def_overlapped(bad_categoric_list, indeterminate_categoric_list):
         error_msg += "Error (Invalid User Input): Some of the categorical definitions of bad & indeterminate have overlapped.\t"
+
+    if len(bad_numeric_list) == 0 and len(indeterminate_numeric_list) == 0 and len(bad_categoric_list) == 0 and len(indeterminate_categoric_list) == 0:
+        error_msg += "Error: Definitions should not be empty."
 
     return error_msg
 
@@ -1185,8 +1426,9 @@ def show_good_bad_stats_and_bar_chart(good_bad_def_data):
             html.P("Weight of Good: " + str(good_weight)),
             html.P("Weight of Bad: " + str(bad_weight)),
             html.Div([], style={"height": 8}),
-            html.P("Population Good Count: " + str(population_good_count)),
-            html.P("Population Bad Count: " + str(population_bad_count)),
+            html.P("Population Good Count: " +
+                   str(int(population_good_count))),
+            html.P("Population Bad Count: " + str(int(population_bad_count))),
         ], style=purple_panel_style),
         html.Div([
             dcc.Graph(figure=fig),
