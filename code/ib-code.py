@@ -1710,6 +1710,48 @@ def update_auto_bin_input_section_UI(auto_bin_algo):
 
 
 """
+Interactive Binning Page:
+Update the input area of equal width automated binning 
+algorithm based on the radio button value
+"""
+
+
+@app.callback(
+    [
+        Output("equal_width_width_input_section", "style"),
+        Output("equal_width_num_bin_input_section", "style"),
+    ],
+    Input("equal_width_radio_button", "value"),
+)
+def update_equal_freq_input_section(method):
+    if method == "width":
+        return {}, {"display": "none"}
+    else:  # method == "number of bins"
+        return {"display": "none"}, {}
+
+
+"""
+Interactive Binning Page:
+Update the input area of equal frequency automated binning 
+algorithm based on the radio button value
+"""
+
+
+@app.callback(
+    [
+        Output("equal_freq_freq_input_section", "style"),
+        Output("equal_freq_num_bin_input_section", "style"),
+    ],
+    Input("equal_freq_radio_button", "value"),
+)
+def update_equal_freq_input_section(method):
+    if method == "frequency":
+        return {}, {"display": "none"}
+    else:  # method == "number of bins"
+        return {"display": "none"}, {}
+
+
+"""
 Preview & Download Settings:
 update binned dataframe for preview
 """
