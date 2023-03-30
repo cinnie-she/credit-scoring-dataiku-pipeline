@@ -1,11 +1,12 @@
 import pandas as pd
+import numpy as np
 
 df = pd.DataFrame()
 
 # A class for performing binning based on bins settings & good bad definition
 class BinningMachine:
     # A method for performing binning for the whole dataframe based on bins_settings, returns a binned_df
-    def perform_binning(self, bins_settings_list):
+    def perform_binning_on_whole_df(self, bins_settings_list):
         binned_df = df[df.columns.to_list()]
 
         for predictor_var_info in bins_settings_list:
@@ -21,25 +22,222 @@ class BinningMachine:
 
         return binned_df
     
-    # A method for performing equal width binning with a specified width
-    def perform_eq_width_binning_by_width(self):
+    # A method for performing binning for a single column based on bins_settings, returns a pd.Series
+    def perform_binning_on_col(self, col_df, bin_method):
+        if bin_method["bins"] == "none":
+            return pd.Series(col_df) # no binning
+        elif isinstance(bin_method["bins"], dict):  # auto binning
+            if bin_method["bins"]["algo"] == "equal width":
+                if bin_method["bins"]["method"] == "width":
+                    return self.__perform_eq_width_binning_by_width__(col_df, bin_method["type"], bin_method["bins"]["value"])
+                else: # by num of bins
+                    return self.__perform_eq_width_binning_by_num_bins__(col_df, bin_method["type"], bin_method["bins"]["value"])
+            elif bin_method["bins"]["algo"] == "equal frequency":
+                if bin_method["bins"]["method"] == "freq":
+                    return self.__perform_eq_freq_binning_by_freq__(col_df, bin_method["type"], bin_method["bins"]["value"])
+                else: # by num of bins
+                    return self.__perform_eq_freq_binning_by_num_bins__(col_df, bin_method["type"], bin_method["bins"]["value"])
+            else: # import settings
+                pass
+        else: # custom binning
+            pass
+    
+    # A method for performing equal width binning with a specified width, returns a pd.Series
+    def __perform_eq_width_binning_by_width__(self, col_df, dtype, width):
+        # Check if the width is valid
+        if width <= 0:
+            raise ValueError("Width should be a positive number.")
+        col_name = df.columns[0]
+        if dtype == "categorical" and width > col_df[col_name].nunique():
+            raise ValueError("For categorical variable, width should not be greater than number of unique values in the column.")
+            
+        # Bin the column
+        if dtype == "numerical":
+            min_value = col_df[col_name].min()
+            max_value = col_df[col_name].max()
+            num_bins = int(np.ceil((max_value - min_value) / width))
+            return pd.cut(col_df[col_name], bins=num_bins, include_lowest=True)
+        else: # categorical
+            pass
+    
+    # A method for performing equal width binning with a specified number of fixed-width bins, returns a pd.Series
+    def __perform_eq_width_binning_by_num_bins__(self, col_df, dtype, num_bins):
+        # Check if the width is valid
+        if num_bins <= 0 or not isinstance(num_bins, int):
+            raise ValueError("Number of bins should be a positive integer.")
+        col_name = df.columns[0]
+        if dtype == "categorical" and num_bins > col_df[col_name].nunique():
+            raise ValueError("For categorical variable, number of bins should not be greater than number of unique values in the column.")
+            
+        if dtype == "numerical":
+            return pd.cut(col_df[col_name], bins=num_bins, include_lowest=True)
+        else: # categorical
+            pass
+    
+    # A method for performing equal frequency binning with a specified frequency, returns a pd.Series
+    def __perform_eq_freq_binning_by_freq__(self, col_df, dtype, freq):
         pass
     
-    # A method for performing equal width binning with a specified number of fixed-width bins
-    def perform_eq_width_binning_by_num_bins(self):
+    # A method for performing equal frequency binning with a specified number of fixed-frequency bins, returns a pd.Series
+    def __perform_eq_freq_binning_by_num_bins__(self, col_df, dtype, num_bins):
         pass
     
-    # A method for performing equal frequency binning with a specified frequency
-    def perform_eq_freq_binning_by_freq(self):
+    # A method for performing binning based on boundary points obtained from interactive binning, returns a pd.Series
+    def __perform_binning_by_import_settings__(self):
         pass
+
+
+# A class to calculate statistical values for displaying the mixed chart & statistical tables
+class StatCalculator:
+    def __init__(self, df, col_bins_settings, good_bad_def) -> None:
+        self.df = df # for binning & good bad calculation, need whole df (OR only columns to be binned & columns involved in good bad def)
+        self.col_bins_settings = col_bins_settings # for binning
+        self.good_bad_def = good_bad_def # for good bad calculation
+
+    # Output - a dataframe representing the summary statistics table of the column
+    def compute_summary_stat_table(self):
+        """
+        1. Binning
+        """
+        col_to_bin = self.col_bins_settings["column"] # get the name of column to be binned
+        
+        col_df = self.df.loc[:, [col_to_bin]] # get a single column
+        
+        # perform binning
+        binning_machine = BinningMachine()
+        binned_series = binning_machine.perform_binning_on_col(col_df, self.col_bins_settings)
+        self.df.insert(loc=0, column=col_to_bin+"_binned", value=binned_series)
+        
+        """
+        2. Compute Summary Statistic Table
+        """
+        # Initialize an empty dictionary for storing information of each rows of the summary table (i.e., each bin)
+        summary_dict = dict()
+        # Create a list which stores summary table' column names
+        summary_table_col_name_list = ["Bin", "Good", "Bad", "Odds", "Total", "Good%", "Bad%", "Total%", "Info_Odds", "WOE", "MC"]
+
+        # Get and save a list of unique bin_name
+        bin_name_list = self.df.iloc[:, 0].unique().tolist()
+        
+        # Get total good & bad
+        good_bad_counter = GoodBadCounter()
+        _, _, _, _, _, total_good_count, total_bad_count = good_bad_counter.get_statistics(self.df, self.good_bad_def)
+        
+        # For each bin_name in the list (i.e. loop nbin times)
+        for bin_name in bin_name_list:
+            # Get a DataFrame which filtered out rows that does not belong to the bin
+            bin_df = self.df.loc[self.df.iloc[:,0] == bin_name]
+            # Call compute_bin_stats(var_df : pd.DataFrame, total_num_records : Integer, bin_name : String) and save as bin_stats_list
+            bin_stats_list = self.__compute_bin_stats__(bin_df, bin_name, total_good_count, total_bad_count)
+            # Add an element in the dictionary, with bin_name as the key, and bin_stats_list as the value
+            summary_dict[bin_name] = bin_stats_list
+        
+        # Create a pd.DataFrame object using the created dictionary
+        var_summary_df = pd.DataFrame.from_dict(summary_dict, orient='index', columns=summary_table_col_name_list)
+
+        # Call compute_var_stats(var_df: pd.DataFrame, var_summary_df : pd.DataFrame, total_num_records : Integer) and save the list
+        var_stats_list = self.__compute_var_stats__(var_summary_df, total_good_count, total_bad_count)
+
+        # Create a dictionary using "all" as the key, and the list created as the value
+        all_summary_series = pd.Series(var_stats_list, index = summary_table_col_name_list)
+
+        # Append the dictionary as a row to the pd.DataFrame created
+        var_summary_df = var_summary_df.append(all_summary_series, ignore_index=True)
     
-    # A method for performing equal frequency binning with a specified number of fixed-frequency bins
-    def perform_eq_freq_binning_by_num_bins(self):
-        pass
+        # format df
+        for col in ['Odds','Info_Odds','WOE','MC']:
+            var_summary_df[col] = var_summary_df[col].apply(lambda x: 0 if (x != None and abs(x) < 0.001) else x)
+            
+        return var_summary_df
     
-    # A method for performing binning based on boundary points obtained from interactive binning
-    def perform_binning_by_import_settings(self):
-        pass
+    def __compute_bin_stats__(self, bin_df, bin_name, total_good, total_bad):
+        # Initialize an empty list (e.g., bin_stats_list) for storing the statistics for a bin
+        bin_stats_list = list()
+
+        # Compute bin good & bad count
+        good_bad_counter = GoodBadCounter()
+        _, _, _, _, _, good, bad = good_bad_counter.get_statistics(bin_df, self.good_bad_def)
+        # Compute bin total count
+        total = good + bad
+        # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., good%)
+        good_pct = self.__compute_pct__(good, total_good)
+        # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., bad%)
+        bad_pct = self.__compute_pct__(bad, total_bad)
+        # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., total%)
+        total_pct = self.__compute_pct__(total, total_good + total_bad)
+        # Call compute_odds(good_pct : Float, bad_pct : Float) and save the returned value
+        odds = self.__compute_odds__(good, bad)
+        info_odds = self.__compute_info_odds__(good_pct, bad_pct)
+        # Call compute_woe(df : pd.DataFrame) using df and save the returned value
+        woe = self.__compute_woe__(info_odds)
+        # Call compute_info_val(good_pct : Float, bad_pct : Float, woe : Float) and save the returned value
+        mc = self.__compute_mc__(good_pct, bad_pct, woe)
+
+        # Append all statistics to the bin_stats_list in order
+        bin_stats_row = [bin_name, good, bad, odds, total, good_pct*100, bad_pct*100, total_pct*100, info_odds, woe, mc]
+        bin_stats_list.extend(bin_stats_row)
+
+        # Return list
+        return bin_stats_list
+    
+    def __compute_var_stats__(self, var_summary_df, total_good, total_bad):
+        # Create an empty list for storing the statistics for the whole dataset
+        var_stats_list = list()
+
+        # Call compute_good(df : pd.DataFrame) using df and save the returned value
+        good = total_good
+        # Call compute_bad(df : pd.DataFrame) using df and save the returned value
+        bad = total_bad
+        # Call compute_total(df : pd.DataFrame) using df and save the returned value
+        total = good + bad
+        # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., good%)
+        good_pct = self.__compute_pct__(good, total_good)
+        # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., bad%)
+        bad_pct = self.__compute_pct__(bad, total_bad)
+        # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., total%)
+        total_pct = 1
+        # Call compute_odds(good_pct : Float, bad_pct : Float) and save the returned value
+        odds = self.__compute_odds__(good, bad)
+        info_odds = None
+        # Empty woe
+        woe = None
+        # Sum up the MC column and save the value = InfoVal
+        mc = var_summary_df.MC.sum()
+
+        # Append all statistics to the empty list in order
+        var_stats_list = ["Total", good, bad, odds, total, good_pct*100, bad_pct*100, total_pct*100, info_odds, woe, mc]
+        # Return list
+        return var_stats_list
+    
+    def __compute_pct__(self, value, total_value):
+        if total_value == 0:
+            return None
+        else:
+            return (value/total_value)
+        
+    def __compute_odds__(self, good, bad):
+        if bad == 0:
+            return None
+        else:
+            return (good/bad)
+        
+    def __compute_info_odds__(self, good_pct, bad_pct):
+        if bad_pct == 0:
+            return None
+        else:
+            return (good_pct/bad_pct)
+        
+    def __compute_woe__(self, info_odds):
+        if info_odds == None or info_odds == 0:
+            return None
+        else:
+            return np.log(info_odds)
+
+    def __compute_mc__(self, good_pct, bad_pct, woe):
+        if woe == None:
+            return 0
+        else:
+            return (good_pct - bad_pct)*woe
 
 
 # A class for counting the number of good and bad samples/population in the column

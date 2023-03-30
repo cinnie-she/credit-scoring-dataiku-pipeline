@@ -26,7 +26,11 @@ bins_settings = {
             "column": "loan_grade",
             "type": "categorical",
             "info_val": 0.33,
-            "bins": "eqaul width",
+            "bins": {
+                        "algo": "eqaul width",
+                        "method": "width", # OR num_bins
+                        "value": 1, # represent width or num_bins
+                    },
         },
         {
             "column": "person_home_ownership",

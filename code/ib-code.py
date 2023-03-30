@@ -7,6 +7,8 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State, ALL, MATCH
 from dash.exceptions import PreventUpdate
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 # Get data from dataiku
 dataset = dataiku.Dataset("credit_risk_dataset_generated")
@@ -379,6 +381,158 @@ Interactive Binning Page
 """
 
 
+def get_list_of_total_count(var_df, unique_bin_name_list, good_bad_def):
+    total_count_list = list()
+    for unique_bin_name in unique_bin_name_list:
+        bin_df = var_df[var_df.iloc[:, 0] == unique_bin_name]
+        if (
+            good_bad_def == None
+        ):  # If-else statement put outside for loop would be better
+            total_count_list.append(len(bin_df))
+        else:
+            good_bad_def_dict = json.loads(good_bad_def)
+            if good_bad_def_dict["column"] == "loan_status":
+                good_count = good_bad_def_dict["weights"]["good"] * len(
+                    bin_df[bin_df["loan_status"] == 0]
+                )
+                bad_count = good_bad_def_dict["weights"]["bad"] * len(
+                    bin_df[bin_df["loan_status"] == 1]
+                )
+                total_count_list.append(good_count + bad_count)
+            else:
+                good_count = good_bad_def_dict["weights"]["good"] * len(
+                    bin_df.loc[
+                        (
+                            bin_df["paid_past_due"]
+                            < good_bad_def_dict["indeterminate"][0]
+                        )
+                        & (bin_df["loan_status"] == 0)
+                    ]
+                )
+                bad_count = good_bad_def_dict["weights"]["bad"] * (
+                    len(
+                        bin_df.loc[
+                            (
+                                bin_df["paid_past_due"]
+                                > good_bad_def_dict["indeterminate"][1]
+                            )
+                            & (bin_df["loan_status"] == 0)
+                        ]
+                    )
+                    + len(bin_df[bin_df["loan_status"] == 1])
+                )
+                total_count_list.append(good_count + bad_count)
+    return total_count_list
+
+
+def get_list_of_bad_count(var_df, unique_bin_name_list, good_bad_def):
+    bad_count_list = list()
+    for unique_bin_name in unique_bin_name_list:
+        bin_df = var_df[var_df.iloc[:, 0] == unique_bin_name]
+        if good_bad_def == None:  # use 'loan_status'
+            bad_count = len(bin_df[bin_df["loan_status"] == 1])
+            bad_count_list.append(bad_count)
+        else:
+            good_bad_def_dict = json.loads(good_bad_def)
+            if good_bad_def_dict["column"] == "loan_status":
+                bad_count = good_bad_def_dict["weights"]["bad"] * len(
+                    bin_df[bin_df["loan_status"] == 1]
+                )
+                bad_count_list.append(bad_count)
+            else:
+                bad_count = good_bad_def_dict["weights"]["bad"] * (
+                    len(
+                        bin_df.loc[
+                            (
+                                bin_df["paid_past_due"]
+                                > good_bad_def_dict["indeterminate"][1]
+                            )
+                            & (bin_df["loan_status"] == 0)
+                        ]
+                    )
+                    + len(bin_df[bin_df["loan_status"] == 1])
+                )
+                bad_count_list.append(bad_count)
+    return bad_count_list
+
+
+def generate_mixed_chart_fig(
+    var_df=df[[df.columns[4], "loan_status"]], clicked_bar_index=None, good_bad_def=None
+):
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+    good_marker_color = ["#8097e6"] * \
+        (len(var_df.iloc[:, 0].unique().tolist()))
+    if clicked_bar_index is not None:
+        good_marker_color[clicked_bar_index] = "#3961ee"
+
+    bad_marker_color = ["#8bd58b"] * (len(var_df.iloc[:, 0].unique().tolist()))
+    if clicked_bar_index is not None:
+        bad_marker_color[clicked_bar_index] = "#55a755"
+
+    unique_bins = sorted(var_df.iloc[:, 0].unique().tolist())
+    total_count_list = get_list_of_total_count(
+        var_df, unique_bins, good_bad_def)
+    bad_count_list = get_list_of_bad_count(
+        var_df,
+        unique_bins,
+        good_bad_def,
+    )
+
+    fig.add_trace(
+        go.Bar(
+            x=unique_bins,
+            y=total_count_list,
+            name="Good",
+            marker_color=good_marker_color,
+            offsetgroup=0,
+        ),
+        secondary_y=False,
+    )
+
+    fig.add_trace(
+        go.Bar(
+            x=unique_bins,
+            y=bad_count_list,  # TODO: need sum good & bad multplied by weights instead
+            name="Bad",
+            marker_color=bad_marker_color,
+            offsetgroup=0,
+        ),
+        secondary_y=False,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            mode="lines+markers",
+            x=unique_bins,
+            y=bad_count_list,
+            # y=get_list_of_woe(total_count_list, bad_count_list),
+            name="WOE",
+            marker_color="red",
+        ),
+        secondary_y=True,
+    )
+
+    fig.update_layout(
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01,
+        ),
+        margin=go.layout.Margin(l=0, r=0, b=0, t=0),
+    )
+
+    # Set x-axis title
+    fig.update_xaxes(title_text="Bins")
+
+    # Set y-axes titles
+    fig.update_yaxes(title_text="Bin Frequency", secondary_y=False)
+    fig.update_yaxes(title_text="WOE", secondary_y=True)
+
+    return fig
+
+
 """
 All
 """
@@ -387,7 +541,7 @@ All
 
 class BinningMachine:
     # A method for performing binning for the whole dataframe based on bins_settings, returns a binned_df
-    def perform_binning(self, bins_settings_list):
+    def perform_binning_on_whole_df(self, bins_settings_list):
         binned_df = df[df.columns.to_list()]
 
         for predictor_var_info in bins_settings_list:
@@ -499,11 +653,10 @@ class GoodBadCounter:
     def __get_population_bad(self, sample_bad_count, bad_weight):
         return sample_bad_count * bad_weight
 
+
 ###########################################################################
 ######################### Setup Page Layouts Here #########################
 ###########################################################################
-
-
 home_page_layout = html.Div(
     [
         NavBar(),
@@ -918,6 +1071,61 @@ interactive_binning_page_layout = html.Div([
         ]
     ),
     html.Div([], style={"width": "100%", "height": 25, "clear": "left"}),
+    html.Div(
+        [
+            html.Div(
+                [
+                    SectionHeading("III. Perform Interactive Binning"),
+                    dcc.Graph(
+                        figure=generate_mixed_chart_fig(),
+                        id="mixed_chart",
+                    ),
+                ],
+                style=white_panel_style,
+            ),
+            html.Div(
+                [
+                    # html.P("Split/Add bin: Click on the bar representing the bin you would like to split > choose the split point > click the 'split' button"),
+                    # html.P("Remove bin: Click on the bar representing the bin you would like to remove > click on 'Remove' button"),
+                    # html.P("Adjust bin boundaries: Click on the bar to be adjusted > adjust through slider > click on 'Adjust' button"),
+                    html.P("Bin Name: ", id="selected_bin_name"),
+                    html.P("Bin Index: ", id="selected_bin_index"),
+                    html.P("Bin Count: ", id="selected_bin_count"),
+                    html.Div(
+                        [],
+                        style={
+                            "width": "100%",
+                            "height": 0,
+                            "border": "1px solid black",
+                        },
+                    ),
+                    SectionHeading("Rename Selected Bin"),
+                    SaveButton(title="Rename"),
+                    SectionHeading("Split Selected Bin"),
+                    SaveButton(title="Split"),
+                    SectionHeading("Merge Selected Bins"),
+                    SaveButton(title="Merge"),
+                    SectionHeading("Remove Selected Bin(s)"),
+                    SaveButton(title="Remove"),
+                ],
+                style=purple_panel_style,
+            ),
+        ]
+    ),
+    html.Div([], style={"width": "100%", "height": 25, "clear": "left"}),
+    html.Div(
+        [
+            SectionHeading("IV. Monitor Bins Performance (Before)"),
+        ],
+        style=grey_full_width_panel_style,
+    ),
+    html.Div([], style={"width": "100%", "height": 25, "clear": "left"}),
+    html.Div(
+        [
+            SectionHeading("V. Monitor Bins Performance (After)"),
+        ],
+        style=green_full_width_panel_style,
+    ),
     SectionHeading(
         "VI. Save & Confirm Your Bins Settings for the Chosen Predictor Variable:",
         inline=True,
@@ -1711,6 +1919,28 @@ def update_auto_bin_input_section_UI(auto_bin_algo):
 
 """
 Interactive Binning Page:
+Change the automated binning algorithm description based on 
+the user-selected algorithm
+"""
+
+
+@app.callback(
+    dash.dependencies.Output("auto_bin_algo_description", "children"),
+    dash.dependencies.Input("auto_bin_algo_dropdown", "value"),
+)
+def update_auto_bin_algo_description(selected_algo):
+    if selected_algo == "none":
+        return "*Regards each unique value in the dataset as a bin"
+    elif selected_algo == "equal width":
+        return "*Divides the range of value with predetermined width OR into predetermined number of equal width bins"
+    elif selected_algo == "equal frequency":
+        return "*Divides the data into a predetermined number of bins containing approximately the same number of observations"
+    else:
+        return "*Upload the bins_settings.json downloaded before as the initial binning"
+
+
+"""
+Interactive Binning Page:
 Update the input area of equal width automated binning 
 algorithm based on the radio button value
 """
@@ -1793,7 +2023,7 @@ def bin_dataset(bins_settings_data):
     bins_settings_list = bins_settings_dict["variable"]
 
     binning_machine = BinningMachine()
-    binned_df = binning_machine.perform_binning(bins_settings_list)
+    binned_df = binning_machine.perform_binning_on_whole_df(bins_settings_list)
 
     return json.dumps(binned_df.to_dict())
 
