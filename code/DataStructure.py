@@ -1,6 +1,6 @@
 # Bins Settings data structure
 bins_settings = {
-    "variables": [
+    "variable": [
         {
             "column": "person_age",  # from Confirm Input Dataset Page
             "type": "numerical",  # from Confirm Input Dataset Page
