@@ -404,25 +404,45 @@ class StatCalculator:
             return (good_pct - bad_pct)*woe
 
 
+def get_list_of_total_count(var_to_bin, unique_bin_name_list, good_bad_def):
+    total_count_list = list()
+
+    for unique_bin_name in unique_bin_name_list:
+        if good_bad_def == None:  # If-else statement put outside for loop would be better
+            total_count_list.append(0)  # good bad def not defined, so no count
+        else:
+            bin_df = df[df[var_to_bin] == unique_bin_name]
+            # Get total good & bad
+            good_bad_counter = GoodBadCounter()
+            _, _, _, _, _, total_good_count, total_bad_count = good_bad_counter.get_statistics(
+                bin_df, good_bad_def)
+            total_count_list.append(total_good_count+total_bad_count)
+    return total_count_list
+
 df = pd.read_excel('credit_risk_dataset_generated.xlsx')
 print(len(df))
 
 var_to_bin = 'person_age'
-bins_settings_dict = {'variable': [{'column': 'person_age', 'type': 'numerical', 'infoVal': -1, 'bins': 'none'}, {'column': 'loan_status', 'type': 'categorical', 'infoVal': -1, 'bins': 'none'}, {'column': 'loan_percent_income', 'type': 'numerical', 'infoVal': -1, 'bins': 'none'}, {'column': 'cb_person_default_on_file', 'type': 'categorical', 'infoVal': -1, 'bins': 'none'}, {'column': 'cb_person_cred_hist_length', 'type': 'numerical', 'infoVal': -1, 'bins': 'none'}, {'column': 'paid_past_due', 'type': 'numerical', 'infoVal': -1, 'bins': 'none'}]}
-
-bins_settings_list = bins_settings_dict["variable"]
-col_bins_settings = None
-for var in bins_settings_list:
-    if var["column"] == var_to_bin:
-        col_bins_settings = var
-        break
-
+unique_bins = sorted(df[var_to_bin].unique().tolist())
 good_bad_def = {'bad': {'numerical': [], 'categorical': [{'column': 'loan_status', 'elements': [1]}], 'weight': 1}, 'indeterminate': {'numerical': [], 'categorical': []}, 'good': {'weight': 1}}
 
-stat_calculator = StatCalculator(df=df, col_bins_settings=col_bins_settings, good_bad_def=good_bad_def)
+print(get_list_of_total_count(var_to_bin=var_to_bin, unique_bin_name_list=unique_bins, good_bad_def=good_bad_def))
+
+# bins_settings_dict = {'variable': [{'column': 'person_age', 'type': 'numerical', 'infoVal': -1, 'bins': 'none'}, {'column': 'loan_status', 'type': 'categorical', 'infoVal': -1, 'bins': 'none'}, {'column': 'loan_percent_income', 'type': 'numerical', 'infoVal': -1, 'bins': 'none'}, {'column': 'cb_person_default_on_file', 'type': 'categorical', 'infoVal': -1, 'bins': 'none'}, {'column': 'cb_person_cred_hist_length', 'type': 'numerical', 'infoVal': -1, 'bins': 'none'}, {'column': 'paid_past_due', 'type': 'numerical', 'infoVal': -1, 'bins': 'none'}]}
+
+# bins_settings_list = bins_settings_dict["variable"]
+# col_bins_settings = None
+# for var in bins_settings_list:
+#     if var["column"] == var_to_bin:
+#         col_bins_settings = var
+#         break
+
+# good_bad_def = {'bad': {'numerical': [], 'categorical': [{'column': 'loan_status', 'elements': [1]}], 'weight': 1}, 'indeterminate': {'numerical': [], 'categorical': []}, 'good': {'weight': 1}}
+
+# stat_calculator = StatCalculator(df=df, col_bins_settings=col_bins_settings, good_bad_def=good_bad_def)
     
-stat_df = stat_calculator.compute_summary_stat_table()
-print(stat_df)
+# stat_df = stat_calculator.compute_summary_stat_table()
+# print(stat_df)
 
 # @app.callback(
 #     [

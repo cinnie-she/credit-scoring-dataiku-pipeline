@@ -381,100 +381,55 @@ Interactive Binning Page
 """
 
 
-def get_list_of_total_count(var_df, unique_bin_name_list, good_bad_def):
+def get_list_of_total_count(var_to_bin, unique_bin_name_list, good_bad_def):
     total_count_list = list()
+
     for unique_bin_name in unique_bin_name_list:
-        bin_df = var_df[var_df.iloc[:, 0] == unique_bin_name]
-        if (
-            good_bad_def == None
-        ):  # If-else statement put outside for loop would be better
-            total_count_list.append(len(bin_df))
+        if good_bad_def == None:  # If-else statement put outside for loop would be better
+            total_count_list.append(0)  # good bad def not defined, so no count
         else:
-            good_bad_def_dict = json.loads(good_bad_def)
-            if good_bad_def_dict["column"] == "loan_status":
-                good_count = good_bad_def_dict["weights"]["good"] * len(
-                    bin_df[bin_df["loan_status"] == 0]
-                )
-                bad_count = good_bad_def_dict["weights"]["bad"] * len(
-                    bin_df[bin_df["loan_status"] == 1]
-                )
-                total_count_list.append(good_count + bad_count)
-            else:
-                good_count = good_bad_def_dict["weights"]["good"] * len(
-                    bin_df.loc[
-                        (
-                            bin_df["paid_past_due"]
-                            < good_bad_def_dict["indeterminate"][0]
-                        )
-                        & (bin_df["loan_status"] == 0)
-                    ]
-                )
-                bad_count = good_bad_def_dict["weights"]["bad"] * (
-                    len(
-                        bin_df.loc[
-                            (
-                                bin_df["paid_past_due"]
-                                > good_bad_def_dict["indeterminate"][1]
-                            )
-                            & (bin_df["loan_status"] == 0)
-                        ]
-                    )
-                    + len(bin_df[bin_df["loan_status"] == 1])
-                )
-                total_count_list.append(good_count + bad_count)
+            bin_df = df[df[var_to_bin] == unique_bin_name]
+            # Get total good & bad
+            good_bad_counter = GoodBadCounter()
+            _, _, _, _, _, total_good_count, total_bad_count = good_bad_counter.get_statistics(
+                bin_df, good_bad_def)
+            total_count_list.append(total_good_count+total_bad_count)
     return total_count_list
 
 
-def get_list_of_bad_count(var_df, unique_bin_name_list, good_bad_def):
+def get_list_of_bad_count(var_to_bin, unique_bin_name_list, good_bad_def):
     bad_count_list = list()
     for unique_bin_name in unique_bin_name_list:
-        bin_df = var_df[var_df.iloc[:, 0] == unique_bin_name]
-        if good_bad_def == None:  # use 'loan_status'
-            bad_count = len(bin_df[bin_df["loan_status"] == 1])
-            bad_count_list.append(bad_count)
+        if good_bad_def == None:  # good bad def not defined, so no count
+            bad_count_list.append(0)
         else:
-            good_bad_def_dict = json.loads(good_bad_def)
-            if good_bad_def_dict["column"] == "loan_status":
-                bad_count = good_bad_def_dict["weights"]["bad"] * len(
-                    bin_df[bin_df["loan_status"] == 1]
-                )
-                bad_count_list.append(bad_count)
-            else:
-                bad_count = good_bad_def_dict["weights"]["bad"] * (
-                    len(
-                        bin_df.loc[
-                            (
-                                bin_df["paid_past_due"]
-                                > good_bad_def_dict["indeterminate"][1]
-                            )
-                            & (bin_df["loan_status"] == 0)
-                        ]
-                    )
-                    + len(bin_df[bin_df["loan_status"] == 1])
-                )
-                bad_count_list.append(bad_count)
+            bin_df = df[df[var_to_bin] == unique_bin_name]
+            good_bad_counter = GoodBadCounter()
+            _, _, _, _, _, _, total_bad_count = good_bad_counter.get_statistics(
+                bin_df, good_bad_def)
+            bad_count_list.append(total_bad_count)
     return bad_count_list
 
 
 def generate_mixed_chart_fig(
-    var_df=df[[df.columns[4], "loan_status"]], clicked_bar_index=None, good_bad_def=None
+    var_to_bin=df.columns[0], clicked_bar_index=None, good_bad_def=None
 ):
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     good_marker_color = ["#8097e6"] * \
-        (len(var_df.iloc[:, 0].unique().tolist()))
+        (len(df[var_to_bin].unique().tolist()))
     if clicked_bar_index is not None:
         good_marker_color[clicked_bar_index] = "#3961ee"
 
-    bad_marker_color = ["#8bd58b"] * (len(var_df.iloc[:, 0].unique().tolist()))
+    bad_marker_color = ["#8bd58b"] * (len(df[var_to_bin].unique().tolist()))
     if clicked_bar_index is not None:
         bad_marker_color[clicked_bar_index] = "#55a755"
 
-    unique_bins = sorted(var_df.iloc[:, 0].unique().tolist())
+    unique_bins = sorted(df[var_to_bin].unique().tolist())
     total_count_list = get_list_of_total_count(
-        var_df, unique_bins, good_bad_def)
+        var_to_bin, unique_bins, good_bad_def)
     bad_count_list = get_list_of_bad_count(
-        var_df,
+        var_to_bin,
         unique_bins,
         good_bad_def,
     )
@@ -2325,6 +2280,23 @@ def update_equal_freq_input_section(method):
         return {}, {"display": "none"}
     else:  # method == "number of bins"
         return {"display": "none"}, {}
+
+
+"""
+Interactive Binning Page:
+Update mixed chart when user changes the variable 
+to be binned
+"""
+
+
+@app.callback(
+    Output("mixed_chart", "figure"),
+    Input("predictor_var_ib_dropdown", "value"),
+    State("good_bad_def", "data"),
+)
+def update_mixed_chart_on_var_to_bin_change(var_to_bin, good_bad_def_data):
+    good_bad_def = json.loads(good_bad_def_data)
+    return generate_mixed_chart_fig(var_to_bin=var_to_bin, good_bad_def=good_bad_def)
 
 
 """
