@@ -25,7 +25,7 @@ class BinningMachine:
     # A method for performing binning for a single column based on bins_settings, returns a pd.Series
     def perform_binning_on_col(self, col_df, bin_method):
         if bin_method["bins"] == "none":
-            return pd.Series(col_df) # no binning
+            return col_df.iloc[:, 0] # no binning
         elif isinstance(bin_method["bins"], dict):  # auto binning
             if bin_method["bins"]["algo"] == "equal width":
                 if bin_method["bins"]["method"] == "width":
@@ -245,6 +245,10 @@ class StatCalculator:
         # format df
         for col in ['Odds','Info_Odds','WOE','MC']:
             var_summary_df[col] = var_summary_df[col].apply(lambda x: 0 if (x != None and abs(x) < 0.001) else x)
+            var_summary_df[col] = var_summary_df[col].apply(lambda x: round(x, 4))
+        
+        for col in ['Good%', 'Bad%', 'Total%']:
+            var_summary_df[col] = var_summary_df[col].apply(lambda x: round(x, 2))
             
         return var_summary_df
     
