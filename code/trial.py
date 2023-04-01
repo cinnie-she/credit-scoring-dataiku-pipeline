@@ -324,18 +324,18 @@ class StatCalculator:
         # Compute bin total count
         total = good + bad
         # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., good%)
-        good_pct = self.__compute_pct__(good, total_good)
+        good_pct = self.compute_pct(good, total_good)
         # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., bad%)
-        bad_pct = self.__compute_pct__(bad, total_bad)
+        bad_pct = self.compute_pct(bad, total_bad)
         # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., total%)
-        total_pct = self.__compute_pct__(total, total_good + total_bad)
+        total_pct = self.compute_pct(total, total_good + total_bad)
         # Call compute_odds(good_pct : Float, bad_pct : Float) and save the returned value
-        odds = self.__compute_odds__(good, bad)
-        info_odds = self.__compute_info_odds__(good_pct, bad_pct)
+        odds = self.compute_odds(good, bad)
+        info_odds = self.compute_info_odds(good_pct, bad_pct)
         # Call compute_woe(df : pd.DataFrame) using df and save the returned value
-        woe = self.__compute_woe__(info_odds)
+        woe = self.compute_woe(info_odds)
         # Call compute_info_val(good_pct : Float, bad_pct : Float, woe : Float) and save the returned value
-        mc = self.__compute_mc__(good_pct, bad_pct, woe)
+        mc = self.compute_mc(good_pct, bad_pct, woe)
 
         # Append all statistics to the bin_stats_list in order
         bin_stats_row = [bin_name, good, bad, odds, total, good_pct*100, bad_pct*100, total_pct*100, info_odds, woe, mc]
@@ -355,13 +355,13 @@ class StatCalculator:
         # Call compute_total(df : pd.DataFrame) using df and save the returned value
         total = good + bad
         # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., good%)
-        good_pct = self.__compute_pct__(good, total_good)
+        good_pct = self.compute_pct(good, total_good)
         # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., bad%)
-        bad_pct = self.__compute_pct__(bad, total_bad)
+        bad_pct = self.compute_pct(bad, total_bad)
         # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., total%)
         total_pct = 1
         # Call compute_odds(good_pct : Float, bad_pct : Float) and save the returned value
-        odds = self.__compute_odds__(good, bad)
+        odds = self.compute_odds(good, bad)
         info_odds = None
         # Empty woe
         woe = None
@@ -373,31 +373,36 @@ class StatCalculator:
         # Return list
         return var_stats_list
     
-    def __compute_pct__(self, value, total_value):
+    @staticmethod
+    def compute_pct(value, total_value):
         if total_value == 0:
             return None
         else:
             return (value/total_value)
-        
-    def __compute_odds__(self, good, bad):
+    
+    @staticmethod    
+    def compute_odds(good, bad):
         if bad == 0:
             return None
         else:
             return (good/bad)
-        
-    def __compute_info_odds__(self, good_pct, bad_pct):
+    
+    @staticmethod    
+    def compute_info_odds(good_pct, bad_pct):
         if bad_pct == 0:
             return None
         else:
             return (good_pct/bad_pct)
-        
-    def __compute_woe__(self, info_odds):
+      
+    @staticmethod  
+    def compute_woe(info_odds):
         if info_odds == None or info_odds == 0:
             return None
         else:
             return np.log(info_odds)
 
-    def __compute_mc__(self, good_pct, bad_pct, woe):
+    @staticmethod
+    def compute_mc(good_pct, bad_pct, woe):
         if woe == None:
             return 0
         else:
@@ -419,6 +424,23 @@ def get_list_of_total_count(var_to_bin, unique_bin_name_list, good_bad_def):
             total_count_list.append(total_good_count+total_bad_count)
     return total_count_list
 
+def get_list_of_woe(var_to_bin, unique_bin_name_list, good_bad_def):
+    woe_list = list()
+    for unique_bin_name in unique_bin_name_list:
+        if good_bad_def == None:
+            woe_list.append(0)
+        else:
+            bin_df = df[df[var_to_bin] == unique_bin_name]
+            good_bad_counter = GoodBadCounter()
+            _, _, _, _, _, total_good, total_bad = good_bad_counter.get_statistics(df, good_bad_def)
+            _, _, _, _, _, good, bad = good_bad_counter.get_statistics(bin_df, good_bad_def)
+            good_pct = StatCalculator.compute_pct(good, total_good)
+            bad_pct = StatCalculator.compute_pct(bad, total_bad)
+            info_odds = StatCalculator.compute_info_odds(good_pct, bad_pct)
+            woe = StatCalculator.compute_woe(info_odds)
+            woe_list.append(woe)
+    return woe_list
+
 df = pd.read_excel('credit_risk_dataset_generated.xlsx')
 print(len(df))
 
@@ -426,7 +448,7 @@ var_to_bin = 'person_age'
 unique_bins = sorted(df[var_to_bin].unique().tolist())
 good_bad_def = {'bad': {'numerical': [], 'categorical': [{'column': 'loan_status', 'elements': [1]}], 'weight': 1}, 'indeterminate': {'numerical': [], 'categorical': []}, 'good': {'weight': 1}}
 
-print(get_list_of_total_count(var_to_bin=var_to_bin, unique_bin_name_list=unique_bins, good_bad_def=good_bad_def))
+print(get_list_of_woe(var_to_bin=var_to_bin, unique_bin_name_list=unique_bins, good_bad_def=good_bad_def))
 
 # bins_settings_dict = {'variable': [{'column': 'person_age', 'type': 'numerical', 'infoVal': -1, 'bins': 'none'}, {'column': 'loan_status', 'type': 'categorical', 'infoVal': -1, 'bins': 'none'}, {'column': 'loan_percent_income', 'type': 'numerical', 'infoVal': -1, 'bins': 'none'}, {'column': 'cb_person_default_on_file', 'type': 'categorical', 'infoVal': -1, 'bins': 'none'}, {'column': 'cb_person_cred_hist_length', 'type': 'numerical', 'infoVal': -1, 'bins': 'none'}, {'column': 'paid_past_due', 'type': 'numerical', 'infoVal': -1, 'bins': 'none'}]}
 
