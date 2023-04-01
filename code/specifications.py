@@ -55,7 +55,7 @@
 
 """
 Interactive Binning features:
-1. Split bin
+1. Split bin (and Change Bin Boundaries)
     - numerical
         -> The user clicks on the bar representing the bin
         -> The interface shows the list of ranges of the bin

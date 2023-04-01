@@ -907,10 +907,6 @@ interactive_binning_page_layout = html.Div([
                                 "label": "Equal Frequency",
                                 "value": "equal frequency",
                             },
-                            {
-                                "label": "Import Settings",
-                                "value": "import settings",
-                            },
                         ],
                         value="none",
                         clearable=False,
@@ -1042,21 +1038,6 @@ interactive_binning_page_layout = html.Div([
                             ),
                         ],
                         id="equal_frequency_input_section",
-                        style={"display": "none"},
-                    ),
-                    html.Div(
-                        children=[
-                            html.Div(
-                                [], style={
-                                    "display": "inline", "marginLeft": 5}
-                            ),
-                            html.P("Upload a file: ", style={
-                                "display": "inline"}),
-                            SaveButton(
-                                "Upload", marginLeft=10, backgroundColor="#8097e6"
-                            ),
-                        ],
-                        id="import_settings_input_section",
                         style={"display": "none"},
                     ),
                     html.Div([], style={"marginBottom": 25}),
@@ -1902,19 +1883,16 @@ dropdown value
     [
         Output("equal_width_input_section", "style"),
         Output("equal_frequency_input_section", "style"),
-        Output("import_settings_input_section", "style"),
     ],
     Input("auto_bin_algo_dropdown", "value"),
 )
 def update_auto_bin_input_section_UI(auto_bin_algo):
     if auto_bin_algo == "none":
-        return {"display": "none"}, {"display": "none"}, {"display": "none"}
+        return {"display": "none"}, {"display": "none"}
     elif auto_bin_algo == "equal width":
-        return {}, {"display": "none"}, {"display": "none"}
-    elif auto_bin_algo == "equal frequency":
-        return {"display": "none"}, {}, {"display": "none"}
-    else:
-        return {"display": "none"}, {"display": "none"}, {}
+        return {}, {"display": "none"}
+    else:  # equal frequency
+        return {"display": "none"}, {}
 
 
 """
@@ -1933,10 +1911,8 @@ def update_auto_bin_algo_description(selected_algo):
         return "*Regards each unique value in the dataset as a bin"
     elif selected_algo == "equal width":
         return "*Divides the range of value with predetermined width OR into predetermined number of equal width bins"
-    elif selected_algo == "equal frequency":
+    else:  # equal frequency
         return "*Divides the data into a predetermined number of bins containing approximately the same number of observations"
-    else:
-        return "*Upload the bins_settings.json downloaded before as the initial binning"
 
 
 """
