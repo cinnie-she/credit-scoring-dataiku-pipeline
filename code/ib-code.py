@@ -295,7 +295,10 @@ class GoodBadDefValidator:
     def validate_numerical_bounds(self, numeric_info_list):
         for numeric_info in numeric_info_list:
             a_range = [numeric_info[1], numeric_info[2]]
-            if a_range[1] <= a_range[0]:
+            try:
+                if a_range[1] <= a_range[0]:
+                    return False
+            except:
                 return False
         return True
 
@@ -555,11 +558,12 @@ class BinningMachine:
     def __perform_eq_width_binning_by_width__(self, col_df, dtype, width):
         # Check if the width is valid
         if width <= 0:
-            raise ValueError("Width should be a positive number.")
+            # Width should be a positive number.
+            raise PreventUpdate
         col_name = df.columns[0]
         if dtype == "categorical" and width > col_df[col_name].nunique():
-            raise ValueError(
-                "For categorical variable, width should not be greater than number of unique values in the column.")
+            # For categorical variable, width should not be greater than number of unique values in the column.
+            raise PreventUpdate
 
         # Bin the column
         if dtype == "numerical":
@@ -609,11 +613,12 @@ class BinningMachine:
     def __perform_eq_width_binning_by_num_bins__(self, col_df, dtype, num_bins):
         # Check if the width is valid
         if num_bins <= 0 or not isinstance(num_bins, int):
-            raise ValueError("Number of bins should be a positive integer.")
+            # Number of bins should be a positive integer.
+            raise PreventUpdate
         col_name = df.columns[0]
         if dtype == "categorical" and num_bins > col_df[col_name].nunique():
-            raise ValueError(
-                "For categorical variable, number of bins should not be greater than number of unique values in the column.")
+            # For categorical variable, number of bins should not be greater than number of unique values in the column.
+            raise PreventUpdate
 
         # Bin the column
         if dtype == "numerical":
@@ -667,7 +672,8 @@ class BinningMachine:
     def __perform_eq_freq_binning_by_freq__(self, col_df, dtype, freq):
         # Check if the width is valid
         if freq <= 0 or not isinstance(freq, int):
-            raise ValueError("Frequency should be a positive integer.")
+            # Frequency should be a positive integer.
+            raise PreventUpdate
         col_name = df.columns[0]
 
         # Bin the column
@@ -770,11 +776,11 @@ class StatCalculator:
             var_summary_df[col] = var_summary_df[col].apply(
                 lambda x: 0 if (x != None and abs(x) < 0.001) else x)
             var_summary_df[col] = var_summary_df[col].apply(
-                lambda x: round(x, 4))
+                lambda x: round(x, 4) if (x != None) else x)
 
         for col in ['Good%', 'Bad%', 'Total%']:
             var_summary_df[col] = var_summary_df[col].apply(
-                lambda x: round(x, 2))
+                lambda x: round(x, 4) if (x != None) else x)
 
         return var_summary_df
 
@@ -1343,7 +1349,7 @@ interactive_binning_page_layout = html.Div([
                         style={"display": "none"},
                     ),
                     html.Div([], style={"marginBottom": 25}),
-                    SaveButton("Refresh"),
+                    SaveButton("Refresh", id="auto_bin_refresh_button"),
                     html.P(
                         style={"marginTop": 20},
                         id="auto_bin_algo_description",
@@ -1619,7 +1625,7 @@ def edit_bad_numeric_def_list(add_clicks, remove_clicks_list, numeric_col_data, 
                 ),
                 dcc.Input(
                     type="number",
-                    min=0,
+                    # min=0,
                     value=lower,
                     id={"index": idx, "type": "bad_numerical_lower"},
                     style={"width": 150, "float": "left", "marginLeft": 20},
@@ -1633,7 +1639,7 @@ def edit_bad_numeric_def_list(add_clicks, remove_clicks_list, numeric_col_data, 
                 ),
                 dcc.Input(
                     type="number",
-                    min=0,
+                    # min=0,
                     value=upper,
                     id={"index": idx, "type": "bad_numerical_upper"},
                     style={"width": 150, "float": "left", "marginLeft": 10},
@@ -1958,7 +1964,7 @@ def save_good_bad_def_to_storage(n_clicks, bad_numerical_column_list, bad_numeri
 
     # Validate if weights are numeric & non-negative
     if bad_weight == None or good_weight == None:
-        raisePreventUpdate
+        raise PreventUpdate
 
     # Validate numerical boundaries of user input, if invalid, return original definition
     bad_numeric_info_list = tuple(zip(

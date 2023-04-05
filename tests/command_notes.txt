@@ -1,0 +1,8 @@
+To get unit test result:
+simply run 'pytest' in terminal
+
+To get coverage result:
+run 'pytest --cov' in terminal
+
+To get coverage result with missing line number:
+run 'pytest --cov --cov-report=term-missing' in terminal

@@ -453,7 +453,10 @@ class GoodBadDefValidator:
     def validate_numerical_bounds(self, numeric_info_list):
         for numeric_info in numeric_info_list:
             a_range = [numeric_info[1], numeric_info[2]]
-            if a_range[1] <= a_range[0]:
+            try:
+                if a_range[1] <= a_range[0]:
+                    return False
+            except:
                 return False
         return True
 

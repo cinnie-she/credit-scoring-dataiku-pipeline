@@ -1,0 +1,21 @@
+TODO:
+
+1. Unit Testing
+    - GoodBadDefDecoder [completed]
+    - GoodBadDefValidator [completed]
+    - GoodBadCounter
+    - BinningMachine
+    - StatCalculator
+    - InteractiveBinningMachine (TBC)
+
+2. Finish Auto Bin
+
+3. Finish Interactive Binning
+
+4. Finish Output bins_settings
+
+5. Finish Binning in Flow
+
+6. Finish Compute Statistical Tables in Flow
+
+7. Finish Credit Scoring Model
