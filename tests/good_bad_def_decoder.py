@@ -1,6 +1,6 @@
-# A class for obtaining user inputs from the section UI info
+# A class for merging overlapping good bad definition ranges/elements for the same type (bad or indeterminate)
 class GoodBadDefDecoder:    
-    # A method to translate section UI info to a list of numerical definition
+    # A method to translate numerical definition ranges defined by user (with/without overlapping) info to a list of numerical definition (no overlapping)
     def get_numeric_def_list_from_section(self, numeric_info_list):
         numeric_list = list()  # initialization
 
@@ -49,8 +49,8 @@ class GoodBadDefDecoder:
                 single_def_dict["ranges"] = [a_range]
                 numeric_list.append(single_def_dict)
         return numeric_list
-    # A method to translate section UI info to a list of categorical definition
-
+    
+    # # A method to translate categorical definition elements defined by user (with/without overlapping) info to a list of categorical definition (no overlapping)
     def get_categorical_def_list_from_section(self, categoric_info_list):
         categoric_list = list()  # initialization
         for categoric_info in categoric_info_list:
