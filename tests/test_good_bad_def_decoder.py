@@ -133,3 +133,29 @@ def test_get_categorical_def_list_from_section(categoric_info_list, expected):
     decoded_categoric_list = GoodBadDefDecoder.get_categorical_def_list_from_section(categoric_info_list)
     print(decoded_categoric_list)
     assert decoded_categoric_list == expected
+  
+
+"""
+Test Scenario 3
+Sort numerical definition ranges in ascending order
+
+Test sort in ascending order e.g., [[20, 30], [10, 15], [3, 5], [60, 80]] to [[3, 5], [10, 15], [20, 30], [60, 80]].
+
+------------------------
+Test Cases Design
+------------------------
+(1) Empty list
+(2) Only single range in the list
+(3) Typical case
+"""  
+
+sort_numerical_def_ranges_test_data = [
+    ([], []), # 1
+    ([[10, 20]], [[10, 20]]), # 2
+    ([[20, 30], [10, 15], [3, 5], [60, 80]], [[3, 5], [10, 15], [20, 30], [60, 80]]), # 3
+]
+    
+@pytest.mark.parametrize("numeric_def_r,expected", sort_numerical_def_ranges_test_data)
+def test_sort_numerical_def_ranges(numeric_def_r, expected):
+    result = GoodBadDefDecoder.sort_numerical_def_ranges(numeric_def_r)
+    assert result == expected

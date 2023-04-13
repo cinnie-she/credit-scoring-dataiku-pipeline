@@ -1,3 +1,7 @@
+import pandas as pd
+from binning_machine import BinningMachine
+from good_bad_counter import GoodBadCounter
+
 # A class to calculate statistical values for displaying the mixed chart & statistical tables
 class StatCalculator:
     def __init__(self, df, col_bins_settings, good_bad_def) -> None:
@@ -16,9 +20,7 @@ class StatCalculator:
         col_df = self.df.loc[:, [col_to_bin]]  # get a single column
 
         # perform binning
-        binning_machine = BinningMachine()
-        binned_series = binning_machine.perform_binning_on_col(
-            col_df, self.col_bins_settings)
+        binned_series = BinningMachine.perform_binning_on_col(col_df, self.col_bins_settings)
         self.df.insert(loc=0, column=col_to_bin+"_binned", value=binned_series)
 
         """
@@ -34,9 +36,7 @@ class StatCalculator:
         bin_name_list = self.df.iloc[:, 0].unique().tolist()
 
         # Get total good & bad
-        good_bad_counter = GoodBadCounter()
-        _, _, _, _, _, total_good_count, total_bad_count = good_bad_counter.get_statistics(
-            self.df, self.good_bad_def)
+        _, _, _, _, _, total_good_count, total_bad_count = GoodBadCounter.get_statistics(self.df, self.good_bad_def)
 
         # For each bin_name in the list (i.e. loop nbin times)
         for bin_name in bin_name_list:
@@ -82,9 +82,7 @@ class StatCalculator:
         bin_stats_list = list()
 
         # Compute bin good & bad count
-        good_bad_counter = GoodBadCounter()
-        _, _, _, _, _, good, bad = good_bad_counter.get_statistics(
-            bin_df, self.good_bad_def)
+        _, _, _, _, _, good, bad = GoodBadCounter.get_statistics(bin_df, self.good_bad_def)
         # Compute bin total count
         total = good + bad
         # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., good%)
