@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from binning_machine import BinningMachine
 from good_bad_counter import GoodBadCounter
 
@@ -160,7 +161,7 @@ class StatCalculator:
 
     @staticmethod
     def compute_woe(info_odds):
-        if info_odds == None or info_odds == 0:
+        if info_odds == None or info_odds <= 0:
             return None
         else:
             return np.log(info_odds)
