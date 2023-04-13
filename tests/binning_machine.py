@@ -1,186 +1,136 @@
-# A class for performing binning based on bins settings & good bad definition
+import pandas as pd
+import numpy as np
+from decimal import Decimal
+
+# A class for performing binning based on bins settings
 class BinningMachine:
-    # A method for performing binning for the whole dataframe based on bins_settings, returns a binned_df
-    def perform_binning_on_whole_df(self, bins_settings_list):
-        binned_df = df[df.columns.to_list()]
+    # Perform equal width binning based on a specified width (for numerical column only)
+    @staticmethod
+    def perform_eq_width_binning_by_width(col_df, width):
+        if len(col_df) == 0:
+            return -1
+        if not pd.api.types.is_numeric_dtype(col_df.iloc[:, 0]): # Cannot be categorical type
+            return -1
+        if not (isinstance(width, int) or isinstance(width, float)): # width cannot be non-numeric
+            return -1
+        
+        min = col_df.min()
+        max = col_df.max()
+        num_bins = int(np.ceil((max - min) / width)) + 1
+        
+        bin_edges = list()
+        for i in range(num_bins):
+            bin_edges.append(float(Decimal(str(float(min))) + Decimal(str(width)) * i))
+        
+        bin_ranges = [[edge, float(Decimal(str(edge))+Decimal(str(width)))] for edge in bin_edges]
+        
+        binned_result = list()
+        for _, row in col_df.iterrows():
+            val = row.iloc[0]
+            for bin_range in bin_ranges:
+                if val >= bin_range[0] and val < bin_range[1]:
+                    binned_result.append(f"[{bin_range[0]}, {bin_range[1]})")
+                    break
+        print(bin_ranges)
+        print(binned_result)
+        return pd.Series(binned_result)
+    
+    # A method to perform equal width binning based on a specified number of bins
+    @staticmethod
+    def perform_eq_width_binning_by_num_bins(col_df, num_bins):
+        if len(col_df) == 0:
+            return -1
+        if not pd.api.types.is_numeric_dtype(col_df.iloc[:, 0]): # Cannot be categorical type
+            return -1
+        if not isinstance(num_bins, int):
+            return -1
+        
+        min = col_df.min()
+        max = col_df.max()
+        width = (float(max) - float(min)) / num_bins
+        add_to_last_width = Decimal(str(width * 0.01)) # to include max value
+        
+        bin_edges = list()
+        for i in range(num_bins):
+            bin_edges.append(float(Decimal(str(float(min))) + Decimal(str(width)) * i))
+        
+        bin_ranges = [[edge, float(Decimal(str(edge))+Decimal(str(width)))] for edge in bin_edges]
+        bin_ranges[len(bin_ranges)-1][1] = float(Decimal(str(add_to_last_width)) + Decimal(str(bin_ranges[len(bin_ranges)-1][1])))
+        
+        binned_result = list()
+        for _, row in col_df.iterrows():
+            val = row.iloc[0]
+            for bin_range in bin_ranges:
+                if val >= bin_range[0] and val < bin_range[1]:
+                    binned_result.append(f"[{bin_range[0]}, {bin_range[1]})")
+                    break
+        print(bin_ranges)
+        print(binned_result)
+        return pd.Series(binned_result)
+    
+    # A method to perform equal frequency binning based on a specified frequency
+    # @staticmethod
+    # def perform_eq_freq_binning_by_freq(col_df, freq):
+    #     if len(col_df) == 0:
+    #         return -1
+    #     if not pd.api.types.is_numeric_dtype(col_df.iloc[:, 0]): # Cannot be categorical type
+    #         return -1
+    #     if not isinstance(freq, int) or freq <= 0 or freq > len(col_df):
+    #         return -1
+        
+        
+    #     num_bins = int(np.ceil(len(col_df)/freq))
+    #     print(num_bins)
+    #     if num_bins == 1: # i.e., no binnings
+    #         print(type(col_df.iloc[:, 0]))
+    #         return col_df.iloc[:, 0]
+        
+    #     # bin the col_df
+    #     interval_li = pd.qcut(col_df.iloc[:, 0], num_bins, duplicates="drop").to_list()
+    #     print(interval_li)
+        
+    #     # convert to the format we want
+    #     binned_result = list()
+    #     for idx in range(len(interval_li)):
+    #         binned_result.append(f"[{interval_li[idx].left}, {interval_li[idx].right})")
+        
+    #     print(binned_result)
+    #     return pd.Series(binned_result)
+    
+# df = pd.DataFrame([7,0, 3, 5, 101, 11, 18, 8, 9])
+# df = pd.DataFrame([1, 1])
+# df = pd.DataFrame([1,1,1,1,1,1,1])
+# print(BinningMachine.perform_eq_freq_binning_by_freq(df, 2))
 
-        for predictor_var_info in bins_settings_list:
-            new_col_name = predictor_var_info["column"] + "_binned"
-            if predictor_var_info["bins"] == "none":
-                binned_df[new_col_name] = df[predictor_var_info["column"]]
-            elif predictor_var_info["bins"] == "equal width":
-                pass
-            elif predictor_var_info["bins"] == "equal frequency":
-                pass
-            else:
-                pass
 
-        return binned_df
 
-    # A method for performing binning for a single column based on bins_settings, returns a pd.Series
-    def perform_binning_on_col(self, col_df, bin_method):
-        if bin_method["bins"] == "none":
-            return col_df.iloc[:, 0]  # no binning
-        elif isinstance(bin_method["bins"], dict):  # auto binning
-            if bin_method["bins"]["algo"] == "equal width":
-                if bin_method["bins"]["method"] == "width":
-                    return self.__perform_eq_width_binning_by_width__(col_df, bin_method["type"], bin_method["bins"]["value"])
-                else:  # by num of bins
-                    return self.__perform_eq_width_binning_by_num_bins__(col_df, bin_method["type"], bin_method["bins"]["value"])
-            else:  # equal frequency
-                if bin_method["bins"]["method"] == "freq":
-                    return self.__perform_eq_freq_binning_by_freq__(col_df, bin_method["type"], bin_method["bins"]["value"])
-                else:  # by num of bins
-                    return self.__perform_eq_freq_binning_by_num_bins__(col_df, bin_method["type"], bin_method["bins"]["value"])
-        else:  # custom binning
-            return self.__perform_custom_binning__(col_df, bin_method["type"], bin_method["bins"])
 
-    # A method for performing equal width binning with a specified width, returns a pd.Series
-    def __perform_eq_width_binning_by_width__(self, col_df, dtype, width):
-        # Check if the width is valid
-        if width <= 0:
-            # Width should be a positive number.
-            raise PreventUpdate
-        col_name = df.columns[0]
-        if dtype == "categorical" and width > col_df[col_name].nunique():
-            # For categorical variable, width should not be greater than number of unique values in the column.
-            raise PreventUpdate
 
-        # Bin the column
-        if dtype == "numerical":
-            min_value = col_df[col_name].min()
-            max_value = col_df[col_name].max()
-            num_bins = int(np.ceil((max_value - min_value) / width))
-            return pd.cut(col_df[col_name], bins=num_bins, right=False)
-        else:  # categorical
-            num_unique_value = col_df[col_name].nunique()
-            bins_num_elements = list()
 
-            num_bins = int(np.ceil(num_unique_value/width))
 
-            for i in range(num_bins-1):
-                bins_num_elements.append(width)
-            bins_num_elements.append(num_unique_value - (num_bins-1) * width)
 
-            unique_values = col_df[col_name].unique().tolist()
-            bin_defs = list()
-            bin_names = list()
-
-            for num_elements in bins_num_elements:
-                def_list = list()
-                bin_name = ""
-
-                def_list.append(unique_values[0])
-                bin_name += str(unique_values[0])
-                unique_values.pop(0)
-                for i in range(num_elements-1):
-                    def_list.append(unique_values[0])
-                    bin_name += (", " + str(unique_values[0]))
-                    unique_values.pop(0)
-
-                bin_defs.append(def_list)
-                bin_names.append(bin_name)
-
-            assigned_bin = list()
-            for _, row in col_df.iterrows():
-                for i in range(len(bin_defs)):
-                    if row[0] in bin_defs[i]:
-                        assigned_bin.append(bin_names[i])
-                        break
-
-            return pd.Series(assigned_bin)
-
-    # A method for performing equal width binning with a specified number of fixed-width bins, returns a pd.Series
-    def __perform_eq_width_binning_by_num_bins__(self, col_df, dtype, num_bins):
-        # Check if the width is valid
-        if num_bins <= 0 or not isinstance(num_bins, int):
-            # Number of bins should be a positive integer.
-            raise PreventUpdate
-        col_name = df.columns[0]
-        if dtype == "categorical" and num_bins > col_df[col_name].nunique():
-            # For categorical variable, number of bins should not be greater than number of unique values in the column.
-            raise PreventUpdate
-
-        # Bin the column
-        if dtype == "numerical":
-            return pd.cut(col_df[col_name], bins=num_bins, right=False)
-        else:  # categorical
-            num_unique_value = col_df[col_name].nunique()
-            bins_num_elements = list()  # list storing the number of elements in each bin
-
-            if num_bins % num_unique_value == 0:
-                for i in range(num_unique_value):
-                    bins_num_elements.append(num_bins // num_unique_value)
-            else:
-                zp = num_bins - (num_unique_value % num_bins)
-                pp = num_unique_value//num_bins
-                for i in range(num_bins):
-                    if (i >= zp):
-                        bins_num_elements.append(pp+1)
-                    else:
-                        bins_num_elements.append(pp)
-            # print(bins_num_elements)
-
-            unique_values = col_df[col_name].unique().tolist()
-            bin_defs = list()
-            bin_names = list()
-
-            for num_elements in bins_num_elements:
-                def_list = list()
-                bin_name = ""
-
-                def_list.append(unique_values[0])
-                bin_name += str(unique_values[0])
-                unique_values.pop(0)
-                for i in range(num_elements-1):
-                    def_list.append(unique_values[0])
-                    bin_name += (", " + str(unique_values[0]))
-                    unique_values.pop(0)
-
-                bin_defs.append(def_list)
-                bin_names.append(bin_name)
-
-            assigned_bin = list()
-            for _, row in col_df.iterrows():
-                for i in range(len(bin_defs)):
-                    if row[0] in bin_defs[i]:
-                        assigned_bin.append(bin_names[i])
-                        break
-
-            return pd.Series(assigned_bin)
-
-    # A method for performing equal frequency binning with a specified frequency, returns a pd.Series
-    def __perform_eq_freq_binning_by_freq__(self, col_df, dtype, freq):
-        # Check if the width is valid
-        if freq <= 0 or not isinstance(freq, int):
-            # Frequency should be a positive integer.
-            raise PreventUpdate
-        col_name = df.columns[0]
-
-        # Bin the column
-        if dtype == "numerical":
-            num_rows = len(col_df)
-            num_bins = int(np.ceil(num_rows/freq))
-            return pd.qcut(col_df[col_name], num_bins, duplicates="drop")
-        else:  # categorical
-            pass
-
-    # A method for performing equal frequency binning with a specified number of fixed-frequency bins, returns a pd.Series
-    def __perform_eq_freq_binning_by_num_bins__(self, col_df, dtype, num_bins):
-        # Check if the width is valid
-        if num_bins <= 0 or not isinstance(num_bins, int):
-            raise ValueError("Frequency should be a positive integer.")
-        col_name = df.columns[0]
-        if dtype == "categorical" and num_bins > col_df[col_name].nunique():
-            raise ValueError(
-                "For categorical variable, number of bins should not be greater than number of unique values in the column.")
-
-        # Bin the column
-        if dtype == "numerical":
-            return pd.qcut(col_df[col_name], num_bins, duplicates="drop")
-        else:  # categorical
-            pass
-
-    # A method for performing binning based on boundary points obtained from interactive binning, returns a pd.Series
-    def __perform_custom_binning__(self, col_df, dtype, bins_settings):
-        pass
+# # Get the indexes that sort col_df in ascending order
+#         df_order_li = col_df.iloc[:, 0].argsort().tolist()
+#         print(df_order_li)
+        
+#         # Calculate number of bins
+#         # num_bins = int(np.ceil(len(col_df) / freq))
+#         # print(num_bins)
+        
+#         # Get list of bin lower boundaries
+#         low_bounds = [df_order_li[idx] for idx in range(len(df_order_li)) if idx % freq == 0]
+#         print(low_bounds)
+        
+#         # Prepare bin ranges
+#         bin_ranges = list()
+#         for idx in range(len(low_bounds)):
+#             if idx != len(low_bounds) - 1:
+#                 bin_ranges.append([float(col_df.iloc[low_bounds[idx]]), float(col_df.iloc[low_bounds[idx+1]])])
+#             else:
+#                 bin_ranges.append([float(col_df.iloc[low_bounds[idx]]), float(col_df.iloc[low_bounds[idx]])+1])
+#         print(bin_ranges)
+        
+#         curr = 0
+#         for _, row in col_df.iterrows():
+#             val = row.iloc[0]
+            

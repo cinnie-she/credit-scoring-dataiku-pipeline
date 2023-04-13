@@ -1,7 +1,8 @@
 # A class for merging overlapping good bad definition ranges/elements for the same type (bad or indeterminate)
 class GoodBadDefDecoder:    
     # A method to translate numerical definition ranges defined by user (with/without overlapping) info to a list of numerical definition (no overlapping)
-    def get_numeric_def_list_from_section(self, numeric_info_list):
+    @staticmethod
+    def get_numeric_def_list_from_section(numeric_info_list):
         numeric_list = list()  # initialization
 
         for numeric_info in numeric_info_list:
@@ -48,9 +49,29 @@ class GoodBadDefDecoder:
                 single_def_dict["column"] = column
                 single_def_dict["ranges"] = [a_range]
                 numeric_list.append(single_def_dict)
+        
+        for idx in range(len(numeric_list)):
+            numeric_list[idx]["ranges"] = GoodBadDefDecoder.sort_numerical_def_ranges(numeric_list[idx]["ranges"])
+       
         return numeric_list
     
-    # # A method to translate categorical definition elements defined by user (with/without overlapping) info to a list of categorical definition (no overlapping)
+    # A method to sort a list of numerical def e.g., from [[15, 20], [1, 10], [13, 14]] to [[1, 10], [13, 14], [15, 20]].
+    @staticmethod
+    def sort_numerical_def_ranges(numeric_def_r):
+        sorted_def_ranges = list()
+        for r in numeric_def_r:
+            has_appended = False
+            for idx in range(len(sorted_def_ranges)):
+                if r[0] < sorted_def_ranges[idx][0]:
+                    sorted_def_ranges.insert(idx, r)
+                    has_appended = True
+                    break
+            if has_appended == False:
+                sorted_def_ranges.append(r)
+        return sorted_def_ranges
+    
+    # A method to translate categorical definition elements defined by user (with/without overlapping) info to a list of categorical definition (no overlapping)
+    @staticmethod
     def get_categorical_def_list_from_section(self, categoric_info_list):
         categoric_list = list()  # initialization
         for categoric_info in categoric_info_list:

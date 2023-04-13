@@ -67,7 +67,7 @@ numeric_test_data = [
     ((("paid_past_due", -8, -1), ("paid_past_due", -5, -3)), [{"column": "paid_past_due", "ranges": [[-8, -1]]}]), # 25
     ((("paid_past_due", -5, -1), ("paid_past_due", -8, -3)), [{"column": "paid_past_due", "ranges": [[-8, -1]]}]), # 26
     ((("paid_past_due", -8, -3), ("paid_past_due", -5, -1)), [{"column": "paid_past_due", "ranges": [[-8, -1]]}]), # 27
-    ((("paid_past_due", -3, -1), ("paid_past_due", -8, -5)), [{"column": "paid_past_due", "ranges": [[-3, -1], [-8, -5]]}]), # 28
+    ((("paid_past_due", -3, -1), ("paid_past_due", -8, -5)), [{"column": "paid_past_due", "ranges": [[-8, -5], [-3, -1]]}]), # 28
     ((("paid_past_due", 10, 20), ("paid_past_due", 15, 25), ("paid_past_due", 7, 11), ("paid_past_due", 1, 30), ("paid_past_due", -1, 2), ("paid_past_due", 80, 90)), [{"column": "paid_past_due", "ranges": [[-1, 30], [80, 90]]}]), # 29
     ((("paid_past_due", -8, -3), ("paid_past_due", -8, -3)), [{"column": "paid_past_due", "ranges": [[-8, -3]]}]), # 30
     ((("paid_past_due", 1, 3), ("paid_past_due", 5, 7)), [{"column": "paid_past_due", "ranges": [[1, 3], [5, 7]]}]), # 31
@@ -85,8 +85,7 @@ numeric_test_data = [
 
 @pytest.mark.parametrize("numeric_info_list,expected", numeric_test_data)
 def test_get_numeric_def_list_from_section(numeric_info_list, expected):
-    decoder = GoodBadDefDecoder()
-    decoded_numeric_list = decoder.get_numeric_def_list_from_section(numeric_info_list)
+    decoded_numeric_list = GoodBadDefDecoder.get_numeric_def_list_from_section(numeric_info_list)
     print(decoded_numeric_list)
     assert decoded_numeric_list == expected
     
@@ -131,7 +130,6 @@ categoric_test_data = [
 
 @pytest.mark.parametrize("categoric_info_list,expected", categoric_test_data)
 def test_get_categorical_def_list_from_section(categoric_info_list, expected):
-    decoder = GoodBadDefDecoder()
-    decoded_categoric_list = decoder.get_categorical_def_list_from_section(categoric_info_list)
+    decoded_categoric_list = GoodBadDefDecoder.get_categorical_def_list_from_section(categoric_info_list)
     print(decoded_categoric_list)
     assert decoded_categoric_list == expected
