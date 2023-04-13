@@ -72,7 +72,7 @@ class GoodBadDefDecoder:
     
     # A method to translate categorical definition elements defined by user (with/without overlapping) info to a list of categorical definition (no overlapping)
     @staticmethod
-    def get_categorical_def_list_from_section(self, categoric_info_list):
+    def get_categorical_def_list_from_section(categoric_info_list):
         categoric_list = list()  # initialization
         for categoric_info in categoric_info_list:
             single_def_dict = dict()
