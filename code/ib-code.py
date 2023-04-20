@@ -295,10 +295,7 @@ class GoodBadDefValidator:
     def validate_numerical_bounds(self, numeric_info_list):
         for numeric_info in numeric_info_list:
             a_range = [numeric_info[1], numeric_info[2]]
-            try:
-                if a_range[1] <= a_range[0]:
-                    return False
-            except:
+            if a_range[1] <= a_range[0]:
                 return False
         return True
 
@@ -1625,7 +1622,7 @@ def edit_bad_numeric_def_list(add_clicks, remove_clicks_list, numeric_col_data, 
                 ),
                 dcc.Input(
                     type="number",
-                    # min=0,
+                    min=0,
                     value=lower,
                     id={"index": idx, "type": "bad_numerical_lower"},
                     style={"width": 150, "float": "left", "marginLeft": 20},
@@ -1639,7 +1636,7 @@ def edit_bad_numeric_def_list(add_clicks, remove_clicks_list, numeric_col_data, 
                 ),
                 dcc.Input(
                     type="number",
-                    # min=0,
+                    min=0,
                     value=upper,
                     id={"index": idx, "type": "bad_numerical_upper"},
                     style={"width": 150, "float": "left", "marginLeft": 10},
@@ -1964,7 +1961,7 @@ def save_good_bad_def_to_storage(n_clicks, bad_numerical_column_list, bad_numeri
 
     # Validate if weights are numeric & non-negative
     if bad_weight == None or good_weight == None:
-        raise PreventUpdate
+        raisePreventUpdate
 
     # Validate numerical boundaries of user input, if invalid, return original definition
     bad_numeric_info_list = tuple(zip(

@@ -13,6 +13,8 @@ class StatCalculator:
 
     # Output - a dataframe representing the summary statistics table of the column
     def compute_summary_stat_table(self):
+        if len(self.df) == 0 or self.col_bins_settings == None or self.good_bad_def == None:
+            return None
         """
         1. Binning
         """

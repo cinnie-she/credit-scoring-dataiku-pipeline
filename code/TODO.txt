@@ -1,0 +1,23 @@
+TODO:
+
+Mixed Chart (Initialization)
+- Add chart, and allow it to change based on selected variable (just copy and paste previous code)
+- Amend the update chart function to check bins_settings for the column --> bin it --> save to temp_binned_col_df --> count and generate chart
+
+Summary Statistic Table (Before) (Initialization)
+- 
+
+
+
+Summary Statistic Table (After) (Initialization)
+-
+
+
+
+
+
+Automated Binning
+- When user clicked the 'Refresh' button, 
+- Automated Binning, use BinningMachine.perform_binning_on_col to bin the column and store in shared storage as temp_binned_col_df
+- Add chart, and allow it to change based on selected variable (just copy and paste previous code)
+- Amend the update chart function to generate chart based on te

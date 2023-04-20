@@ -15,6 +15,9 @@ class InteractiveBinningMachine:
     # A method that split bins for categorical column by amending the bins_settings
     @staticmethod
     def categorical_split_bin(col_bin_list, selected_bin_name, element_list):
+        if len(element_list) == 0:
+            return (col_bin_list, [], [])
+        
         old_bin_info_list = list() # TODO: need check empty later 
         updated_bin_info_list = list()
         # If have overlapping
@@ -29,26 +32,48 @@ class InteractiveBinningMachine:
                     break
                 
             # Update other bins
+            to_remove_idx = list()
             overlapped_element_list = list()
-            for bin in col_bin_list:
-                intersaction = set(bin["elements"]) & set(selected_bin_elements)
-                if bool(intersaction) == True: 
+            for idx in range(len(col_bin_list)):
+                intersaction = set(col_bin_list[idx]["elements"]) & set(element_list)
+                if bool(intersaction) == True and col_bin_list[idx]["name"] != selected_bin_name: 
                     # Get all overlapped elements
                     for intersacted_element in list(intersaction):
                         overlapped_element_list.append(intersacted_element)
                     # Remove overlapped elements from other bins
-                    old_bin_info_list.append([bin["name"], bin["elements"]])
-                    bin["elements"] = [x for x in bin["elements"] if x not in list(intersaction)]
-                    bin["name"] = str(bin["elements"])
-                    updated_bin_info_list.append([bin["name"], bin["elements"]])
+                    print("update old 1")
+                    print([col_bin_list[idx]["name"], col_bin_list[idx]["elements"]])
+                    old_bin_info_list.append([col_bin_list[idx]["name"], col_bin_list[idx]["elements"].copy()])
+                    print(f"old_bin_info_list: {old_bin_info_list}")
+                    col_bin_list[idx]["elements"] = [x for x in col_bin_list[idx]["elements"] if x not in list(intersaction)]
+                    # print(col_bin_list[idx]["name"])
+                    # print(col_bin_list[idx]["elements"])
+                    if len(col_bin_list[idx]["elements"]) == 0:
+                        to_remove_idx.append(idx)
+                    # bin["name"] = str(bin["elements"])
+                    else:
+                        print("update new 4")
+                        updated_bin_info_list.append([col_bin_list[idx]["name"], col_bin_list[idx]["elements"]])
+                        # print(updated_bin_info_list)
+            
+            for idx in sorted(to_remove_idx, reverse=True):
+                del col_bin_list[idx]
             
             # Check if all elements in bin["elements"] appears in element_list (I.e. only add element but not split)
             if all(element in element_list for element in selected_bin_elements) is True:
                 # Only add elements, no need split & change name
-                old_bin_info_list.append(col_bin_list[selected_bin_idx]["name"], col_bin_list[selected_bin_idx]["elements"])
-                col_bin_list[selected_bin_idx]["elements"].append(overlapped_element_list)
+                print("update old 5")
+                print([col_bin_list[selected_bin_idx]["name"], col_bin_list[selected_bin_idx]["elements"]])
+                old_bin_info_list.append([col_bin_list[selected_bin_idx]["name"], col_bin_list[selected_bin_idx]["elements"].copy()])
+                print(f"old_bin_info_list: {old_bin_info_list}")
+                for overlapped_element in overlapped_element_list:
+                    col_bin_list[selected_bin_idx]["elements"].append(overlapped_element)
+                print("update new 5")
+                print([col_bin_list[selected_bin_idx]["name"], col_bin_list[selected_bin_idx]["elements"]])
                 updated_bin_info_list.insert(0, [col_bin_list[selected_bin_idx]["name"], col_bin_list[selected_bin_idx]["elements"]])
+                print(f"old_bin_info_list: {old_bin_info_list}")
             else: # Need spliting
+                print("update 6")
                 old_bin_info_list.insert(0, [col_bin_list[selected_bin_idx]["name"], col_bin_list[selected_bin_idx]["elements"]])
                 # Remove all elements of elements_list from selected_bin_elements
                 col_bin_list[selected_bin_idx]["elements"] = [x for x in col_bin_list[selected_bin_idx]["elements"] if x not in element_list]
@@ -61,6 +86,7 @@ class InteractiveBinningMachine:
                     "elements": element_list
                 }
                 col_bin_list.append(new_bin)
+                print("update new 5")
                 updated_bin_info_list.insert(1, [str(element_list), element_list])
                 
 
@@ -76,6 +102,7 @@ class InteractiveBinningMachine:
                         bin["elements"] = [x for x in bin["elements"] if x not in element_list ]
                         # Change bin["name"] using bin["elements"]
                         bin["name"] = str(bin["elements"])
+                        print("update 7")
                         updated_bin_info_list.append([bin["name"], bin["elements"]])
 
                         # Append new bin to col_bin_list with element_list element
@@ -84,6 +111,7 @@ class InteractiveBinningMachine:
                             "elements": element_list
                         }
                         col_bin_list.append(new_bin)
+                        print("update 6")
                         updated_bin_info_list.append([str(element_list), element_list])
                         
                     break
@@ -169,7 +197,7 @@ class InteractiveBinningMachine:
         
     # A method that split bin for numerical columns based on the selected bin and user-specified ranges
     @staticmethod
-    def numerical_split_bin(col_bin_list, selected_bin_name, range_list):
+    def numerical_split_bin(col_bin_list, range_list):
         """
         E.g., 
         selected bin= [      [1, 10],       [15, 20],         [30, 35],       [40, 60],       [70, 75],       [80, 90],       [98,   100]]
@@ -266,9 +294,16 @@ class InteractiveBinningMachine:
     # A method to convert a list e.g., [[10, 20], [30, 50]], into a string e.g., "[[10, 20), [30, 50)]".
     @staticmethod
     def get_str_from_ranges(ranges):
+        if not isinstance(ranges, list):
+            return -1
+        if len(ranges) == 0:
+            return '[]'
+        
+        ranges = GoodBadDefDecoder.sort_numerical_def_ranges(ranges)
+        
         ranges_str = "["
         ranges_str = f"{ranges_str}[{ranges[0][0]}, {ranges[0][1]})"
-        for idx in ranges(1, len(ranges)):
+        for idx in range(1, len(ranges)):
             ranges_str = f"{ranges_str}, [{ranges[idx][0]}, {ranges[idx][1]})"
         ranges_str += "]"
         return ranges_str    
@@ -297,57 +332,35 @@ class InteractiveBinningMachine:
     
     
     
-    
-    
-    
-"""
-# If have overlapping
-        if InteractiveBinningMachine.check_if_numerical_overlapped(col_bin_list, selected_bin_name, range_list) == True:
-# IF have no overlapping
-        else:
-            selected_bin_idx = None
-            old_bin_def_ranges = None
-            # Find dict with name == selected bin name
-            for idx in range(len(col_bin_list)):
-                if col_bin_list[idx]["name"] == selected_bin_name:
-                    selected_bin_idx = idx # remember where to find the selected bin def
-                    old_bin_def_ranges = col_bin_list[idx]["ranges"] # initialize bin def
-                    break
-            
-            # Update the bin def with each user-specified range
-            append_bin_ranges = list() # append to selected bin def
-            added_bin_ranges = list() # new bin
-            for r in range_list:
-                for idx in range(len(old_bin_def_ranges)):
-                    if old_bin_def_ranges[idx][0] == r[0] and old_bin_def_ranges[idx][1] == r[1]: # remove current bin
-                        del old_bin_def_ranges[idx]
-                        added_bin_ranges.append(r)
-                        break
-                    elif old_bin_def_ranges[idx][0] == r[0] and r[1] < old_bin_def_ranges[idx][1]: # split to 2
-                        # Remove r from old def range
-                        old_bin_def_ranges[idx] = [r[1], old_bin_def_ranges[idx][1]]
-                        # Add r to another bin
-                        added_bin_ranges.append(r)
-                        break
-                    elif old_bin_def_ranges[idx][0] < r[0] and r[1] < old_bin_def_ranges[idx][1]: # split to 3
-                        old_bin_def_ranges[idx] = [old_bin_def_ranges[idx][0], r[0]]
-                        added_bin_ranges.append(r)
-                        append_bin_ranges.append([r[1], old_bin_def_ranges[idx][1]])
-                        break
-                    elif old_bin_def_ranges[idx][0] < r[0] and old_bin_def_ranges[idx][1] == r[1]: # split to 2
-                        old_bin_def_ranges[idx] = [old_bin_def_ranges[idx][0], r[0]]
-                        added_bin_ranges.append(r)
-                        break
-        
-            # Update bins_settings
-            col_bin_list[selected_bin_idx]["ranges"] = old_bin_def_ranges
-            for r in append_bin_ranges:
-                col_bin_list[selected_bin_idx]["ranges"].append(r)
-            col_bin_list[selected_bin_idx]["name"] = str(col_bin_list[selected_bin_idx]["ranges"])
-            
-            new_bin = {
-                "name": str(added_bin_ranges),
-                "ranges": added_bin_ranges
-            }
-            col_bin_list.append(new_bin)
-"""
+col_bin_list = [
+    {
+        "name": "Good",
+        "elements": ["A", "B", "C"],
+    }, 
+    {
+        "name": "Poor",
+        "elements": ["F", "E"],
+    },
+    {
+        "name": "Indeterminate",
+        "elements": ["D"]
+    }
+]
+selected_bin_name = "Good"
+element_list = ["A", "B", "C", "D"]
+print(col_bin_list)
+print(InteractiveBinningMachine.categorical_split_bin(col_bin_list, selected_bin_name, element_list))
+
+# Split:
+# ([{'name': 'Good', 'elements': ['A', 'B', 'C']}, {'name': 'Poor', 'elements': ['F', 'E']}, {'name': 'Indeterminate', 'elements': ['D']}], "Good", ["A", "B"], ([{'name': "['C']", 'elements': ['C']}, {'name': 'Poor', 'elements': ['F', 'E']}, {'name': 'Indeterminate', 'elements': ['D']}, {'name': "['A', 'B']", 'elements': ['A', 'B']}], [['Good', ['A', 'B', 'C']]], [["['C']", ['C']], ["['A', 'B']", ['A', 'B']]]))
+
+# Split with overlap
+# ([{'name': 'Good', 'elements': ['A', 'B', 'C']}, {'name': 'Poor', 'elements': ['F', 'E']}, {'name': 'Indeterminate', 'elements': ['D']}], "Good", ["A", "F"], ([{'name': "['B', 'C']", 'elements': ['B', 'C']}, {'name': 'Poor', 'elements': ['E']}, {'name': 'Indeterminate', 'elements': ['D']}, {'name': "['A', 'F']", 'elements': ['A', 'F']}], [['Good', ['A', 'B', 'C']], ['Poor', ['F', 'E']]], [['Good', ['B', 'C']], ["['A', 'F']", ['A', 'F']], ['Poor', ['E']]]))
+
+([
+    {'name': 'Good', 'elements': [['A', 'C', 'B', 'D']]}, 
+    {'name': 'Poor', 'elements': ['F', 'E']}, 
+    {'name': 'Indeterminate', 'elements': []}],  # should
+ 
+ [['Good', ['A', 'B', 'C']], ['Indeterminate', ['D']], ['Good', [['A', 'C', 'B', 'D']]]], 
+ [['Good', [['A', 'C', 'B', 'D']]], ['Good', [['A', 'C', 'B', 'D']]], ['Indeterminate', []]])
