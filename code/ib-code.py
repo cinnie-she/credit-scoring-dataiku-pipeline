@@ -2933,13 +2933,23 @@ to be binned
         Output("mixed_chart", "figure"),
         Output("test_trigger", "children"),
     ],
-    Input("predictor_var_ib_dropdown", "value"),
+    [
+        Input("predictor_var_ib_dropdown", "value"),
+        Input("auto_bin_refresh_button", "n_clicks"),
+    ],
     [
         State("bins_settings", "data"),
         State("good_bad_def", "data"),
+        State("auto_bin_algo_dropdown", "value"),
+        State("equal_width_radio_button", "value"),
+        State("equal_width_width_input", "value"),
+        State("equal_width_num_bin_input", "value"),
+        State("equal_freq_radio_button", "value"),
+        State("equal_freq_freq_input", "value"),
+        State("equal_freq_num_bin_input", "value"),
     ],
 )
-def update_mixed_chart_on_var_to_bin_change(var_to_bin, bins_settings_data, good_bad_def_data):
+def update_mixed_chart_on_var_to_bin_change(var_to_bin, n_clicks, bins_settings_data, good_bad_def_data, auto_bin_algo, equal_width_method, width, ew_num_bins, equal_freq_method, freq, ef_num_bins):
     triggered = dash.callback_context.triggered
     
     bins_settings_dict = json.loads(bins_settings_data)
@@ -2949,14 +2959,45 @@ def update_mixed_chart_on_var_to_bin_change(var_to_bin, bins_settings_data, good
         if var["column"] == var_to_bin:
             col_bins_settings = var
             break
-    
+
+    if triggered[0]['prop_id'] == 'auto_bin_refresh_button.n_clicks':
+        if auto_bin_algo == "equal width":
+            if equal_width_method == "width":
+                col_bins_settings["bins"] = {
+                    "algo": "equal width",
+                    "method": "width",
+                    "value": width,
+                }
+            else:
+                col_bins_settings["bins"] = {
+                    "algo": "eqaul width",
+                    "method": "num_bins", 
+                    "value": ew_num_bins, 
+                }
+        elif auto_bin_algo == "equal frequency":
+            if equal_freq_method == "freq":
+                col_bins_settings["bins"] = {
+                    "algo": "eqaul frequency",
+                    "method": "frequency", 
+                    "value": freq, 
+                }
+            else:
+                col_bins_settings["bins"] = {
+                    "algo": "eqaul frequency",
+                    "method": "num_bins", 
+                    "value": ef_num_bins,
+                }
+        else: # none
+            col_bins_settings["bins"] = "none"
+            
     binned_series = BinningMachine.perform_binning_on_col(df.loc[:, [var_to_bin]], col_bins_settings)
     temp_df = df.copy()
     temp_df['binned_col'] = binned_series.values
-    
+
     good_bad_def = json.loads(good_bad_def_data)
+
+    return [generate_mixed_chart_fig(temp_df=temp_df, binned_col='binned_col', good_bad_def=good_bad_def), str(triggered)]
     
-    return [generate_mixed_chart_fig(temp_df=temp_df, binned_col='binned_col', good_bad_def=good_bad_def), str(type(df.loc[:, [var_to_bin]]))]
     
     
 """
