@@ -710,14 +710,14 @@ class StatCalculator:
         else:
             return (good_pct - bad_pct)*woe
 
-def get_list_of_total_count(var_to_bin, unique_bin_name_list, good_bad_def):
+def get_list_of_total_count(temp_df, binned_col, unique_bin_name_list, good_bad_def):
     total_count_list = list()
 
     for unique_bin_name in unique_bin_name_list:
         if good_bad_def == None:  # If-else statement put outside for loop would be better
             total_count_list.append(0)  # good bad def not defined, so no count
         else:
-            bin_df = df[df[var_to_bin] == unique_bin_name]
+            bin_df = temp_df[temp_df[binned_col] == unique_bin_name]
             # Get total good & bad
             _, _, _, _, _, total_good_count, total_bad_count = GoodBadCounter.get_statistics(
                 bin_df, good_bad_def)
@@ -725,26 +725,26 @@ def get_list_of_total_count(var_to_bin, unique_bin_name_list, good_bad_def):
     return total_count_list
 
 
-def get_list_of_bad_count(var_to_bin, unique_bin_name_list, good_bad_def):
+def get_list_of_bad_count(temp_df, binned_col, unique_bin_name_list, good_bad_def):
     bad_count_list = list()
     for unique_bin_name in unique_bin_name_list:
         if good_bad_def == None:  # good bad def not defined, so no count
             bad_count_list.append(0)
         else:
-            bin_df = df[df[var_to_bin] == unique_bin_name]
+            bin_df = temp_df[temp_df[binned_col] == unique_bin_name]
             _, _, _, _, _, _, total_bad_count = GoodBadCounter.get_statistics(
                 bin_df, good_bad_def)
             bad_count_list.append(total_bad_count)
     return bad_count_list
 
 
-def get_list_of_woe(var_to_bin, unique_bin_name_list, good_bad_def):
+def get_list_of_woe(temp_df, binned_col, unique_bin_name_list, good_bad_def):
     woe_list = list()
     for unique_bin_name in unique_bin_name_list:
         if good_bad_def == None:
             woe_list.append(0)
         else:
-            bin_df = df[df[var_to_bin] == unique_bin_name]
+            bin_df = temp_df[temp_df[binned_col] == unique_bin_name]
             _, _, _, _, _, total_good, total_bad = GoodBadCounter.get_statistics(
                 df, good_bad_def)
             _, _, _, _, _, good, bad = GoodBadCounter.get_statistics(
@@ -757,28 +757,29 @@ def get_list_of_woe(var_to_bin, unique_bin_name_list, good_bad_def):
     return woe_list
 
 def generate_mixed_chart_fig(
-    var_to_bin=df.columns[0], clicked_bar_index=None, good_bad_def=None
+    temp_df=df, binned_col=df.columns[0], clicked_bar_index=None, good_bad_def=None
 ):
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     good_marker_color = ["#8097e6"] * \
-        (len(df[var_to_bin].unique().tolist()))
+        (len(temp_df[binned_col].unique().tolist()))
     if clicked_bar_index is not None:
         good_marker_color[clicked_bar_index] = "#3961ee"
 
-    bad_marker_color = ["#8bd58b"] * (len(df[var_to_bin].unique().tolist()))
+    bad_marker_color = ["#8bd58b"] * (len(temp_df[binned_col].unique().tolist()))
     if clicked_bar_index is not None:
         bad_marker_color[clicked_bar_index] = "#55a755"
 
-    unique_bins = sorted(df[var_to_bin].unique().tolist())
+    unique_bins = sorted(temp_df[binned_col].unique().tolist())
     total_count_list = get_list_of_total_count(
-        var_to_bin, unique_bins, good_bad_def)
+        temp_df, binned_col, unique_bins, good_bad_def)
     bad_count_list = get_list_of_bad_count(
-        var_to_bin,
+        temp_df,
+        binned_col,
         unique_bins,
         good_bad_def,
     )
-    woe_list = get_list_of_woe(var_to_bin, unique_bins, good_bad_def)
+    woe_list = get_list_of_woe(temp_df, binned_col, unique_bins, good_bad_def)
 
     fig.add_trace(
         go.Bar(
@@ -2029,6 +2030,7 @@ interactive_binning_page_layout = html.Div([
             ], id="numerical_merge_bins_control_panel", style={"display": "none"}),
         ]
     ),
+    html.P(id="test_trigger"),
     html.Div([], style={"width": "100%", "height": 25, "clear": "left"}),
     html.Div(
         [
@@ -2927,13 +2929,34 @@ to be binned
 
 
 @app.callback(
-    Output("mixed_chart", "figure"),
+    [
+        Output("mixed_chart", "figure"),
+        Output("test_trigger", "children"),
+    ],
     Input("predictor_var_ib_dropdown", "value"),
-    State("good_bad_def", "data"),
+    [
+        State("bins_settings", "data"),
+        State("good_bad_def", "data"),
+    ],
 )
-def update_mixed_chart_on_var_to_bin_change(var_to_bin, good_bad_def_data):
+def update_mixed_chart_on_var_to_bin_change(var_to_bin, bins_settings_data, good_bad_def_data):
+    triggered = dash.callback_context.triggered
+    
+    bins_settings_dict = json.loads(bins_settings_data)
+    bins_settings_list = bins_settings_dict["variable"]
+    col_bins_settings = None
+    for var in bins_settings_list:
+        if var["column"] == var_to_bin:
+            col_bins_settings = var
+            break
+    
+    binned_series = BinningMachine.perform_binning_on_col(df.loc[:, [var_to_bin]], col_bins_settings)
+    temp_df = df.copy()
+    temp_df['binned_col'] = binned_series.values
+    
     good_bad_def = json.loads(good_bad_def_data)
-    return generate_mixed_chart_fig(var_to_bin=var_to_bin, good_bad_def=good_bad_def)
+    
+    return [generate_mixed_chart_fig(temp_df=temp_df, binned_col='binned_col', good_bad_def=good_bad_def), str(type(df.loc[:, [var_to_bin]]))]
     
     
 """
