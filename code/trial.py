@@ -516,10 +516,9 @@ class BinningMachine:
         return dframe
 
 df = pd.read_excel("tests\\test_input_datasets\\credit_risk_dataset_generated.xlsx")
-col_bins_settings = {"column": "person_age", "type": "numerical", "bins": {"algo": "eqaul width", "method": "num_bins", "value": 10}}
-good_bad_def = {'bad': {'numerical': [], 'categorical': [{'column': 'cb_person_default_on_file', 'elements': ['Y']}], 'weight': 1}, 'indeterminate': {'numerical': [], 'categorical': []}, 'good': {'weight': 1}}
 
-stat_cal = StatCalculator(df, col_bins_settings, good_bad_def)
-stat_df = stat_cal.compute_summary_stat_table()
+a_dict = df.to_dict()
+print(a_dict)
 
-print(stat_df)
+final_df = pd.DataFrame(a_dict)
+print(final_df)

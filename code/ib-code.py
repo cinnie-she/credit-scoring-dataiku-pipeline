@@ -27,6 +27,8 @@ def SharedDataStorage():
             dcc.Store(id="numerical_columns"),
             dcc.Store(id="categorical_columns"),
             dcc.Store(id="temp_col_bins_settings"),
+            dcc.Store(id="temp_binned_col"),
+            dcc.Store(id="temp_chart_info"),
         ]
     )
 
@@ -758,29 +760,19 @@ def get_list_of_woe(temp_df, binned_col, unique_bin_name_list, good_bad_def):
     return woe_list
 
 def generate_mixed_chart_fig(
-    temp_df=df, binned_col=df.columns[0], clicked_bar_index=None, good_bad_def=None
+    unique_bins=[], total_count_list=[], bad_count_list=[], woe_list=[], clicked_bar_index=None, good_bad_def=None
 ):
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
-    good_marker_color = ["#8097e6"] * \
-        (len(temp_df[binned_col].unique().tolist()))
+    num_bins = len(unique_bins)
+    
+    good_marker_color = ["#8097e6"] * num_bins
     if clicked_bar_index is not None:
         good_marker_color[clicked_bar_index] = "#3961ee"
 
-    bad_marker_color = ["#8bd58b"] * (len(temp_df[binned_col].unique().tolist()))
+    bad_marker_color = ["#8bd58b"] * num_bins
     if clicked_bar_index is not None:
         bad_marker_color[clicked_bar_index] = "#55a755"
-
-    unique_bins = sorted(temp_df[binned_col].unique().tolist())
-    total_count_list = get_list_of_total_count(
-        temp_df, binned_col, unique_bins, good_bad_def)
-    bad_count_list = get_list_of_bad_count(
-        temp_df,
-        binned_col,
-        unique_bins,
-        good_bad_def,
-    )
-    woe_list = get_list_of_woe(temp_df, binned_col, unique_bins, good_bad_def)
 
     fig.add_trace(
         go.Bar(
@@ -1323,6 +1315,7 @@ interactive_binning_page_layout = html.Div([
     
     html.Div(
         [
+            html.P("Note: Binning & generating statistical tables may take some time, please wait patiently if applicable."),
             html.Div(
                 [
                     SectionHeading(
@@ -1511,6 +1504,7 @@ interactive_binning_page_layout = html.Div([
                         figure=generate_mixed_chart_fig(),
                         id="mixed_chart",
                     ),
+                    html.P("Tips: If you would like to de-select the bar(s), simply click on the WOE line.", style={"marginTop": 20}),
                 ],
                 style=white_panel_style,
             ),
@@ -2989,8 +2983,63 @@ def update_temp_bins_settings(var_to_bin, n_clicks, bins_settings_data, auto_bin
     
     return json.dumps(col_bins_settings)
     
-        
 
+"""
+Interactive Binning Page:
+Update temp_binned_col whenever temp_col_bins_settings
+has changed
+"""
+@app.callback(
+    Output("temp_binned_col", "data"),
+    Input("temp_col_bins_settings", "data"),
+)
+def update_temp_binned_col(temp_col_bins_settings_data):
+    triggered = dash.callback_context.triggered
+    
+    col_bins_settings = json.loads(temp_col_bins_settings_data)
+            
+    binned_series = BinningMachine.perform_binning_on_col(df.loc[:, [col_bins_settings["column"]]], col_bins_settings)
+    temp_df = df.copy()
+    temp_df['binned_col'] = binned_series.values
+    
+    return json.dumps(temp_df.to_dict())
+
+"""
+Interactive Binning Page:
+Save chart info including unique_bins, total_count_list,
+bad_count_list, and woe_list into storage when temp_binned_col
+is updated
+"""
+@app.callback(
+    Output("temp_chart_info", "data"),
+    Input("temp_binned_col", "data"),
+    State("good_bad_def", "data"),
+)
+def save_temp_chart_info(temp_binned_col_data, good_bad_def_data):
+    temp_binned_col_dict = json.loads(temp_binned_col_data)
+    temp_df = pd.DataFrame(temp_binned_col_dict)
+    
+    good_bad_def = json.loads(good_bad_def_data)
+    
+    unique_bins = sorted(temp_df['binned_col'].unique().tolist())
+    total_count_list = get_list_of_total_count(
+        temp_df, 'binned_col', unique_bins, good_bad_def)
+    bad_count_list = get_list_of_bad_count(
+        temp_df,
+        'binned_col',
+        unique_bins,
+        good_bad_def,
+    )
+    woe_list = get_list_of_woe(temp_df, 'binned_col', unique_bins, good_bad_def)
+    
+    temp_chart_info_dict = {
+        "unique_bins": unique_bins,
+        "total_count_list": total_count_list,
+        "bad_count_list": bad_count_list,
+        "woe_list": woe_list,
+    }
+    
+    return json.dumps(temp_chart_info_dict)
 
 """
 Interactive Binning Page:
@@ -3000,11 +3049,11 @@ to be binned
 
 
 @app.callback(
+    Output("mixed_chart", "figure"),
     [
-        Output("mixed_chart", "figure"),
-        Output("test_trigger", "children"),
+        Input("temp_chart_info", "data"),
+        Input("mixed_chart", "clickData"),
     ],
-    Input("temp_col_bins_settings", "data"),
     [
         State("good_bad_def", "data"),
         State("auto_bin_algo_dropdown", "value"),
@@ -3016,18 +3065,20 @@ to be binned
         State("equal_freq_num_bin_input", "value"),
     ],
 )
-def update_mixed_chart_on_var_to_bin_change(temp_col_bins_settings_data, good_bad_def_data, auto_bin_algo, equal_width_method, width, ew_num_bins, equal_freq_method, freq, ef_num_bins):
+def update_mixed_chart_on_var_to_bin_change(temp_chart_info_data, click_data, good_bad_def_data, auto_bin_algo, equal_width_method, width, ew_num_bins, equal_freq_method, freq, ef_num_bins):
     triggered = dash.callback_context.triggered
     
-    col_bins_settings = json.loads(temp_col_bins_settings_data)
-            
-    binned_series = BinningMachine.perform_binning_on_col(df.loc[:, [col_bins_settings["column"]]], col_bins_settings)
-    temp_df = df.copy()
-    temp_df['binned_col'] = binned_series.values
+    temp_chart_info = json.loads(temp_chart_info_data)
+    
+    clicked_bar_index = None
 
-    good_bad_def = json.loads(good_bad_def_data)
+    if click_data is not None and click_data["points"][0]["curveNumber"] != 2:
+        clicked_bar_index = click_data["points"][0]["pointIndex"]
 
-    return [generate_mixed_chart_fig(temp_df=temp_df, binned_col='binned_col', good_bad_def=good_bad_def), str(triggered)]
+    if triggered[0]['prop_id'] == 'temp_chart_info.data':
+        clicked_bar_index = None
+        
+    return generate_mixed_chart_fig(unique_bins=temp_chart_info['unique_bins'], total_count_list=temp_chart_info['total_count_list'], bad_count_list=temp_chart_info['bad_count_list'], woe_list=temp_chart_info['woe_list'], clicked_bar_index=clicked_bar_index)
     
     
     
@@ -3042,7 +3093,6 @@ changes the variable to be binned
     [
         Output("stat_table_before", "children"),
         Output("stat_table_after", "children"),
-        Output("test_stat", "children"),
     ],
     Input("temp_col_bins_settings", "data"),
     [
@@ -3058,7 +3108,7 @@ def update_stat_tables_on_var_to_bin_change(temp_col_bins_settings_data, good_ba
     stat_cal = StatCalculator(df.copy(), col_bins_settings, good_bad_def)
     stat_df = stat_cal.compute_summary_stat_table()
     
-    return [stat_table_after, [DataTable(stat_df, width=70)], str(col_bins_settings)]
+    return [stat_table_after, [DataTable(stat_df, width=70)]]
 
 
 """
