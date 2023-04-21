@@ -3,7 +3,7 @@ TODO:
 (1) Initialization
 
 Mixed Chart (Initialization)
-- Add chart that get var to bin from dropdown --> check bins_settings for the column --> bin it --> save to temp_binned_col_df --> count and generate chart
+- Add chart that get var to bin from dropdown --> check bins_settings for the column --> bin it --> count and generate chart
 
 Summary Statistic Table (Before) (Initialization)
 - Empty df

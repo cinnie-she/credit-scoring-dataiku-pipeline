@@ -26,6 +26,7 @@ def SharedDataStorage():
             dcc.Store(id="binned_df"),
             dcc.Store(id="numerical_columns"),
             dcc.Store(id="categorical_columns"),
+            dcc.Store(id="temp_col_bins_settings"),
         ]
     )
 
@@ -197,7 +198,7 @@ def DataTable(df, id="", width=dimens["table-column-width"]):
         style_cell={
             "minWidth": width,
             "width": width,
-            "maxWidth": width,
+            "maxWidth": width+30,
         },
         sort_action="native",
         filter_action="native",
@@ -2030,6 +2031,7 @@ interactive_binning_page_layout = html.Div([
             ], id="numerical_merge_bins_control_panel", style={"display": "none"}),
         ]
     ),
+    html.P(id="test_stat"),
     html.P(id="test_trigger"),
     html.Div([], style={"width": "100%", "height": 25, "clear": "left"}),
     html.Div(
@@ -2923,23 +2925,18 @@ def update_equal_freq_input_section(method):
 
 """
 Interactive Binning Page:
-Update mixed chart when user changes the variable 
-to be binned
+Initialize temp_bins_settings when user select predictor
+var to bin & Update temp_bins_settings when user clicks on 
+refresh button in automated binning panel
 """
-
-
 @app.callback(
-    [
-        Output("mixed_chart", "figure"),
-        Output("test_trigger", "children"),
-    ],
+    Output("temp_col_bins_settings", "data"),
     [
         Input("predictor_var_ib_dropdown", "value"),
         Input("auto_bin_refresh_button", "n_clicks"),
     ],
     [
         State("bins_settings", "data"),
-        State("good_bad_def", "data"),
         State("auto_bin_algo_dropdown", "value"),
         State("equal_width_radio_button", "value"),
         State("equal_width_width_input", "value"),
@@ -2949,7 +2946,7 @@ to be binned
         State("equal_freq_num_bin_input", "value"),
     ],
 )
-def update_mixed_chart_on_var_to_bin_change(var_to_bin, n_clicks, bins_settings_data, good_bad_def_data, auto_bin_algo, equal_width_method, width, ew_num_bins, equal_freq_method, freq, ef_num_bins):
+def update_temp_bins_settings(var_to_bin, n_clicks, bins_settings_data, auto_bin_algo, equal_width_method, width, ew_num_bins, equal_freq_method, freq, ef_num_bins):
     triggered = dash.callback_context.triggered
     
     bins_settings_dict = json.loads(bins_settings_data)
@@ -2959,7 +2956,7 @@ def update_mixed_chart_on_var_to_bin_change(var_to_bin, n_clicks, bins_settings_
         if var["column"] == var_to_bin:
             col_bins_settings = var
             break
-
+    
     if triggered[0]['prop_id'] == 'auto_bin_refresh_button.n_clicks':
         if auto_bin_algo == "equal width":
             if equal_width_method == "width":
@@ -2970,27 +2967,61 @@ def update_mixed_chart_on_var_to_bin_change(var_to_bin, n_clicks, bins_settings_
                 }
             else:
                 col_bins_settings["bins"] = {
-                    "algo": "eqaul width",
+                    "algo": "equal width",
                     "method": "num_bins", 
                     "value": ew_num_bins, 
                 }
         elif auto_bin_algo == "equal frequency":
             if equal_freq_method == "freq":
                 col_bins_settings["bins"] = {
-                    "algo": "eqaul frequency",
-                    "method": "frequency", 
+                    "algo": "equal frequency",
+                    "method": "freq", 
                     "value": freq, 
                 }
             else:
                 col_bins_settings["bins"] = {
-                    "algo": "eqaul frequency",
+                    "algo": "equal frequency",
                     "method": "num_bins", 
                     "value": ef_num_bins,
                 }
         else: # none
             col_bins_settings["bins"] = "none"
+    
+    return json.dumps(col_bins_settings)
+    
+        
+
+
+"""
+Interactive Binning Page:
+Update mixed chart when user changes the variable 
+to be binned
+"""
+
+
+@app.callback(
+    [
+        Output("mixed_chart", "figure"),
+        Output("test_trigger", "children"),
+    ],
+    Input("temp_col_bins_settings", "data"),
+    [
+        State("good_bad_def", "data"),
+        State("auto_bin_algo_dropdown", "value"),
+        State("equal_width_radio_button", "value"),
+        State("equal_width_width_input", "value"),
+        State("equal_width_num_bin_input", "value"),
+        State("equal_freq_radio_button", "value"),
+        State("equal_freq_freq_input", "value"),
+        State("equal_freq_num_bin_input", "value"),
+    ],
+)
+def update_mixed_chart_on_var_to_bin_change(temp_col_bins_settings_data, good_bad_def_data, auto_bin_algo, equal_width_method, width, ew_num_bins, equal_freq_method, freq, ef_num_bins):
+    triggered = dash.callback_context.triggered
+    
+    col_bins_settings = json.loads(temp_col_bins_settings_data)
             
-    binned_series = BinningMachine.perform_binning_on_col(df.loc[:, [var_to_bin]], col_bins_settings)
+    binned_series = BinningMachine.perform_binning_on_col(df.loc[:, [col_bins_settings["column"]]], col_bins_settings)
     temp_df = df.copy()
     temp_df['binned_col'] = binned_series.values
 
@@ -3011,30 +3042,23 @@ changes the variable to be binned
     [
         Output("stat_table_before", "children"),
         Output("stat_table_after", "children"),
+        Output("test_stat", "children"),
     ],
-    Input("predictor_var_ib_dropdown", "value"),
+    Input("temp_col_bins_settings", "data"),
     [
-        State("bins_settings", "data"),
         State("good_bad_def", "data"),
-    ],
+        State("stat_table_after", "children"),
+    ]
 )
-def update_stat_tables_on_var_to_bin_change(var_to_bin, bins_settings_data, good_bad_def_data):
-    bins_settings_dict = json.loads(bins_settings_data)
-    bins_settings_list = bins_settings_dict["variable"]
-    col_bins_settings = None
-    for var in bins_settings_list:
-        if var["column"] == var_to_bin:
-            col_bins_settings = var
-            break
+def update_stat_tables_on_var_to_bin_change(temp_col_bins_settings_data, good_bad_def_data, stat_table_after):
+    col_bins_settings = json.loads(temp_col_bins_settings_data)
 
     good_bad_def = json.loads(good_bad_def_data)
 
-    stat_calculator = StatCalculator(
-        df=df, col_bins_settings=col_bins_settings, good_bad_def=good_bad_def)
-
-    stat_df = stat_calculator.compute_summary_stat_table()
-
-    return [[], [DataTable(stat_df, width=70)]]
+    stat_cal = StatCalculator(df.copy(), col_bins_settings, good_bad_def)
+    stat_df = stat_cal.compute_summary_stat_table()
+    
+    return [stat_table_after, [DataTable(stat_df, width=70)], str(col_bins_settings)]
 
 
 """
