@@ -9,6 +9,7 @@ from dash.dependencies import Input, Output, State, ALL, MATCH
 from dash.exceptions import PreventUpdate
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from decimal import Decimal
 
 # Get data from dataiku
 dataset = dataiku.Dataset("credit_risk_dataset_generated")
@@ -92,6 +93,11 @@ section_heading_inline_style = {
     "fontSize": font_size["section-heading"],
     "display": "inline",
 }
+section_heading_center_style = {
+    "fontSize": font_size["section-heading"],
+    "textAlign": "center",
+    "fontWeight": "bold",
+}
 
 # Good/Bad Definition Page
 purple_panel_style = {
@@ -164,17 +170,22 @@ def Heading(title):
     return html.H1(title, style=heading_style)
 
 
-def SectionHeading(title, inline=False):
+def SectionHeading(title, inline=False, center=False, bold=False):
     if inline == True:
         return html.H2(
             title,
             style=section_heading_inline_style,
         )
-    else:
+    if center == True and bold == True:
         return html.H2(
             title,
-            style=section_heading_style,
+            style=section_heading_center_style,
         )
+    return html.H2(
+        title,
+        style=section_heading_style,
+    )
+    
 
 
 def DataTable(df, id="", width=dimens["table-column-width"]):
@@ -213,18 +224,63 @@ def PredictorTypeListItem(var_name):
     )
 
 
-def SaveButton(title, marginLeft=0, marginTop=0, id="", backgroundColor="#6668A9"):
-    return html.Button(
-        title,
-        style={
-            "marginLeft": marginLeft,
-            "marginTop": marginTop,
-            "backgroundColor": backgroundColor,
-            "color": "#ffffff",
-            "textTransform": "none",
-        },
-        id=id,
-    )
+def SaveButton(title, inline=False, marginLeft=0, marginTop=0, id="", backgroundColor="#6668A9", width=0):
+    if width == 0:
+        if inline == True:
+            return html.Button(
+            title,
+            style={
+                "marginLeft": marginLeft,
+                "marginTop": marginTop,
+                "backgroundColor": backgroundColor,
+                "color": "#ffffff",
+                "textTransform": "none",
+                "float": "left",
+            },
+            id=id,
+        )
+        return html.Button(
+            title,
+            style={
+                "marginLeft": marginLeft,
+                "marginTop": marginTop,
+                "backgroundColor": backgroundColor,
+                "color": "#ffffff",
+                "textTransform": "none",
+            },
+            id=id,
+        )
+    else:
+        if inline == True:
+            return html.Button(
+            title,
+            style={
+                "marginLeft": marginLeft,
+                "marginTop": marginTop,
+                "backgroundColor": backgroundColor,
+                "color": "#ffffff",
+                "textTransform": "none",
+                "float": "left",
+                "width": width,
+                "paddingLeft": 5,
+                "paddingRight": 5,
+            },
+            id=id,
+        )
+        return html.Button(
+            title,
+            style={
+                "marginLeft": marginLeft,
+                "marginTop": marginTop,
+                "backgroundColor": backgroundColor,
+                "color": "#ffffff",
+                "textTransform": "none",
+                "width": width,
+                "paddingLeft": 5,
+                "paddingRight": 5,
+            },
+            id=id,
+        )
 
 
 ###########################################################################
@@ -253,8 +309,6 @@ def generate_predictor_type_list(var_name_list):
 Good/Bad Definition Page
 """
 # A class for validating user inputs for good bad definitions
-
-
 class GoodBadDefValidator:
     # A method to validate if numerical definitions for bad/indeterminate has overlapped
     def validate_if_numerical_def_overlapped(self, bad_numeric_list, indeterminate_numeric_list):
@@ -295,15 +349,19 @@ class GoodBadDefValidator:
     def validate_numerical_bounds(self, numeric_info_list):
         for numeric_info in numeric_info_list:
             a_range = [numeric_info[1], numeric_info[2]]
-            if a_range[1] <= a_range[0]:
+            try:
+                if a_range[1] <= a_range[0]:
+                    return False
+            except:
                 return False
         return True
 
 
-# A class for obtaining user inputs from the section UI info
-class GoodBadDefDecoder:
-    # A method to translate section UI info to a list of numerical definition
-    def get_numeric_def_list_from_section(self, numeric_info_list):
+# A class for merging overlapping good bad definition ranges/elements for the same type (bad or indeterminate)
+class GoodBadDefDecoder:    
+    # A method to translate numerical definition ranges defined by user (with/without overlapping) info to a list of numerical definition (no overlapping)
+    @staticmethod
+    def get_numeric_def_list_from_section(numeric_info_list):
         numeric_list = list()  # initialization
 
         for numeric_info in numeric_info_list:
@@ -350,10 +408,30 @@ class GoodBadDefDecoder:
                 single_def_dict["column"] = column
                 single_def_dict["ranges"] = [a_range]
                 numeric_list.append(single_def_dict)
+        
+        for idx in range(len(numeric_list)):
+            numeric_list[idx]["ranges"] = GoodBadDefDecoder.sort_numerical_def_ranges(numeric_list[idx]["ranges"])
+       
         return numeric_list
-    # A method to translate section UI info to a list of categorical definition
-
-    def get_categorical_def_list_from_section(self, categoric_info_list):
+    
+    # A method to sort a list of numerical def e.g., from [[15, 20], [1, 10], [13, 14]] to [[1, 10], [13, 14], [15, 20]].
+    @staticmethod
+    def sort_numerical_def_ranges(numeric_def_r):
+        sorted_def_ranges = list()
+        for r in numeric_def_r:
+            has_appended = False
+            for idx in range(len(sorted_def_ranges)):
+                if r[0] < sorted_def_ranges[idx][0]:
+                    sorted_def_ranges.insert(idx, r)
+                    has_appended = True
+                    break
+            if has_appended == False:
+                sorted_def_ranges.append(r)
+        return sorted_def_ranges
+    
+    # A method to translate categorical definition elements defined by user (with/without overlapping) info to a list of categorical definition (no overlapping)
+    @staticmethod
+    def get_categorical_def_list_from_section(categoric_info_list):
         categoric_list = list()  # initialization
         for categoric_info in categoric_info_list:
             single_def_dict = dict()
@@ -376,10 +454,261 @@ class GoodBadDefDecoder:
         return categoric_list
 
 
+# A class for counting the number of good and bad samples/population in the column
+class GoodBadCounter:
+    # A method to get the number of sample bad, sample indeterminate, sample good, population good, and population bad
+    @staticmethod
+    def get_statistics(dframe, good_bad_def):
+        new_dframe, sample_bad_count = GoodBadCounter.count_sample_bad(
+            dframe, good_bad_def["bad"])
+        sample_indeterminate_count = GoodBadCounter.count_sample_indeterminate(
+            new_dframe, good_bad_def["indeterminate"])
+        sample_good_count = GoodBadCounter.count_sample_good(
+            dframe, sample_bad_count, sample_indeterminate_count)
+        good_weight = good_bad_def["good"]["weight"]
+        bad_weight = good_bad_def["bad"]["weight"]
+        population_good_count = GoodBadCounter.get_population_good(
+            sample_good_count, good_weight)
+        population_bad_count = GoodBadCounter.get_population_bad(
+            sample_bad_count, bad_weight)
+        return (sample_bad_count, sample_indeterminate_count, sample_good_count, good_weight, bad_weight, population_good_count, population_bad_count)
+
+    # A method to count the number of sample bad
+    @staticmethod
+    def count_sample_bad(dframe, bad_defs):
+        bad_count = 0
+        for bad_numeric_def in bad_defs["numerical"]:
+            # count number of rows if dframe row is in bad_numeric_def range, and add to bad_count
+            for a_range in bad_numeric_def["ranges"]:
+                bad_count += len(dframe[(dframe[bad_numeric_def["column"]] >= a_range[0]) & (
+                    dframe[bad_numeric_def["column"]] < a_range[1])])
+                # delete rows if dframe row is in bad_numeric_def range
+                dframe = dframe.drop(dframe[(dframe[bad_numeric_def["column"]] >= a_range[0]) & (
+                    dframe[bad_numeric_def["column"]] < a_range[1])].index)
+
+        for bad_categoric_def in bad_defs["categorical"]:
+            # count number of rows if dframe row is having any one of the bad_categoric_def elements value
+            for element in bad_categoric_def["elements"]:
+                bad_count += len(dframe[(dframe[bad_categoric_def["column"]] == element)])
+                # delete rows if dframe row has value 'element'
+                dframe = dframe.drop(
+                    dframe[(dframe[bad_categoric_def["column"]] == element)].index)
+
+        return (dframe, bad_count)
+
+    # A method to count the number of sample indeterminate
+    @staticmethod
+    def count_sample_indeterminate(dframe, indeterminate_defs):
+        indeterminate_count = 0
+        for indeterminate_numeric_def in indeterminate_defs["numerical"]:
+            # count number of rows if dframe row is in indeterminate_numeric_def range, and add to indeterminate_count
+            for a_range in indeterminate_numeric_def["ranges"]:
+                indeterminate_count += len(dframe[(dframe[indeterminate_numeric_def["column"]] >= a_range[0]) & (
+                    dframe[indeterminate_numeric_def["column"]] < a_range[1])])
+                # delete rows if dframe row is in indeterminate_numeric_def range
+                dframe = dframe.drop(dframe[(dframe[indeterminate_numeric_def["column"]] >= a_range[0]) & (
+                    dframe[indeterminate_numeric_def["column"]] < a_range[1])].index)
+
+        for indeterminate_categoric_def in indeterminate_defs["categorical"]:
+            # count number of rows if dframe row is having any one of the indeterminate_categoric_def elements value
+            for element in indeterminate_categoric_def["elements"]:
+                indeterminate_count += len(
+                    dframe[(dframe[indeterminate_categoric_def["column"]] == element)])
+                # delete rows if dframe row has value 'element'
+                dframe = dframe.drop(
+                    dframe[(dframe[indeterminate_categoric_def["column"]] == element)].index)
+
+        return indeterminate_count
+
+    # A method to count the number of sample good
+    @staticmethod
+    def count_sample_good(dframe, sample_bad_count, sample_indeterminate_count):
+        return (len(dframe) - sample_bad_count - sample_indeterminate_count)
+
+    # A method to count the number of population good
+    @staticmethod
+    def get_population_good(sample_good_count, good_weight):
+        return sample_good_count * good_weight
+
+    # A method to count the number of population bad
+    @staticmethod
+    def get_population_bad(sample_bad_count, bad_weight):
+        return sample_bad_count * bad_weight
+
 """
 Interactive Binning Page
 """
+# A class to calculate statistical values for displaying the mixed chart & statistical tables
+class StatCalculator:
+    def __init__(self, df, col_bins_settings, good_bad_def) -> None:
+        # for binning & good bad calculation, need whole df (OR only columns to be binned & columns involved in good bad def)
+        self.df = df
+        self.col_bins_settings = col_bins_settings  # for binning
+        self.good_bad_def = good_bad_def  # for good bad calculation
 
+    # Output - a dataframe representing the summary statistics table of the column
+    def compute_summary_stat_table(self):
+        if len(self.df) == 0 or self.col_bins_settings == None or self.good_bad_def == None:
+            return None
+        """
+        1. Binning
+        """
+        col_to_bin = self.col_bins_settings["column"]  # get the name of column to be binned
+
+        col_df = self.df.loc[:, [col_to_bin]]  # get a single column
+
+        # perform binning
+        binned_series = BinningMachine.perform_binning_on_col(col_df, self.col_bins_settings)
+        self.df.insert(loc=0, column=col_to_bin+"_binned", value=binned_series)
+
+        """
+        2. Compute Summary Statistic Table
+        """
+        # Initialize an empty dictionary for storing information of each rows of the summary table (i.e., each bin)
+        summary_dict = dict()
+        # Create a list which stores summary table' column names
+        summary_table_col_name_list = ["Bin", "Good", "Bad", "Odds",
+                                       "Total", "Good%", "Bad%", "Total%", "Info_Odds", "WOE", "MC"]
+
+        # Get and save a list of unique bin_name
+        bin_name_list = self.df.iloc[:, 0].unique().tolist()
+
+        # Get total good & bad
+        _, _, _, _, _, total_good_count, total_bad_count = GoodBadCounter.get_statistics(self.df, self.good_bad_def)
+
+        # For each bin_name in the list (i.e. loop nbin times)
+        for bin_name in bin_name_list:
+            # Get a DataFrame which filtered out rows that does not belong to the bin
+            bin_df = self.df.loc[self.df.iloc[:, 0] == bin_name]
+            # Call compute_bin_stats(var_df : pd.DataFrame, total_num_records : Integer, bin_name : String) and save as bin_stats_list
+            bin_stats_list = self.__compute_bin_stats__(
+                bin_df, bin_name, total_good_count, total_bad_count)
+            # Add an element in the dictionary, with bin_name as the key, and bin_stats_list as the value
+            summary_dict[bin_name] = bin_stats_list
+
+        # Create a pd.DataFrame object using the created dictionary
+        var_summary_df = pd.DataFrame.from_dict(
+            summary_dict, orient='index', columns=summary_table_col_name_list)
+
+        # Call compute_var_stats(var_df: pd.DataFrame, var_summary_df : pd.DataFrame, total_num_records : Integer) and save the list
+        var_stats_list = self.__compute_var_stats__(
+            var_summary_df, total_good_count, total_bad_count)
+
+        # Create a dictionary using "all" as the key, and the list created as the value
+        all_summary_series = pd.Series(
+            var_stats_list, index=summary_table_col_name_list)
+
+        # Append the dictionary as a row to the pd.DataFrame created
+        var_summary_df = var_summary_df.append(
+            all_summary_series, ignore_index=True)
+
+        # format df
+        for col in ['Odds', 'Info_Odds', 'WOE', 'MC']:
+            var_summary_df[col] = var_summary_df[col].apply(
+                lambda x: 0 if (x != None and abs(x) < 0.001) else x)
+            var_summary_df[col] = var_summary_df[col].apply(
+                lambda x: round(x, 4) if (x != None) else x)
+
+        for col in ['Good%', 'Bad%', 'Total%']:
+            var_summary_df[col] = var_summary_df[col].apply(
+                lambda x: round(x, 4) if (x != None) else x)
+
+        return var_summary_df
+
+    def __compute_bin_stats__(self, bin_df, bin_name, total_good, total_bad):
+        # Initialize an empty list (e.g., bin_stats_list) for storing the statistics for a bin
+        bin_stats_list = list()
+
+        # Compute bin good & bad count
+        _, _, _, _, _, good, bad = GoodBadCounter.get_statistics(bin_df, self.good_bad_def)
+        # Compute bin total count
+        total = good + bad
+        # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., good%)
+        good_pct = self.compute_pct(good, total_good)
+        # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., bad%)
+        bad_pct = self.compute_pct(bad, total_bad)
+        # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., total%)
+        total_pct = self.compute_pct(total, total_good + total_bad)
+        # Call compute_odds(good_pct : Float, bad_pct : Float) and save the returned value
+        odds = self.compute_odds(good, bad)
+        info_odds = self.compute_info_odds(good_pct, bad_pct)
+        # Call compute_woe(df : pd.DataFrame) using df and save the returned value
+        woe = self.compute_woe(info_odds)
+        # Call compute_info_val(good_pct : Float, bad_pct : Float, woe : Float) and save the returned value
+        mc = self.compute_mc(good_pct, bad_pct, woe)
+
+        # Append all statistics to the bin_stats_list in order
+        bin_stats_row = [bin_name, good, bad, odds, total, good_pct *
+                         100, bad_pct*100, total_pct*100, info_odds, woe, mc]
+        bin_stats_list.extend(bin_stats_row)
+
+        # Return list
+        return bin_stats_list
+
+    def __compute_var_stats__(self, var_summary_df, total_good, total_bad):
+        # Create an empty list for storing the statistics for the whole dataset
+        var_stats_list = list()
+
+        # Call compute_good(df : pd.DataFrame) using df and save the returned value
+        good = total_good
+        # Call compute_bad(df : pd.DataFrame) using df and save the returned value
+        bad = total_bad
+        # Call compute_total(df : pd.DataFrame) using df and save the returned value
+        total = good + bad
+        # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., good%)
+        good_pct = self.compute_pct(good, total_good)
+        # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., bad%)
+        bad_pct = self.compute_pct(bad, total_bad)
+        # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., total%)
+        total_pct = 1
+        # Call compute_odds(good_pct : Float, bad_pct : Float) and save the returned value
+        odds = self.compute_odds(good, bad)
+        info_odds = None
+        # Empty woe
+        woe = None
+        # Sum up the MC column and save the value = InfoVal
+        mc = var_summary_df.MC.sum()
+
+        # Append all statistics to the empty list in order
+        var_stats_list = ["Total", good, bad, odds, total, good_pct *
+                          100, bad_pct*100, total_pct*100, info_odds, woe, mc]
+        # Return list
+        return var_stats_list
+
+    @staticmethod
+    def compute_pct(value, total_value):
+        if total_value == 0:
+            return None
+        else:
+            return (value/total_value)
+
+    @staticmethod
+    def compute_odds(good, bad):
+        if bad == 0:
+            return None
+        else:
+            return (good/bad)
+
+    @staticmethod
+    def compute_info_odds(good_pct, bad_pct):
+        if bad_pct == 0:
+            return None
+        else:
+            return (good_pct/bad_pct)
+
+    @staticmethod
+    def compute_woe(info_odds):
+        if info_odds == None or info_odds <= 0:
+            return None
+        else:
+            return np.log(info_odds)
+
+    @staticmethod
+    def compute_mc(good_pct, bad_pct, woe):
+        if woe == None:
+            return 0
+        else:
+            return (good_pct - bad_pct)*woe
 
 def get_list_of_total_count(var_to_bin, unique_bin_name_list, good_bad_def):
     total_count_list = list()
@@ -390,8 +719,7 @@ def get_list_of_total_count(var_to_bin, unique_bin_name_list, good_bad_def):
         else:
             bin_df = df[df[var_to_bin] == unique_bin_name]
             # Get total good & bad
-            good_bad_counter = GoodBadCounter()
-            _, _, _, _, _, total_good_count, total_bad_count = good_bad_counter.get_statistics(
+            _, _, _, _, _, total_good_count, total_bad_count = GoodBadCounter.get_statistics(
                 bin_df, good_bad_def)
             total_count_list.append(total_good_count+total_bad_count)
     return total_count_list
@@ -404,8 +732,7 @@ def get_list_of_bad_count(var_to_bin, unique_bin_name_list, good_bad_def):
             bad_count_list.append(0)
         else:
             bin_df = df[df[var_to_bin] == unique_bin_name]
-            good_bad_counter = GoodBadCounter()
-            _, _, _, _, _, _, total_bad_count = good_bad_counter.get_statistics(
+            _, _, _, _, _, _, total_bad_count = GoodBadCounter.get_statistics(
                 bin_df, good_bad_def)
             bad_count_list.append(total_bad_count)
     return bad_count_list
@@ -418,10 +745,9 @@ def get_list_of_woe(var_to_bin, unique_bin_name_list, good_bad_def):
             woe_list.append(0)
         else:
             bin_df = df[df[var_to_bin] == unique_bin_name]
-            good_bad_counter = GoodBadCounter()
-            _, _, _, _, _, total_good, total_bad = good_bad_counter.get_statistics(
+            _, _, _, _, _, total_good, total_bad = GoodBadCounter.get_statistics(
                 df, good_bad_def)
-            _, _, _, _, _, good, bad = good_bad_counter.get_statistics(
+            _, _, _, _, _, good, bad = GoodBadCounter.get_statistics(
                 bin_df, good_bad_def)
             good_pct = StatCalculator.compute_pct(good, total_good)
             bad_pct = StatCalculator.compute_pct(bad, total_bad)
@@ -429,7 +755,6 @@ def get_list_of_woe(var_to_bin, unique_bin_name_list, good_bad_def):
             woe = StatCalculator.compute_woe(info_odds)
             woe_list.append(woe)
     return woe_list
-
 
 def generate_mixed_chart_fig(
     var_to_bin=df.columns[0], clicked_bar_index=None, good_bad_def=None
@@ -508,451 +833,270 @@ def generate_mixed_chart_fig(
 
     return fig
 
+# A class for performing binning based on bins settings
+class BinningMachine:
+    # Perform equal width binning based on a specified width (for numerical column only)
+    @staticmethod
+    def perform_eq_width_binning_by_width(col_df, width):
+        if len(col_df) == 0:
+            return -1
+        if col_df.isna().all().all():
+            return pd.Series([None for _ in range(len(col_df))])
+        if not pd.api.types.is_numeric_dtype(col_df.iloc[:, 0]): # Cannot be categorical type
+            return -1
+        if not (isinstance(width, int) or isinstance(width, float)) or width <= 0: # width cannot be non-numeric
+            return -1
+        
+        min = col_df.min()
+        max = col_df.max()
+        num_bins = int(np.ceil((max - min) / width)) + 1
+        
+        bin_edges = list()
+        for i in range(num_bins):
+            bin_edges.append(float(Decimal(str(float(min))) + Decimal(str(width)) * i))
+        
+        bin_ranges = [[edge, float(Decimal(str(edge))+Decimal(str(width)))] for edge in bin_edges]
+        
+        binned_result = list()
+        for _, row in col_df.iterrows():
+            val = row.iloc[0]
+            if np.isnan(val):
+                binned_result.append(None)
+                
+            for bin_range in bin_ranges:
+                if val >= bin_range[0] and val < bin_range[1]:
+                    binned_result.append(f"[{bin_range[0]}, {bin_range[1]})")
+                    break
+        return pd.Series(binned_result)
+    
+    # A method to perform equal width binning based on a specified number of bins
+    @staticmethod
+    def perform_eq_width_binning_by_num_bins(col_df, num_bins):
+        if len(col_df) == 0:
+            return -1
+        if col_df.isna().all().all():
+            return pd.Series([None for _ in range(len(col_df))])
+        if not pd.api.types.is_numeric_dtype(col_df.iloc[:, 0]): # Cannot be categorical type
+            return -1
+        if not isinstance(num_bins, int) or num_bins <= 0:
+            return -1
+        
+        min = col_df.min()
+        max = col_df.max()
+        width = (float(max) - float(min)) / num_bins
+        add_to_last_width = Decimal(str(width * 0.01)) # to include max value
+        
+        bin_edges = list()
+        for i in range(num_bins):
+            bin_edges.append(float(Decimal(str(float(min))) + Decimal(str(width)) * i))
+        
+        bin_ranges = [[edge, float(Decimal(str(edge))+Decimal(str(width)))] for edge in bin_edges]
+        bin_ranges[len(bin_ranges)-1][1] = float(Decimal(str(add_to_last_width)) + Decimal(str(bin_ranges[len(bin_ranges)-1][1])))
+        
+        binned_result = list()
+        for _, row in col_df.iterrows():
+            val = row.iloc[0]
+            if np.isnan(val):
+                binned_result.append(None)
+            for bin_range in bin_ranges:
+                if val >= bin_range[0] and val < bin_range[1]:
+                    binned_result.append(f"[{bin_range[0]}, {bin_range[1]})")
+                    break
+        return pd.Series(binned_result)
+    
+    # A method to perform equal frequency binning based on a specified frequency
+    @staticmethod
+    def perform_eq_freq_binning_by_freq(col_df, freq):
+        if len(col_df) == 0:
+            return -1
+        if col_df.isna().all().all():
+            return pd.Series([None for _ in range(len(col_df))])
+        if not pd.api.types.is_numeric_dtype(col_df.iloc[:, 0]): # Cannot be categorical type
+            return -1
+        if not isinstance(freq, int) or freq <= 0 or freq > len(col_df):
+            return -1
+        
+        
+        num_bins = int(np.ceil(len(col_df)/freq))
+        # print(num_bins)
+        # if num_bins == 1: 
+        #     print(type(col_df.iloc[:, 0]))
+        #     return col_df.iloc[:, 0]
+        
+        # bin the col_df
+        interval_li = pd.qcut(col_df.iloc[:, 0], num_bins, duplicates="drop").to_list()
+
+        if all(not isinstance(x, pd._libs.interval.Interval) for x in interval_li):
+            interval_li = [pd.Interval(float(col_df.iloc[0:1,0]), float(col_df.iloc[0:1,0])+1) for _ in interval_li]
+        
+        # convert to the format we want
+        binned_result = list()
+        for idx in range(len(interval_li)):
+            if not isinstance(interval_li[idx], pd._libs.interval.Interval):
+                binned_result.append(None)
+            else:
+                binned_result.append(f"[{interval_li[idx].left}, {interval_li[idx].right})")
+        
+        return pd.Series(binned_result)
+    
+    # A method to perform equal-frequency binning based on a specified number of bins
+    @staticmethod
+    def perform_eq_freq_binning_by_num_bins(col_df, num_bins):
+        if len(col_df) == 0:
+            return -1
+        if col_df.isna().all().all():
+            return pd.Series([None for _ in range(len(col_df))])
+        if not pd.api.types.is_numeric_dtype(col_df.iloc[:, 0]): # Cannot be categorical type
+            return -1
+        if not isinstance(num_bins, int) or num_bins <= 0:
+            return -1
+        
+        interval_li = pd.qcut(col_df.iloc[:, 0], num_bins, duplicates="drop").to_list()
+
+        if all(not isinstance(x, pd._libs.interval.Interval) for x in interval_li):
+            interval_li = [pd.Interval(float(col_df.iloc[0:1,0]), float(col_df.iloc[0:1,0])+1) for _ in interval_li]
+        
+        # convert to the format we want
+        binned_result = list()
+        for idx in range(len(interval_li)):
+            if not isinstance(interval_li[idx], pd._libs.interval.Interval):
+                binned_result.append(None)
+            else:
+                binned_result.append(f"[{interval_li[idx].left}, {interval_li[idx].right})")
+        
+        return pd.Series(binned_result)
+    
+    # A method to perform custom binning for a categorical column
+    @staticmethod
+    def perform_categorical_custom_binning(col_df, bins_settings):
+        if len(col_df) == 0:
+            return -1
+        
+        binned_result = list()
+        
+        for _, row in col_df.iterrows():
+            val = row.iloc[0]
+            has_assigned_bin = False
+            for bin in bins_settings:
+                if val in bin["elements"]:
+                    binned_result.append(bin["name"])
+                    has_assigned_bin = True
+                    break 
+            if has_assigned_bin == False: # does not belongs to any bin
+                binned_result.append(None)
+        
+        return pd.Series(binned_result)
+    
+    # A method to perform custom binning for a numerical column
+    @staticmethod
+    def perform_numerical_custom_binning(col_df, bins_settings):
+        if len(col_df) == 0:
+            return -1
+        
+        binned_result = list()
+        
+        for _, row in col_df.iterrows():
+            val = row.iloc[0]
+            has_assigned_bin = False
+            for bin in bins_settings:
+                for r in bin["ranges"]:
+                    if val >= r[0] and val < r[1]:
+                        binned_result.append(bin["name"])
+                        has_assigned_bin = True
+                        break
+                
+            if has_assigned_bin == False: # does not belongs to any bin
+                binned_result.append(None)
+        
+        return pd.Series(binned_result)
+    
+    # A method to perform binning (equal-width/equal-frequency/custom) for a single column (either categorical or numerical)
+    @staticmethod
+    def perform_binning_on_col(col_df, col_bins_settings):
+        """
+        col_bins_settings is in the form of: 
+        {
+            "column": "person_income",
+            "type": "numerical",
+            "info_val": 0.11,
+            "bins": [
+                {
+                    "name": "0-9999, 30000-39999",
+                    "ranges": [[0, 9999], [30000, 39999]],
+                },
+                {
+                    "name": "20000-29999",
+                    "ranges": [[20000, 29999]],
+                },
+            ],
+        }
+        """
+        if col_bins_settings["bins"] == "none":
+            if len(col_df) == 0:
+                return -1
+            return col_df.iloc[:, 0] # no binning
+        elif isinstance(col_bins_settings["bins"], dict):  # auto binning
+            if col_bins_settings["bins"]["algo"] == "equal width":
+                if col_bins_settings["bins"]["method"] == "width":
+                    if col_bins_settings["type"] == "numerical":
+                        return BinningMachine.perform_eq_width_binning_by_width(col_df, col_bins_settings["bins"]["value"])
+                    else:
+                        return -1
+                else: # by num of bins
+                    if col_bins_settings["type"] == "numerical":
+                        return BinningMachine.perform_eq_width_binning_by_num_bins(col_df, col_bins_settings["bins"]["value"])
+                    else:
+                        return -1
+            else: # equal frequency
+                if col_bins_settings["bins"]["method"] == "freq":
+                    if col_bins_settings["type"] == "numerical":
+                        return BinningMachine.perform_eq_freq_binning_by_freq(col_df, col_bins_settings["bins"]["value"])
+                    else:
+                        return -1
+                else: # by num of bins
+                    if col_bins_settings["type"] == "numerical":
+                        return BinningMachine.perform_eq_freq_binning_by_num_bins(col_df, col_bins_settings["bins"]["value"])
+                    else:
+                        return -1
+        else: # custom binning
+            if col_bins_settings["type"] == "numerical":
+                return BinningMachine.perform_numerical_custom_binning(col_df, col_bins_settings["bins"])
+            else:
+                return BinningMachine.perform_categorical_custom_binning(col_df, col_bins_settings["bins"])
+    
+    # A method that perform binning (equal-width/equal-frequency/custom) for the whole dataframe (can contain numerical/categorical columns)
+    @staticmethod
+    def perform_binning_on_whole_df(dframe, bins_settings_list):
+        if len(dframe) == 0:
+            return dframe
+        
+        for col in dframe.columns:
+            col_df = dframe.loc[:, [col]]
+            
+            # Find col_bins_settings
+            col_bins_settings = None
+            for bins_settings in bins_settings_list:
+                if bins_settings["column"] == col:
+                    col_bins_settings = bins_settings
+                    break
+            
+            # if no bins settings for the column, skip it
+            if col_bins_settings == None:
+                continue
+            
+            binned_series = BinningMachine.perform_binning_on_col(col_df, col_bins_settings)
+            if not isinstance(binned_series, pd.Series): # error occurs
+                return -1
+            
+            binned_col_name = col + "_binned"
+            dframe[binned_col_name] = binned_series
+        
+        return dframe
+
 
 """
 All
 """
-# A class for performing binning based on bins settings & good bad definition
-
-
-class BinningMachine:
-    # A method for performing binning for the whole dataframe based on bins_settings, returns a binned_df
-    def perform_binning_on_whole_df(self, bins_settings_list):
-        binned_df = df[df.columns.to_list()]
-
-        for predictor_var_info in bins_settings_list:
-            new_col_name = predictor_var_info["column"] + "_binned"
-            if predictor_var_info["bins"] == "none":
-                binned_df[new_col_name] = df[predictor_var_info["column"]]
-            elif predictor_var_info["bins"] == "equal width":
-                pass
-            elif predictor_var_info["bins"] == "equal frequency":
-                pass
-            else:
-                pass
-
-        return binned_df
-
-    # A method for performing binning for a single column based on bins_settings, returns a pd.Series
-    def perform_binning_on_col(self, col_df, bin_method):
-        if bin_method["bins"] == "none":
-            return col_df.iloc[:, 0]  # no binning
-        elif isinstance(bin_method["bins"], dict):  # auto binning
-            if bin_method["bins"]["algo"] == "equal width":
-                if bin_method["bins"]["method"] == "width":
-                    return self.__perform_eq_width_binning_by_width__(col_df, bin_method["type"], bin_method["bins"]["value"])
-                else:  # by num of bins
-                    return self.__perform_eq_width_binning_by_num_bins__(col_df, bin_method["type"], bin_method["bins"]["value"])
-            else:  # equal frequency
-                if bin_method["bins"]["method"] == "freq":
-                    return self.__perform_eq_freq_binning_by_freq__(col_df, bin_method["type"], bin_method["bins"]["value"])
-                else:  # by num of bins
-                    return self.__perform_eq_freq_binning_by_num_bins__(col_df, bin_method["type"], bin_method["bins"]["value"])
-        else:  # custom binning
-            return self.__perform_custom_binning__(col_df, bin_method["type"], bin_method["bins"])
-
-    # A method for performing equal width binning with a specified width, returns a pd.Series
-    def __perform_eq_width_binning_by_width__(self, col_df, dtype, width):
-        # Check if the width is valid
-        if width <= 0:
-            # Width should be a positive number.
-            raise PreventUpdate
-        col_name = df.columns[0]
-        if dtype == "categorical" and width > col_df[col_name].nunique():
-            # For categorical variable, width should not be greater than number of unique values in the column.
-            raise PreventUpdate
-
-        # Bin the column
-        if dtype == "numerical":
-            min_value = col_df[col_name].min()
-            max_value = col_df[col_name].max()
-            num_bins = int(np.ceil((max_value - min_value) / width))
-            return pd.cut(col_df[col_name], bins=num_bins, right=False)
-        else:  # categorical
-            num_unique_value = col_df[col_name].nunique()
-            bins_num_elements = list()
-
-            num_bins = int(np.ceil(num_unique_value/width))
-
-            for i in range(num_bins-1):
-                bins_num_elements.append(width)
-            bins_num_elements.append(num_unique_value - (num_bins-1) * width)
-
-            unique_values = col_df[col_name].unique().tolist()
-            bin_defs = list()
-            bin_names = list()
-
-            for num_elements in bins_num_elements:
-                def_list = list()
-                bin_name = ""
-
-                def_list.append(unique_values[0])
-                bin_name += str(unique_values[0])
-                unique_values.pop(0)
-                for i in range(num_elements-1):
-                    def_list.append(unique_values[0])
-                    bin_name += (", " + str(unique_values[0]))
-                    unique_values.pop(0)
-
-                bin_defs.append(def_list)
-                bin_names.append(bin_name)
-
-            assigned_bin = list()
-            for _, row in col_df.iterrows():
-                for i in range(len(bin_defs)):
-                    if row[0] in bin_defs[i]:
-                        assigned_bin.append(bin_names[i])
-                        break
-
-            return pd.Series(assigned_bin)
-
-    # A method for performing equal width binning with a specified number of fixed-width bins, returns a pd.Series
-    def __perform_eq_width_binning_by_num_bins__(self, col_df, dtype, num_bins):
-        # Check if the width is valid
-        if num_bins <= 0 or not isinstance(num_bins, int):
-            # Number of bins should be a positive integer.
-            raise PreventUpdate
-        col_name = df.columns[0]
-        if dtype == "categorical" and num_bins > col_df[col_name].nunique():
-            # For categorical variable, number of bins should not be greater than number of unique values in the column.
-            raise PreventUpdate
-
-        # Bin the column
-        if dtype == "numerical":
-            return pd.cut(col_df[col_name], bins=num_bins, right=False)
-        else:  # categorical
-            num_unique_value = col_df[col_name].nunique()
-            bins_num_elements = list()  # list storing the number of elements in each bin
-
-            if num_bins % num_unique_value == 0:
-                for i in range(num_unique_value):
-                    bins_num_elements.append(num_bins // num_unique_value)
-            else:
-                zp = num_bins - (num_unique_value % num_bins)
-                pp = num_unique_value//num_bins
-                for i in range(num_bins):
-                    if (i >= zp):
-                        bins_num_elements.append(pp+1)
-                    else:
-                        bins_num_elements.append(pp)
-            # print(bins_num_elements)
-
-            unique_values = col_df[col_name].unique().tolist()
-            bin_defs = list()
-            bin_names = list()
-
-            for num_elements in bins_num_elements:
-                def_list = list()
-                bin_name = ""
-
-                def_list.append(unique_values[0])
-                bin_name += str(unique_values[0])
-                unique_values.pop(0)
-                for i in range(num_elements-1):
-                    def_list.append(unique_values[0])
-                    bin_name += (", " + str(unique_values[0]))
-                    unique_values.pop(0)
-
-                bin_defs.append(def_list)
-                bin_names.append(bin_name)
-
-            assigned_bin = list()
-            for _, row in col_df.iterrows():
-                for i in range(len(bin_defs)):
-                    if row[0] in bin_defs[i]:
-                        assigned_bin.append(bin_names[i])
-                        break
-
-            return pd.Series(assigned_bin)
-
-    # A method for performing equal frequency binning with a specified frequency, returns a pd.Series
-    def __perform_eq_freq_binning_by_freq__(self, col_df, dtype, freq):
-        # Check if the width is valid
-        if freq <= 0 or not isinstance(freq, int):
-            # Frequency should be a positive integer.
-            raise PreventUpdate
-        col_name = df.columns[0]
-
-        # Bin the column
-        if dtype == "numerical":
-            num_rows = len(col_df)
-            num_bins = int(np.ceil(num_rows/freq))
-            return pd.qcut(col_df[col_name], num_bins, duplicates="drop")
-        else:  # categorical
-            pass
-
-    # A method for performing equal frequency binning with a specified number of fixed-frequency bins, returns a pd.Series
-    def __perform_eq_freq_binning_by_num_bins__(self, col_df, dtype, num_bins):
-        # Check if the width is valid
-        if num_bins <= 0 or not isinstance(num_bins, int):
-            raise ValueError("Frequency should be a positive integer.")
-        col_name = df.columns[0]
-        if dtype == "categorical" and num_bins > col_df[col_name].nunique():
-            raise ValueError(
-                "For categorical variable, number of bins should not be greater than number of unique values in the column.")
-
-        # Bin the column
-        if dtype == "numerical":
-            return pd.qcut(col_df[col_name], num_bins, duplicates="drop")
-        else:  # categorical
-            pass
-
-    # A method for performing binning based on boundary points obtained from interactive binning, returns a pd.Series
-    def __perform_custom_binning__(self, col_df, dtype, bins_settings):
-        pass
-
-
-# A class to calculate statistical values for displaying the mixed chart & statistical tables
-class StatCalculator:
-    def __init__(self, df, col_bins_settings, good_bad_def) -> None:
-        # for binning & good bad calculation, need whole df (OR only columns to be binned & columns involved in good bad def)
-        self.df = df
-        self.col_bins_settings = col_bins_settings  # for binning
-        self.good_bad_def = good_bad_def  # for good bad calculation
-
-    # Output - a dataframe representing the summary statistics table of the column
-    def compute_summary_stat_table(self):
-        """
-        1. Binning
-        """
-        col_to_bin = self.col_bins_settings["column"]  # get the name of column to be binned
-
-        col_df = self.df.loc[:, [col_to_bin]]  # get a single column
-
-        # perform binning
-        binning_machine = BinningMachine()
-        binned_series = binning_machine.perform_binning_on_col(
-            col_df, self.col_bins_settings)
-        self.df.insert(loc=0, column=col_to_bin+"_binned", value=binned_series)
-
-        """
-        2. Compute Summary Statistic Table
-        """
-        # Initialize an empty dictionary for storing information of each rows of the summary table (i.e., each bin)
-        summary_dict = dict()
-        # Create a list which stores summary table' column names
-        summary_table_col_name_list = ["Bin", "Good", "Bad", "Odds",
-                                       "Total", "Good%", "Bad%", "Total%", "Info_Odds", "WOE", "MC"]
-
-        # Get and save a list of unique bin_name
-        bin_name_list = self.df.iloc[:, 0].unique().tolist()
-
-        # Get total good & bad
-        good_bad_counter = GoodBadCounter()
-        _, _, _, _, _, total_good_count, total_bad_count = good_bad_counter.get_statistics(
-            self.df, self.good_bad_def)
-
-        # For each bin_name in the list (i.e. loop nbin times)
-        for bin_name in bin_name_list:
-            # Get a DataFrame which filtered out rows that does not belong to the bin
-            bin_df = self.df.loc[self.df.iloc[:, 0] == bin_name]
-            # Call compute_bin_stats(var_df : pd.DataFrame, total_num_records : Integer, bin_name : String) and save as bin_stats_list
-            bin_stats_list = self.__compute_bin_stats__(
-                bin_df, bin_name, total_good_count, total_bad_count)
-            # Add an element in the dictionary, with bin_name as the key, and bin_stats_list as the value
-            summary_dict[bin_name] = bin_stats_list
-
-        # Create a pd.DataFrame object using the created dictionary
-        var_summary_df = pd.DataFrame.from_dict(
-            summary_dict, orient='index', columns=summary_table_col_name_list)
-
-        # Call compute_var_stats(var_df: pd.DataFrame, var_summary_df : pd.DataFrame, total_num_records : Integer) and save the list
-        var_stats_list = self.__compute_var_stats__(
-            var_summary_df, total_good_count, total_bad_count)
-
-        # Create a dictionary using "all" as the key, and the list created as the value
-        all_summary_series = pd.Series(
-            var_stats_list, index=summary_table_col_name_list)
-
-        # Append the dictionary as a row to the pd.DataFrame created
-        var_summary_df = var_summary_df.append(
-            all_summary_series, ignore_index=True)
-
-        # format df
-        for col in ['Odds', 'Info_Odds', 'WOE', 'MC']:
-            var_summary_df[col] = var_summary_df[col].apply(
-                lambda x: 0 if (x != None and abs(x) < 0.001) else x)
-            var_summary_df[col] = var_summary_df[col].apply(
-                lambda x: round(x, 4) if (x != None) else x)
-
-        for col in ['Good%', 'Bad%', 'Total%']:
-            var_summary_df[col] = var_summary_df[col].apply(
-                lambda x: round(x, 4) if (x != None) else x)
-
-        return var_summary_df
-
-    def __compute_bin_stats__(self, bin_df, bin_name, total_good, total_bad):
-        # Initialize an empty list (e.g., bin_stats_list) for storing the statistics for a bin
-        bin_stats_list = list()
-
-        # Compute bin good & bad count
-        good_bad_counter = GoodBadCounter()
-        _, _, _, _, _, good, bad = good_bad_counter.get_statistics(
-            bin_df, self.good_bad_def)
-        # Compute bin total count
-        total = good + bad
-        # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., good%)
-        good_pct = self.compute_pct(good, total_good)
-        # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., bad%)
-        bad_pct = self.compute_pct(bad, total_bad)
-        # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., total%)
-        total_pct = self.compute_pct(total, total_good + total_bad)
-        # Call compute_odds(good_pct : Float, bad_pct : Float) and save the returned value
-        odds = self.compute_odds(good, bad)
-        info_odds = self.compute_info_odds(good_pct, bad_pct)
-        # Call compute_woe(df : pd.DataFrame) using df and save the returned value
-        woe = self.compute_woe(info_odds)
-        # Call compute_info_val(good_pct : Float, bad_pct : Float, woe : Float) and save the returned value
-        mc = self.compute_mc(good_pct, bad_pct, woe)
-
-        # Append all statistics to the bin_stats_list in order
-        bin_stats_row = [bin_name, good, bad, odds, total, good_pct *
-                         100, bad_pct*100, total_pct*100, info_odds, woe, mc]
-        bin_stats_list.extend(bin_stats_row)
-
-        # Return list
-        return bin_stats_list
-
-    def __compute_var_stats__(self, var_summary_df, total_good, total_bad):
-        # Create an empty list for storing the statistics for the whole dataset
-        var_stats_list = list()
-
-        # Call compute_good(df : pd.DataFrame) using df and save the returned value
-        good = total_good
-        # Call compute_bad(df : pd.DataFrame) using df and save the returned value
-        bad = total_bad
-        # Call compute_total(df : pd.DataFrame) using df and save the returned value
-        total = good + bad
-        # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., good%)
-        good_pct = self.compute_pct(good, total_good)
-        # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., bad%)
-        bad_pct = self.compute_pct(bad, total_bad)
-        # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., total%)
-        total_pct = 1
-        # Call compute_odds(good_pct : Float, bad_pct : Float) and save the returned value
-        odds = self.compute_odds(good, bad)
-        info_odds = None
-        # Empty woe
-        woe = None
-        # Sum up the MC column and save the value = InfoVal
-        mc = var_summary_df.MC.sum()
-
-        # Append all statistics to the empty list in order
-        var_stats_list = ["Total", good, bad, odds, total, good_pct *
-                          100, bad_pct*100, total_pct*100, info_odds, woe, mc]
-        # Return list
-        return var_stats_list
-
-    @staticmethod
-    def compute_pct(value, total_value):
-        if total_value == 0:
-            return None
-        else:
-            return (value/total_value)
-
-    @staticmethod
-    def compute_odds(good, bad):
-        if bad == 0:
-            return None
-        else:
-            return (good/bad)
-
-    @staticmethod
-    def compute_info_odds(good_pct, bad_pct):
-        if bad_pct == 0:
-            return None
-        else:
-            return (good_pct/bad_pct)
-
-    @staticmethod
-    def compute_woe(info_odds):
-        if info_odds == None or info_odds == 0:
-            return None
-        else:
-            return np.log(info_odds)
-
-    @staticmethod
-    def compute_mc(good_pct, bad_pct, woe):
-        if woe == None:
-            return 0
-        else:
-            return (good_pct - bad_pct)*woe
-
-
-# A class for counting the number of good and bad samples/population in the column
-class GoodBadCounter:
-    # A method to get the number of sample bad, sample indeterminate, sample good, population good, and population bad
-    def get_statistics(self, dframe, good_bad_def):
-        new_dframe, sample_bad_count = self.__count_sample_bad(
-            dframe, good_bad_def["bad"])
-        sample_indeterminate_count = self.__count_sample_indeterminate(
-            new_dframe, good_bad_def["indeterminate"])
-        sample_good_count = self.__count_sample_good(
-            dframe, sample_bad_count, sample_indeterminate_count)
-        good_weight = good_bad_def["good"]["weight"]
-        bad_weight = good_bad_def["bad"]["weight"]
-        population_good_count = self.__get_population_good(
-            sample_good_count, good_weight)
-        population_bad_count = self.__get_population_bad(
-            sample_bad_count, bad_weight)
-        return (sample_bad_count, sample_indeterminate_count, sample_good_count, good_weight, bad_weight, population_good_count, population_bad_count)
-
-    # A method to count the number of sample bad
-    def __count_sample_bad(self, dframe, bad_defs):
-        bad_count = 0
-        for bad_numeric_def in bad_defs["numerical"]:
-            # count number of rows if dframe row is in bad_numeric_def range, and add to bad_count
-            for a_range in bad_numeric_def["ranges"]:
-                bad_count += len(dframe[(dframe[bad_numeric_def["column"]] >= a_range[0]) & (
-                    dframe[bad_numeric_def["column"]] < a_range[1])])
-                # delete rows if dframe row is in bad_numeric_def range
-                dframe = dframe.drop(dframe[(dframe[bad_numeric_def["column"]] >= a_range[0]) & (
-                    dframe[bad_numeric_def["column"]] < a_range[1])].index)
-
-        for bad_categoric_def in bad_defs["categorical"]:
-            # count number of rows if dframe row is having any one of the bad_categoric_def elements value
-            for element in bad_categoric_def["elements"]:
-                bad_count += len(dframe[(dframe[bad_categoric_def["column"]] == element)])
-                # delete rows if dframe row has value 'element'
-                dframe = dframe.drop(
-                    dframe[(dframe[bad_categoric_def["column"]] == element)].index)
-
-        return (dframe, bad_count)
-
-    # A method to count the number of sample indeterminate
-    def __count_sample_indeterminate(self, dframe, indeterminate_defs):
-        indeterminate_count = 0
-        for indeterminate_numeric_def in indeterminate_defs["numerical"]:
-            # count number of rows if dframe row is in indeterminate_numeric_def range, and add to indeterminate_count
-            for a_range in indeterminate_numeric_def["ranges"]:
-                indeterminate_count += len(dframe[(dframe[indeterminate_numeric_def["column"]] >= a_range[0]) & (
-                    dframe[indeterminate_numeric_def["column"]] < a_range[1])])
-                # delete rows if dframe row is in indeterminate_numeric_def range
-                dframe = dframe.drop(dframe[(dframe[indeterminate_numeric_def["column"]] >= a_range[0]) & (
-                    dframe[indeterminate_numeric_def["column"]] < a_range[1])].index)
-
-        for indeterminate_categoric_def in indeterminate_defs["categorical"]:
-            # count number of rows if dframe row is having any one of the indeterminate_categoric_def elements value
-            for element in indeterminate_categoric_def["elements"]:
-                indeterminate_count += len(
-                    dframe[(dframe[indeterminate_categoric_def["column"]] == element)])
-                # delete rows if dframe row has value 'element'
-                dframe = dframe.drop(
-                    dframe[(dframe[indeterminate_categoric_def["column"]] == element)].index)
-
-        return indeterminate_count
-
-    # A method to count the number of sample good
-    def __count_sample_good(self, dframe, sample_bad_count, sample_indeterminate_count):
-        return (len(dframe) - sample_bad_count - sample_indeterminate_count)
-
-    # A method to count the number of population good
-    def __get_population_good(self, sample_good_count, good_weight):
-        return sample_good_count * good_weight
-
-    # A method to count the number of population bad
-    def __get_population_bad(self, sample_bad_count, bad_weight):
-        return sample_bad_count * bad_weight
 
 
 ###########################################################################
@@ -963,9 +1107,9 @@ home_page_layout = html.Div(
         NavBar(),
         Heading("Input Dataset"),
         html.P("Number of rows: " + str(df.shape[0])),
-        html.P("Number of columns: " +
-               str(df.shape[1]), style={"marginBottom": 30}),
+        html.P("Number of columns: " + str(df.shape[1]), style={"marginBottom": 30}),
         DataTable(df=df),
+        html.Div(style={"height": 100}),
     ]
 )
 
@@ -1163,9 +1307,8 @@ good_bad_def_page_layout = html.Div(
         html.Div([], id="good_bad_stat_section"),
         html.Div([], style={"height": 50, "clear": "left"}),
         # Debug
-        html.P("", id="test_good_bad_def"),
         html.Div([], style={"height": 100}),
-        html.P(id="text_triggered"),
+        html.P("", id="test_good_bad_def"),
     ]
 )
 
@@ -1173,9 +1316,9 @@ good_bad_def_page_layout = html.Div(
 interactive_binning_page_layout = html.Div([
     NavBar(),
     Heading("Interactive Binning Interface"),
-    html.P(id="ib_show_bins_settings_text"),
-    html.P(id="ib_show_good_bad_def_text"),
-
+    html.P(id="ib_show_bins_settings_text"), # debug
+    html.P(id="ib_show_good_bad_def_text"), # debug
+    
     html.Div(
         [
             html.Div(
@@ -1369,32 +1512,516 @@ interactive_binning_page_layout = html.Div([
                 ],
                 style=white_panel_style,
             ),
+            # Categorical Create New Bin Control Panel
             html.Div(
                 [
-                    # html.P("Split/Add bin: Click on the bar representing the bin you would like to split > choose the split point > click the 'split' button"),
-                    # html.P("Remove bin: Click on the bar representing the bin you would like to remove > click on 'Remove' button"),
-                    # html.P("Adjust bin boundaries: Click on the bar to be adjusted > adjust through slider > click on 'Adjust' button"),
-                    html.P("Bin Name: ", id="selected_bin_name"),
-                    html.P("Bin Index: ", id="selected_bin_index"),
-                    html.P("Bin Count: ", id="selected_bin_count"),
-                    html.Div(
-                        [],
-                        style={
-                            "width": "100%",
-                            "height": 0,
-                            "border": "1px solid black",
-                        },
+                    SectionHeading("Create a New Bin", center=True, bold=True),
+                    html.P("Instructions", style={"fontWeight": "bold"}),
+                    html.Ul([
+                        html.Li("Enter the name of the new bin in the text input area", style={"fontSize": 14}),
+                        html.Li("Select the elements from the dropdown menu that you would like to include in the bin", style={"fontSize": 14}),
+                        html.Li("Click the ‘Create New Bin’ button to preview changes on the bins settings", style={"fontSize": 14}),
+                        html.Li("The selected elements which overlaps with the old bins settings will be automatically removed from the other bins", style={"fontSize": 14}),
+                        html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={"fontSize": 14}),
+                    ], style={"listStyleType": "square", "lineHeight": "97%"}),
+                    html.P("Enter the new bin name: ", style={"fontWeight": "bold"}),
+                    dcc.Input(style={"marginBottom": 10}),
+                    html.P("Select elements to be included in the new bin:", style={"fontWeight": "bold"}),
+                    dcc.Dropdown(
+                        options=convert_column_list_to_dropdown_options(["OWN", "RENT", "MORTGAGE", "OTHERS"]), # dummy
+                        value=[],
+                        multi=True,
+                        style={"marginBottom": 13},
                     ),
-                    SectionHeading("Rename Selected Bin"),
-                    SaveButton(title="Rename"),
-                    SectionHeading("Split Selected Bin"),
-                    SaveButton(title="Split"),
-                    SectionHeading("Merge Selected Bins"),
-                    SaveButton(title="Merge"),
-                    SectionHeading("Remove Selected Bin(s)"),
-                    SaveButton(title="Remove"),
+                    SaveButton("Create New Bin"),
+                    html.Div(style={"height": 13}),
+                    html.P("Preview Changes:", style={"fontWeight": "bold", "textDecoration": "underline"}),
+                    html.P("Old Bin(s):", style={"fontWeight": "bold", "fontSize": 14}),
+                    # 1 old bin elements, TODO: extract it out
+                    html.Div([
+                        html.Div([html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                        html.Div([html.P("Old Bin Name: " + "Rent or Mortgage"), html.P("Old Bin Element(s): " + "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                    ]),
+                    html.P("Will be changed to:", style={"fontWeight": "bold", "fontSize": 14}),
+                    # 1 new bin elements, TODO: extract it out
+                    html.Div([
+                        html.Div([html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                        html.Div([html.P("New Bin Name: " + "Rent or Mortgage"), html.P("New Bin Element(s): " + "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                    ]),
+                    SaveButton("Submit", inline=True),
+                    SaveButton("Hide Details", inline=True, backgroundColor="#8097E6", marginLeft=5),
+                    html.Div(style={"height": 13, "clear": "both"}),
+                    html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.", style={"lineHeight": "99%", "fontSize": 14}),
                 ],
-                style=purple_panel_style,
+                style={
+                    "float": "left",
+                    "width": "30%",
+                    "backgroundColor": "#BCBCDA",
+                    "padding": "2%",
+                    "borderRadius": dimens["panel-border-radius"],
+                    "display": "none",
+                },
+                id="categorical_create_new_bin_control_panel",
+            ),
+            # Categorical Add Elements Control Panel
+            html.Div([
+                html.Div([
+                    SaveButton("Add Elements", inline=True, width="12%"),
+                    SaveButton("Split Bin", inline=True, width="9%", marginLeft="0.5%"),
+                    SaveButton("Rename Bin", inline=True, width="12%", marginLeft="0.5%"),
+                ]),
+                html.Div(
+                    [
+                        SectionHeading("Add Elements to the Bin", center=True, bold=True),
+                        html.P("Instructions", style={"fontWeight": "bold"}),
+                        html.Ul([
+                            html.Li("Enter the new bin name in the text input area, if it is empty, the bin name will remain the same", style={"fontSize": 14}),
+                            html.Li("Select the elements to be added in the new bin from the dropdown menu", style={"fontSize": 14}),
+                            html.Li("Click the ‘Add Elements’ button to preview changes on the bins settings", style={"fontSize": 14}),
+                            html.Li("The selected elements which overlaps with the old bins settings will be automatically removed from the other bins", style={"fontSize": 14}),
+                            html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={"fontSize": 14}),
+                        ], style={"listStyleType": "square", "lineHeight": "97%"}),
+                        html.P("Selected Bin Info: ", style={"fontWeight": "bold"}),
+                        # TODO: extract this out
+                        html.P("Bin Name: " + "Rent or Mortgage", style={"fontSize": 14}),
+                        html.P("Bin Element(s): " + "['RENT', 'MORTGAGE]", style={"fontSize": 14}),
+                        html.P("Population Good Count: " + "11754", style={"fontSize": 14}),
+                        html.P("Population Bad Count: " + "5119", style={"fontSize": 14}),
+
+                        html.P("Enter the new bin name: ", style={"fontWeight": "bold"}),
+                        dcc.Input(style={"marginBottom": 10}),
+                        html.P("Select elements to be added into the bin:", style={"fontWeight": "bold"}),
+                        dcc.Dropdown(
+                            options=convert_column_list_to_dropdown_options(["OWN", "OTHERS"]), # dummy
+                            value=[],
+                            multi=True,
+                            style={"marginBottom": 13},
+                        ),
+                        SaveButton("Add Elements"),
+                        html.Div(style={"height": 13}),
+                        html.P("Preview Changes:", style={"fontWeight": "bold", "textDecoration": "underline"}),
+                        html.P("Old Bin(s):", style={"fontWeight": "bold", "fontSize": 14}),
+                        # 1 old bin elements, TODO: extract it out
+                        html.Div([
+                            html.Div([html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                            html.Div([html.P("Old Bin Name: " + "Rent or Mortgage"), html.P("Old Bin Element(s): " + "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                        ]),
+                        html.P("Will be changed to:", style={"fontWeight": "bold", "fontSize": 14}),
+                        # 1 new bin elements, TODO: extract it out
+                        html.Div([
+                            html.Div([html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                            html.Div([html.P("New Bin Name: " + "Rent or Mortgage"), html.P("New Bin Element(s): " + "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                        ]),
+                        SaveButton("Submit", inline=True),
+                        SaveButton("Hide Details", inline=True, backgroundColor="#8097E6", marginLeft=5),
+                        html.Div(style={"height": 13, "clear": "both"}),
+                        html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.", style={"lineHeight": "99%", "fontSize": 14}),
+                    ],
+                    style={
+                        "marginTop": 13,
+                        "float": "left",
+                        "width": "30%",
+                        "backgroundColor": "#BCBCDA",
+                        "padding": "2%",
+                        "borderRadius": dimens["panel-border-radius"],
+                    },
+                ),
+            ], id="categorical_add_elements_control_panel", style={"display": "none"}),
+            # Categorical Split Bin Control Panel
+            html.Div([
+                html.Div([
+                    SaveButton("Add Elements", inline=True, width="12%"),
+                    SaveButton("Split Bin", inline=True, width="9%", marginLeft="0.5%"),
+                    SaveButton("Rename Bin", inline=True, width="12%", marginLeft="0.5%"),
+                ]),
+                html.Div(
+                    [
+                        SectionHeading("Split an Existing Bin", center=True, bold=True),
+                        html.P("Instructions", style={"fontWeight": "bold"}),
+                        html.Ul([
+                            html.Li("Enter the new bin name in the text input area, if it is empty, the elements included in the bin will be used as the bin name", style={"fontSize": 14}),
+                            html.Li("Select the elements to be split out from the old bin", style={"fontSize": 14}),
+                            html.Li("Click the ‘Split Bin’ button to preview changes on the bins settings", style={"fontSize": 14}),
+                            html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={"fontSize": 14}),
+                        ], style={"listStyleType": "square", "lineHeight": "97%"}),
+                        html.P("Selected Bin Info: ", style={"fontWeight": "bold"}),
+                        # TODO: extract this out
+                        html.P("Bin Name: " + "Rent or Mortgage", style={"fontSize": 14}),
+                        html.P("Bin Element(s): " + "['RENT', 'MORTGAGE]", style={"fontSize": 14}),
+                        html.P("Population Good Count: " + "11754", style={"fontSize": 14}),
+                        html.P("Population Bad Count: " + "5119", style={"fontSize": 14}),
+
+                        html.P("Enter the new bin name: ", style={"fontWeight": "bold"}),
+                        dcc.Input(style={"marginBottom": 10}),
+                        html.P("Select elements to be split out from the bin:", style={"fontWeight": "bold"}),
+                        dcc.Dropdown(
+                            options=convert_column_list_to_dropdown_options(["OWN", "OTHERS"]), # dummy
+                            value=[],
+                            multi=True,
+                            style={"marginBottom": 13},
+                        ),
+                        SaveButton("Split Bin"),
+                        html.Div(style={"height": 13}),
+                        html.P("Preview Changes:", style={"fontWeight": "bold", "textDecoration": "underline"}),
+                        html.P("Old Bin(s):", style={"fontWeight": "bold", "fontSize": 14}),
+                        # 1 old bin elements, TODO: extract it out
+                        html.Div([
+                            html.Div([html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                            html.Div([html.P("Old Bin Name: " + "Rent or Mortgage"), html.P("Old Bin Element(s): " + "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                        ]),
+                        html.P("Will be changed to:", style={"fontWeight": "bold", "fontSize": 14}),
+                        # 1 new bin elements, TODO: extract it out
+                        html.Div([
+                            html.Div([html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                            html.Div([html.P("New Bin Name: " + "Rent or Mortgage"), html.P("New Bin Element(s): " + "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                        ]),
+                        SaveButton("Submit", inline=True),
+                        SaveButton("Hide Details", inline=True, backgroundColor="#8097E6", marginLeft=5),
+                        html.Div(style={"height": 13, "clear": "both"}),
+                        html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.", style={"lineHeight": "99%", "fontSize": 14}),
+                    ],
+                    style={
+                        "marginTop": 13,
+                        "float": "left",
+                        "width": "30%",
+                        "backgroundColor": "#BCBCDA",
+                        "padding": "2%",
+                        "borderRadius": dimens["panel-border-radius"],
+                        
+                    },
+                
+                ),
+            ], id="categorical_split_bin_control_panel", style={"display": "none"}),
+            
+            # Categorical Rename Bin Control Panel
+            html.Div([
+                html.Div([
+                    SaveButton("Add Elements", inline=True, width="12%"),
+                    SaveButton("Split Bin", inline=True, width="9%", marginLeft="0.5%"),
+                    SaveButton("Rename Bin", inline=True, width="12%", marginLeft="0.5%"),
+                ]),
+                html.Div(
+                    [
+                        SectionHeading("Rename Bin", center=True, bold=True),
+                        html.P("Instructions", style={"fontWeight": "bold"}),
+                        html.Ul([
+                            html.Li("Enter the new bin name in the text input area", style={"fontSize": 14}),
+                            html.Li("Click the ‘Rename Bin’ button to preview changes on the bins settings", style={"fontSize": 14}),
+                            html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={"fontSize": 14}),
+                        ], style={"listStyleType": "square", "lineHeight": "97%"}),
+                        html.P("Selected Bin Info: ", style={"fontWeight": "bold"}),
+                        # TODO: extract this out
+                        html.P("Bin Name: " + "Rent or Mortgage", style={"fontSize": 14}),
+                        html.P("Bin Element(s): " + "['RENT', 'MORTGAGE]", style={"fontSize": 14}),
+                        html.P("Population Good Count: " + "11754", style={"fontSize": 14}),
+                        html.P("Population Bad Count: " + "5119", style={"fontSize": 14}),
+
+                        html.P("Enter the new bin name: ", style={"fontWeight": "bold"}),
+                        dcc.Input(style={"marginBottom": 10}),
+                        SaveButton("Rename Bin"),
+                        html.Div(style={"height": 13}),
+                        html.P("Preview Changes:", style={"fontWeight": "bold", "textDecoration": "underline"}),
+                        html.P("Old Bin(s):", style={"fontWeight": "bold", "fontSize": 14}),
+                        # 1 old bin elements, TODO: extract it out
+                        html.Div([
+                            html.Div([html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                            html.Div([html.P("Old Bin Name: " + "Rent or Mortgage"), html.P("Old Bin Element(s): " + "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                        ]),
+                        html.P("Will be changed to:", style={"fontWeight": "bold", "fontSize": 14}),
+                        # 1 new bin elements, TODO: extract it out
+                        html.Div([
+                            html.Div([html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                            html.Div([html.P("New Bin Name: " + "Rent or Mortgage"), html.P("New Bin Element(s): " + "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                        ]),
+                        SaveButton("Submit", inline=True),
+                        SaveButton("Hide Details", inline=True, backgroundColor="#8097E6", marginLeft=5),
+                        html.Div(style={"height": 13, "clear": "both"}),
+                        html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.", style={"lineHeight": "99%", "fontSize": 14}),
+                    ],
+                    style={
+                        "marginTop": 13,
+                        "float": "left",
+                        "width": "30%",
+                        "backgroundColor": "#BCBCDA",
+                        "padding": "2%",
+                        "borderRadius": dimens["panel-border-radius"],
+                        
+                    },
+                
+                ),
+            ], id="categorical_rename_bin_control_panel", style={"display": "none"}),
+            
+            # Categorical Merge Bins Control Panel
+            html.Div(
+                [
+                    SectionHeading("Merge Bins", center=True, bold=True),
+                    html.P("Instructions", style={"fontWeight": "bold"}),
+                    html.Ul([
+                        html.Li("Enter the new bin name in the text input area", style={"fontSize": 14}),
+                        html.Li("Click the ‘Merge Bins’ button to preview changes on the bins settings", style={"fontSize": 14}),
+                        html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={"fontSize": 14}),
+                    ], style={"listStyleType": "square", "lineHeight": "97%"}),
+                    # TODO: extract this out
+                    html.P("Selected Bin Info: ", style={"fontWeight": "bold"}),
+                    html.P("Bin Name: " + "Rent or Mortgage", style={"fontSize": 14}),
+                    html.P("Bin Element(s): " + "['RENT', 'MORTGAGE]", style={"fontSize": 14}),
+                    html.P("Population Good Count: " + "11754", style={"fontSize": 14}),
+                    html.P("Population Bad Count: " + "5119", style={"fontSize": 14}),
+                    html.Hr(style={"marginTop": 8, "marginBottom": 8, "marginLeft": 0, "marginRight": 0}),
+                    
+                    html.P("Bin Name: " + "Rent or Mortgage", style={"fontSize": 14}),
+                    html.P("Bin Element(s): " + "['RENT', 'MORTGAGE]", style={"fontSize": 14}),
+                    html.P("Population Good Count: " + "11754", style={"fontSize": 14}),
+                    html.P("Population Bad Count: " + "5119", style={"fontSize": 14}),
+                    html.Hr(style={"marginTop": 8, "marginBottom": 8, "marginLeft": 0, "marginRight": 0}),
+                    
+                    html.P("Enter the new bin name: ", style={"fontWeight": "bold"}),
+                    dcc.Input(style={"marginBottom": 10}),
+                    SaveButton("Merge Bins"),
+                    html.Div(style={"height": 13}),
+                    html.P("Preview Changes:", style={"fontWeight": "bold", "textDecoration": "underline"}),
+                    html.P("Will be changed to:", style={"fontWeight": "bold", "fontSize": 14}),
+                    # 1 new bin elements, TODO: extract it out
+                    html.Div([
+                        html.Div([html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                        html.Div([html.P("New Bin Name: " + "Rent or Mortgage"), html.P("New Bin Element(s): " + "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                    ]),
+                    SaveButton("Submit", inline=True),
+                    SaveButton("Hide Details", inline=True, backgroundColor="#8097E6", marginLeft=5),
+                    html.Div(style={"height": 13, "clear": "both"}),
+                    html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.", style={"lineHeight": "99%", "fontSize": 14}),
+                ],
+                style={
+                    "float": "left",
+                    "width": "30%",
+                    "backgroundColor": "#BCBCDA",
+                    "padding": "2%",
+                    "borderRadius": dimens["panel-border-radius"],
+                    "display": "none",
+                },
+                id="categorical_merge_bins_control_panel",
+            ),
+            
+            # Numerical Create New Bin Control Panel
+            html.Div(
+                [
+                    SectionHeading("Create a New Bin", center=True, bold=True),
+                    html.P("Instructions", style={"fontWeight": "bold"}),
+                    html.Ul([
+                        html.Li("Enter the name of the new bin in the text input area", style={"fontSize": 14}),
+                        html.Li("Indicate the ranges that you would like to include in the bin", style={"fontSize": 14}),
+                        html.Li("Click the ‘Create New Bin’ button to preview changes on the bins settings", style={"fontSize": 14}),
+                        html.Li("The indicated ranges which overlaps with the old bins settings will be automatically removed from the other bins", style={"fontSize": 14}),
+                        html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={"fontSize": 14}),
+                    ], style={"listStyleType": "square", "lineHeight": "97%"}),
+                    html.P("Enter the new bin name: ", style={"fontWeight": "bold"}),
+                    dcc.Input(style={"marginBottom": 10}),
+                    html.P("Indicate the ranges to be included in the new bin:", style={"fontWeight": "bold"}),
+                    # TODO!! --> Add dynamic range list
+                    SaveButton("Add", inline=True),
+                    SaveButton("Remove", inline=True, marginLeft=8),
+                    html.Div([], style={"clear": "both", "height": 8}),
+                    SaveButton("Create New Bin"),
+                    html.Div(style={"height": 13}),
+                    html.P("Preview Changes:", style={"fontWeight": "bold", "textDecoration": "underline"}),
+                    html.P("Old Bin(s):", style={"fontWeight": "bold", "fontSize": 14}),
+                    # 1 old bin elements, TODO: extract it out
+                    html.Div([
+                        html.Div([html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                        html.Div([html.P("Old Bin Name: " + "0-20"), html.P("Old Bin Range(s): " + "[[0, 20)]")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                    ]),
+                    html.P("Will be changed to:", style={"fontWeight": "bold", "fontSize": 14}),
+                    # 1 new bin elements, TODO: extract it out
+                    html.Div([
+                        html.Div([html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                        html.Div([html.P("New Bin Name: " + "0-30"), html.P("New Bin Range(s): " + "[[[0, 30)]]")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                    ]),
+                    SaveButton("Submit", inline=True),
+                    SaveButton("Hide Details", inline=True, backgroundColor="#8097E6", marginLeft=5),
+                    html.Div(style={"height": 13, "clear": "both"}),
+                    html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.", style={"lineHeight": "99%", "fontSize": 14}),
+                ],
+                style={
+                    "float": "left",
+                    "width": "30%",
+                    "backgroundColor": "#BCBCDA",
+                    "padding": "2%",
+                    "borderRadius": dimens["panel-border-radius"],
+                    "display": "none",
+                },
+                id="numerical_create_new_bin_control_panel",
+            ),
+            
+            # Numerical Adjust Cutpoints Control Panel
+            html.Div([
+                html.Div([
+                    SaveButton("Adjust Cutpoints", inline=True, width="16.5%"),
+                    SaveButton("Rename Bin", inline=True, width="16.5%", marginLeft="1%"),
+                ]),
+                html.Div(
+                    [
+                        SectionHeading("Adjust Cutpoints of the Bin", center=True, bold=True),
+                        html.P("Instructions", style={"fontWeight": "bold"}),
+                        html.Ul([
+                            html.Li("Enter the new bin name in the text input area, if it is empty, the bin name will remain the same", style={"fontSize": 14}),
+                            html.Li("Indicate the ranges that you would like to remains in the selected bin", style={"fontSize": 14}),
+                            html.Li("Any ranges in the selected bin not being indicated would be split out as a new bin", style={"fontSize": 14}),
+                            html.Li("The indicated ranges which overlaps with the old bins settings will be automatically removed from the other bins", style={"fontSize": 14}),
+                            html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={"fontSize": 14}),
+                        ], style={"listStyleType": "square", "lineHeight": "97%"}),
+                        html.P("Selected Bin Info: ", style={"fontWeight": "bold"}),
+                        # TODO: extract this out
+                        html.P("Bin Name: " + "Young", style={"fontSize": 14}),
+                        html.P("Bin Element(s): " + "[[0, 25)]", style={"fontSize": 14}),
+                        html.P("Population Good Count: " + "11754", style={"fontSize": 14}),
+                        html.P("Population Bad Count: " + "5119", style={"fontSize": 14}),
+
+                        html.P("Enter the new bin name: ", style={"fontWeight": "bold"}),
+                        dcc.Input(style={"marginBottom": 10}),
+                        html.P("Indicate the range(s) to be added into the bin:", style={"fontWeight": "bold"}),
+                        # TODO!! --> Add dynamic range list
+                        SaveButton("Add", inline=True),
+                        SaveButton("Remove", inline=True, marginLeft=8),
+                        html.Div([], style={"clear": "both", "height": 8}),
+                        SaveButton("Adjust Cutpoints"),
+                        html.Div(style={"height": 13}),
+                        html.P("Preview Changes:", style={"fontWeight": "bold", "textDecoration": "underline"}),
+                        html.P("Old Bin(s):", style={"fontWeight": "bold", "fontSize": 14}),
+                        # 1 old bin elements, TODO: extract it out
+                        html.Div([
+                            html.Div([html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                            html.Div([html.P("Old Bin Name: " + "Young"), html.P("Old Bin Element(s): " + "[[0, 25)]")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                        ]),
+                        html.P("Will be changed to:", style={"fontWeight": "bold", "fontSize": 14}),
+                        # 1 new bin elements, TODO: extract it out
+                        html.Div([
+                            html.Div([html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                            html.Div([html.P("New Bin Name: " + "Risky"), html.P("New Bin Element(s): " + "[[0, 25)]")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                        ]),
+                        SaveButton("Submit", inline=True),
+                        SaveButton("Hide Details", inline=True, backgroundColor="#8097E6", marginLeft=5),
+                        html.Div(style={"height": 13, "clear": "both"}),
+                        html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.", style={"lineHeight": "99%", "fontSize": 14}),
+                    ],
+                    style={
+                        "marginTop": 13,
+                        "float": "left",
+                        "width": "30%",
+                        "backgroundColor": "#BCBCDA",
+                        "padding": "2%",
+                        "borderRadius": dimens["panel-border-radius"],
+                    },
+                
+                ),
+            ], id="numerical_adjust_cutpoints_control_panel", style={"display": "none"}),
+            
+            # Numerical Rename Bin Control Panel
+            html.Div([
+                html.Div([
+                    SaveButton("Adjust Cutpoints", inline=True, width="16.5%"),
+                    SaveButton("Rename Bin", inline=True, width="16.5%", marginLeft="1%"),
+                ]),
+                html.Div(
+                    [
+                        SectionHeading("Rename Bin", center=True, bold=True),
+                        html.P("Instructions", style={"fontWeight": "bold"}),
+                        html.Ul([
+                            html.Li("Enter the new bin name in the text input area", style={"fontSize": 14}),
+                            html.Li("Click the ‘Rename Bin’ button to preview changes on the bins settings", style={"fontSize": 14}),
+                            html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={"fontSize": 14}),
+                        ], style={"listStyleType": "square", "lineHeight": "97%"}),
+                        html.P("Selected Bin Info: ", style={"fontWeight": "bold"}),
+                        # TODO: extract this out
+                        html.P("Bin Name: " + "Young", style={"fontSize": 14}),
+                        html.P("Bin Element(s): " + "[[0, 25)]", style={"fontSize": 14}),
+                        html.P("Population Good Count: " + "11754", style={"fontSize": 14}),
+                        html.P("Population Bad Count: " + "5119", style={"fontSize": 14}),
+
+                        html.P("Enter the new bin name: ", style={"fontWeight": "bold"}),
+                        dcc.Input(style={"marginBottom": 10}),
+                        SaveButton("Rename Bin"),
+                        html.Div(style={"height": 13}),
+                        html.P("Preview Changes:", style={"fontWeight": "bold", "textDecoration": "underline"}),
+                        html.P("Old Bin(s):", style={"fontWeight": "bold", "fontSize": 14}),
+                        # 1 old bin elements, TODO: extract it out
+                        html.Div([
+                            html.Div([html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                            html.Div([html.P("Old Bin Name: " + "Young"), html.P("Old Bin Element(s): " + "[[0, 25)]")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                        ]),
+                        html.P("Will be changed to:", style={"fontWeight": "bold", "fontSize": 14}),
+                        # 1 new bin elements, TODO: extract it out
+                        html.Div([
+                            html.Div([html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                            html.Div([html.P("New Bin Name: " + "Risky"), html.P("New Bin Element(s): " + "[[0, 25)]")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                        ]),
+                        SaveButton("Submit", inline=True),
+                        SaveButton("Hide Details", inline=True, backgroundColor="#8097E6", marginLeft=5),
+                        html.Div(style={"height": 13, "clear": "both"}),
+                        html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.", style={"lineHeight": "99%", "fontSize": 14}),
+                    ],
+                    style={
+                        "marginTop": 13,
+                        "float": "left",
+                        "width": "30%",
+                        "backgroundColor": "#BCBCDA",
+                        "padding": "2%",
+                        "borderRadius": dimens["panel-border-radius"],
+                        
+                    },
+                
+                ),
+            ], id="numerical_rename_bin_control_panel", style={"display": "none"}),
+            
+            # Numerical Merge Bins Control Panel
+            html.Div(
+                [
+                    SectionHeading("Merge Bins", center=True, bold=True),
+                    html.P("Instructions", style={"fontWeight": "bold"}),
+                    html.Ul([
+                        html.Li("Enter the new bin name in the text input area", style={"fontSize": 14}),
+                        html.Li("Click the ‘Merge Bins’ button to preview changes on the bins settings", style={"fontSize": 14}),
+                        html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={"fontSize": 14}),
+                    ], style={"listStyleType": "square", "lineHeight": "97%"}),
+                    # TODO: extract this out
+                    html.P("Selected Bin Info: ", style={"fontWeight": "bold"}),
+                    html.P("Bin Name: " + "Young", style={"fontSize": 14}),
+                    html.P("Bin Element(s): " + "[[0, 25]]", style={"fontSize": 14}),
+                    html.P("Population Good Count: " + "11754", style={"fontSize": 14}),
+                    html.P("Population Bad Count: " + "5119", style={"fontSize": 14}),
+                    html.Hr(style={"marginTop": 8, "marginBottom": 8, "marginLeft": 0, "marginRight": 0}),
+                    
+                    html.P("Bin Name: " + "Elderly", style={"fontSize": 14}),
+                    html.P("Bin Element(s): " + "[[60, 100]]", style={"fontSize": 14}),
+                    html.P("Population Good Count: " + "11754", style={"fontSize": 14}),
+                    html.P("Population Bad Count: " + "5119", style={"fontSize": 14}),
+                    html.Hr(style={"marginTop": 8, "marginBottom": 8, "marginLeft": 0, "marginRight": 0}),
+                    
+                    html.P("Enter the new bin name: ", style={"fontWeight": "bold"}),
+                    dcc.Input(style={"marginBottom": 10}),
+
+                    SaveButton("Merge Bins"),
+                    html.Div(style={"height": 13}),
+                    html.P("Preview Changes:", style={"fontWeight": "bold", "textDecoration": "underline"}),
+                    html.P("Will be changed to:", style={"fontWeight": "bold", "fontSize": 14}),
+                    # 1 new bin elements, TODO: extract it out
+                    html.Div([
+                        html.Div([html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                        html.Div([html.P("New Bin Name: " + "Rent or Mortgage"), html.P("New Bin Element(s): " + "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                    ]),
+                    SaveButton("Submit", inline=True),
+                    SaveButton("Hide Details", inline=True, backgroundColor="#8097E6", marginLeft=5),
+                    html.Div(style={"height": 13, "clear": "both"}),
+                    html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.", style={"lineHeight": "99%", "fontSize": 14}),
+                ],
+                style={
+                    "float": "left",
+                    "width": "30%",
+                    "backgroundColor": "#BCBCDA",
+                    "padding": "2%",
+                    "borderRadius": dimens["panel-border-radius"],
+                    "display": "none",
+                },
+                id="numerical_merge_bins_control_panel",
             ),
         ]
     ),
@@ -1432,21 +2059,7 @@ preview_download_page_layout = html.Div(
     [
         NavBar(),
         Heading("Preview & Download Bins Settings"),
-        SectionHeading("I. Preview Output Dataset"),
-        DataTable(df, id="preview_binned_df"),
-        html.Div(style={"height": 25}),
-        SectionHeading("II. Preview Summary Statistics Table"),
-        html.P("TBC"),
-        html.Div(style={"height": 25}),
-        SectionHeading("III. Preview Mixed Chart"),
-        html.P("TBC"),
-        html.Div(style={"height": 25}),
-        SectionHeading("IV. Download Bins Settings", inline=True),
-        html.P("TBC"),
-        html.Div(style={"height": 25}),
-        html.P(
-            "After downloading, import the json file into the Dataiku project... XXX"
-        ),
+        
         html.Div(style={"height": 100}),
     ]
 )
@@ -1454,7 +2067,6 @@ preview_download_page_layout = html.Div(
 ###########################################################################
 #################### Implement Callback Functions Here ####################
 ###########################################################################
-
 """
 Confirm Input Dataset Page:
 Hide columns in confirm input dataset page when user add/delete 
@@ -1533,7 +2145,6 @@ def save_initial_bin_settings_to_shared_storage(
             {
                 "column": pred,
                 "type": pred_var_type,
-                "infoVal": -1,
                 "bins": "none",
             }
         )
@@ -1569,7 +2180,6 @@ def show_confirm_input_datset_error_msg(n_clicks, predictor_var_dropdown_values,
         if df[pred].dtype == "object" and pred_var_type == "numerical":
             return "Error: some columns having categorical type is defined as numerical."
     return ""
-
 
 """
 Good/Bad Definition:
@@ -1988,21 +2598,19 @@ def save_good_bad_def_to_storage(n_clicks, bad_numerical_column_list, bad_numeri
         }
     }
 
-    decoder = GoodBadDefDecoder()
-
     bad_categorical_info_list = zip(
         bad_categorical_column_list, bad_categorical_element_list)
     indeterminate_categorical_info_list = zip(
         indeterminate_categorical_column_list, indeterminate_categorical_element_list)
 
     # Update data
-    good_bad_def["bad"]["numerical"] = decoder.get_numeric_def_list_from_section(
+    good_bad_def["bad"]["numerical"] = GoodBadDefDecoder.get_numeric_def_list_from_section(
         numeric_info_list=bad_numeric_info_list)
-    good_bad_def["indeterminate"]["numerical"] = decoder.get_numeric_def_list_from_section(
+    good_bad_def["indeterminate"]["numerical"] = GoodBadDefDecoder.get_numeric_def_list_from_section(
         numeric_info_list=indeterminate_numeric_info_list)
-    good_bad_def["bad"]["categorical"] = decoder.get_categorical_def_list_from_section(
+    good_bad_def["bad"]["categorical"] = GoodBadDefDecoder.get_categorical_def_list_from_section(
         categoric_info_list=bad_categorical_info_list)
-    good_bad_def["indeterminate"]["categorical"] = decoder.get_categorical_def_list_from_section(
+    good_bad_def["indeterminate"]["categorical"] = GoodBadDefDecoder.get_categorical_def_list_from_section(
         categoric_info_list=indeterminate_categorical_info_list)
 
     # Validate if there's overlapping between bad & indeterminate
@@ -2016,7 +2624,6 @@ def save_good_bad_def_to_storage(n_clicks, bad_numerical_column_list, bad_numeri
         raise PreventUpdate
 
     return json.dumps(good_bad_def)
-
 
 """
 Good/Bad Definition Page:
@@ -2068,23 +2675,22 @@ def show_good_bad_def_error_msg(n_clicks, bad_numerical_column_list, bad_numeric
         has_bound_error = True
         error_msg += "Error (Invalid User Input): Some of the numerical range(s) for indeterminate definition has lower bound >= upper bound which is invalid.\t"
 
-    decoder = GoodBadDefDecoder()
     bad_categorical_info_list = zip(
         bad_categorical_column_list, bad_categorical_element_list)
     indeterminate_categorical_info_list = zip(
         indeterminate_categorical_column_list, indeterminate_categorical_element_list)
 
-    bad_numeric_list = decoder.get_numeric_def_list_from_section(
+    bad_numeric_list = GoodBadDefDecoder.get_numeric_def_list_from_section(
         numeric_info_list=bad_numeric_info_list)
-    indeterminate_numeric_list = decoder.get_numeric_def_list_from_section(
+    indeterminate_numeric_list = GoodBadDefDecoder.get_numeric_def_list_from_section(
         numeric_info_list=indeterminate_numeric_info_list)
 
     if not has_bound_error and not validator.validate_if_numerical_def_overlapped(bad_numeric_list, indeterminate_numeric_list):
         error_msg += "Error (Invalid User Input): Some of the numerical definitions of bad & indeterminate have overlapped.\t"
 
-    bad_categoric_list = decoder.get_categorical_def_list_from_section(
+    bad_categoric_list = GoodBadDefDecoder.get_categorical_def_list_from_section(
         categoric_info_list=bad_categorical_info_list)
-    indeterminate_categoric_list = decoder.get_categorical_def_list_from_section(
+    indeterminate_categoric_list = GoodBadDefDecoder.get_categorical_def_list_from_section(
         categoric_info_list=indeterminate_categorical_info_list)
     if not validator.validate_if_categorical_def_overlapped(bad_categoric_list, indeterminate_categoric_list):
         error_msg += "Error (Invalid User Input): Some of the categorical definitions of bad & indeterminate have overlapped.\t"
@@ -2115,8 +2721,7 @@ def show_good_bad_stats_and_bar_chart(good_bad_def_data):
         return []
 
     # Compute statistics
-    counter = GoodBadCounter()
-    sample_bad_count, sample_indeterminate_count, sample_good_count, good_weight, bad_weight, population_good_count, population_bad_count = counter.get_statistics(
+    sample_bad_count, sample_indeterminate_count, sample_good_count, good_weight, bad_weight, population_good_count, population_bad_count = GoodBadCounter.get_statistics(
         df, good_bad_def)
 
     # Prepare bar chart
@@ -2129,7 +2734,7 @@ def show_good_bad_stats_and_bar_chart(good_bad_def_data):
                 "marker": {"color": "#6B87AB"},
             },
         ],
-        "layout": {"title": "Good & Bad Count"},
+        "layout": {"title": "Total Population Good & Bad Counts"},
     }
 
     # Return layout
@@ -2211,7 +2816,6 @@ def update_auto_bin_panel_on_bin_var_change(var_to_bin, bins_settings_data):
     if dtype == "categorical":
         options = [
             {"label": "No Binnings", "value": "none"},
-            {"label": "Equal Width", "value": "equal width"},
         ]
         return ["none", options, "width", 1, 10, "frequency", 1000, 10]
     else:
@@ -2326,8 +2930,8 @@ to be binned
 def update_mixed_chart_on_var_to_bin_change(var_to_bin, good_bad_def_data):
     good_bad_def = json.loads(good_bad_def_data)
     return generate_mixed_chart_fig(var_to_bin=var_to_bin, good_bad_def=good_bad_def)
-
-
+    
+    
 """
 Interactive Binning Page:
 Update statistical table (before & after) when user
@@ -2365,55 +2969,10 @@ def update_stat_tables_on_var_to_bin_change(var_to_bin, bins_settings_data, good
     return [[], [DataTable(stat_df, width=70)]]
 
 
-"""
-Preview & Download Settings:
-update binned dataframe for preview
-"""
-
-
-@app.callback(
-    Output("preview_binned_df", "data"),
-    Input("binned_df", "data"),
-)
-def update_preview_output_dataset(data):
-    adict = json.loads(data)
-    binned_df = pd.DataFrame.from_dict(adict)
-    return binned_df.to_dict("records")
-
-
-@app.callback(
-    Output("preview_binned_df", "columns"),
-    Input("binned_df", "data"),
-)
-def update_preview_output_dataset2(data):
-    adict = json.loads(data)
-    binned_df = pd.DataFrame.from_dict(adict)
-    return [{"name": i, "id": i} for i in binned_df.columns]
-
-
-"""
-All:
-When bins_settings is updated, bin the dataframe, and 
-store in storage as binned_df
-"""
-
-
-@app.callback(
-    Output("binned_df", "data"),
-    Input("bins_settings", "data"),
-)
-def bin_dataset(bins_settings_data):
-    bins_settings_dict = json.loads(bins_settings_data)
-    bins_settings_list = bins_settings_dict["variable"]
-
-    binning_machine = BinningMachine()
-    binned_df = binning_machine.perform_binning_on_whole_df(bins_settings_list)
-
-    return json.dumps(binned_df.to_dict())
-
 ###########################################################################
 ############################ Debugging Purpose ############################
 ###########################################################################
+
 # Get bins settings
 
 
@@ -2448,6 +3007,7 @@ def update_categorical_columns(data):
     alist = json.loads(data)
     return "categorical columns = " + str(alist)
 
+
 # Get good bad definition
 
 
@@ -2457,6 +3017,7 @@ def update_categorical_columns(data):
 )
 def update_good_bad_def_text(data):
     return "good bad def = " + str(json.loads(data))
+
 
 # Get bins settings in ib page
 
