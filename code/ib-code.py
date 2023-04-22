@@ -760,18 +760,24 @@ def get_list_of_woe(temp_df, binned_col, unique_bin_name_list, good_bad_def):
     return woe_list
 
 def generate_mixed_chart_fig(
-    unique_bins=[], total_count_list=[], bad_count_list=[], woe_list=[], clicked_bar_index=None, good_bad_def=None
+    unique_bins=[], total_count_list=[], bad_count_list=[], woe_list=[], clicked_bar_index=None, selected_bars_index_set=None
 ):
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     num_bins = len(unique_bins)
     
     good_marker_color = ["#8097e6"] * num_bins
-    if clicked_bar_index is not None:
+    if selected_bars_index_set is not None and len(selected_bars_index_set) != 0:
+        for idx in selected_bars_index_set:
+            good_marker_color[idx] = "#3961ee"
+    elif clicked_bar_index is not None:
         good_marker_color[clicked_bar_index] = "#3961ee"
 
     bad_marker_color = ["#8bd58b"] * num_bins
-    if clicked_bar_index is not None:
+    if selected_bars_index_set is not None and len(selected_bars_index_set) != 0:
+        for idx in selected_bars_index_set:
+            bad_marker_color[idx] = "#55a755"
+    elif clicked_bar_index is not None:
         bad_marker_color[clicked_bar_index] = "#55a755"
 
     fig.add_trace(
@@ -2025,8 +2031,8 @@ interactive_binning_page_layout = html.Div([
             ], id="numerical_merge_bins_control_panel", style={"display": "none"}),
         ]
     ),
-    html.P(id="test_stat"),
-    html.P(id="test_trigger"),
+    html.P(id="test_select"),
+    html.P(id="test_click"),
     html.Div([], style={"width": "100%", "height": 25, "clear": "left"}),
     html.Div(
         [
@@ -3053,6 +3059,7 @@ to be binned
     [
         Input("temp_chart_info", "data"),
         Input("mixed_chart", "clickData"),
+        Input("mixed_chart", "selectedData"),
     ],
     [
         State("good_bad_def", "data"),
@@ -3065,21 +3072,51 @@ to be binned
         State("equal_freq_num_bin_input", "value"),
     ],
 )
-def update_mixed_chart_on_var_to_bin_change(temp_chart_info_data, click_data, good_bad_def_data, auto_bin_algo, equal_width_method, width, ew_num_bins, equal_freq_method, freq, ef_num_bins):
+def update_mixed_chart_on_var_to_bin_change(temp_chart_info_data, click_data, selected_data, good_bad_def_data, auto_bin_algo, equal_width_method, width, ew_num_bins, equal_freq_method, freq, ef_num_bins):
     triggered = dash.callback_context.triggered
     
     temp_chart_info = json.loads(temp_chart_info_data)
     
     clicked_bar_index = None
+    selected_bars_index_set = set()
 
     if click_data is not None and click_data["points"][0]["curveNumber"] != 2:
         clicked_bar_index = click_data["points"][0]["pointIndex"]
 
-    if triggered[0]['prop_id'] == 'temp_chart_info.data':
-        clicked_bar_index = None
+    if selected_data is not None:
+        for point in selected_data['points']:
+            if point['curveNumber'] != 2:
+                selected_bars_index_set.add(point['pointIndex'])
         
-    return generate_mixed_chart_fig(unique_bins=temp_chart_info['unique_bins'], total_count_list=temp_chart_info['total_count_list'], bad_count_list=temp_chart_info['bad_count_list'], woe_list=temp_chart_info['woe_list'], clicked_bar_index=clicked_bar_index)
+    # Clear click data if new graph data is generated
+    if triggered[0]['prop_id'] == 'temp_chart_info.data' or (click_data is not None and click_data["points"][0]["curveNumber"] == 2):
+        clicked_bar_index = None
+        selected_bars_index_set = None
+        
+    return generate_mixed_chart_fig(unique_bins=temp_chart_info['unique_bins'], total_count_list=temp_chart_info['total_count_list'], bad_count_list=temp_chart_info['bad_count_list'], woe_list=temp_chart_info['woe_list'], clicked_bar_index=clicked_bar_index, selected_bars_index_set=selected_bars_index_set)
+   
+@app.callback(
+    [
+        Output("mixed_chart", "clickData"),
+        Output("mixed_chart", "selectedData"),
+    ],
+    [
+        Input("mixed_chart", "clickData"),
+        Input("mixed_chart", "selectedData"),
+    ],
+)
+def erase_click_data(click_data, selected_data):
+    if click_data is not None and click_data["points"][0]["curveNumber"] == 2:
+        click_data = None
+        selected_data = None
+    if selected_data is not None:
+        click_data = None
     
+    triggered = dash.callback_context.triggered
+    if triggered[0]['prop_id'] == 'mixed_chart.clickData':
+        selected_data = None
+     
+    return [click_data, selected_data]
     
     
 """
@@ -3215,6 +3252,22 @@ def update_bins_settings_text_in_ib(data):
 )
 def update_good_bad_def_text_in_ib(data):
     return "good bad def = " + str(json.loads(data))
+
+# Get selected data info in ib page
+@app.callback(
+    Output("test_select", "children"),
+    Input("mixed_chart", "selectedData"),
+)
+def output_selected_data_info(selected_data):
+    return str(selected_data)
+
+# Get click data info in ib page
+@app.callback(
+    Output("test_click", "children"),
+    Input("mixed_chart", "clickData"),
+)
+def output_selected_data_info(click_data):
+    return str(click_data)
 
 ###########################################################################
 ############ Not important for our development after this line ############
