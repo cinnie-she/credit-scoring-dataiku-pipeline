@@ -1247,7 +1247,13 @@ def generate_bin_changes_div_children(old_bin_list=[], new_bin_list=[], dtype=No
 def generate_selected_bin_info_div_children(temp_chart_info, temp_col_bins_settings, click_data):
     if click_data is not None:
         bin_name = click_data["points"][0]["x"]
-        bin_elements = temp_col_bins_settings["bins"]
+        bin_defs = temp_col_bins_settings["bins"]
+        
+        bin_elements = None
+        for bin_def in bin_defs:
+            if bin_def["name"] == bin_name:
+                bin_elements = bin_def["elements"]
+        
         bin_idx = click_data["points"][0]["pointIndex"]
         bin_bad_count = temp_chart_info["bad_count_list"][bin_idx]
         bin_gd_count = temp_chart_info["total_count_list"][bin_idx] - bin_bad_count
