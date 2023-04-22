@@ -1529,33 +1529,35 @@ interactive_binning_page_layout = html.Div([
                             html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={"fontSize": 14}),
                         ], style={"listStyleType": "square", "lineHeight": "97%"}),
                         html.P("Enter the new bin name: ", style={"fontWeight": "bold"}),
-                        dcc.Input(style={"marginBottom": 10}),
+                        dcc.Input(style={"marginBottom": 10}, id="categoric_create_new_bin_name_input"),
                         html.P("Select elements to be included in the new bin:", style={"fontWeight": "bold"}),
                         dcc.Dropdown(
                             options=convert_column_list_to_dropdown_options(["OWN", "RENT", "MORTGAGE", "OTHERS"]), # dummy
                             value=[],
                             multi=True,
                             style={"marginBottom": 13},
+                            id="categoric_create_new_bin_dropdown",
                         ),
-                        SaveButton("Create New Bin"),
+                        SaveButton("Create New Bin", id="categoric_create_new_bin_button"),
                         html.Div(style={"height": 13}),
-                        html.P("Preview Changes:", style={"fontWeight": "bold", "textDecoration": "underline"}),
+                        html.Div([
+                            html.P("Preview Changes:", style={"fontWeight": "bold", "textDecoration": "underline"}),
                         html.P("Old Bin(s):", style={"fontWeight": "bold", "fontSize": 14}),
                         # 1 old bin elements, TODO: extract it out
                         html.Div([
                             html.Div([html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
                             html.Div([html.P("Old Bin Name: " + "Rent or Mortgage"), html.P("Old Bin Element(s): " + "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),
-                        ]),
+                        ], id="categoric_create_new_bin_old_bin_info"),
                         html.P("Will be changed to:", style={"fontWeight": "bold", "fontSize": 14}),
                         # 1 new bin elements, TODO: extract it out
                         html.Div([
                             html.Div([html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
-                            html.Div([html.P("New Bin Name: " + "Rent or Mortgage"), html.P("New Bin Element(s): " + "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),
-                        ]),
-                        SaveButton("Submit", inline=True),
-                        SaveButton("Hide Details", inline=True, backgroundColor="#8097E6", marginLeft=5),
-                        html.Div(style={"height": 13, "clear": "both"}),
-                        html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.", style={"lineHeight": "99%", "fontSize": 14}),
+                            html.Div([html.P("New Bin Name: " + "Rent or Mortgage"), html.P("New Bin Element(s): " + "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),], id="categoric_create_new_bin_changed_to_info"),
+                            SaveButton("Submit", inline=True, id="categoric_create_new_bin_submit_button"),
+                            SaveButton("Hide Details", inline=True, backgroundColor="#8097E6", marginLeft=5, id="categoric_create_new_bin_hide_details_button"),
+                            html.Div(style={"height": 13, "clear": "both"}),
+                            html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.", style={"lineHeight": "99%", "fontSize": 14}),
+                        ], id="categoric_create_new_bin_preview_changes_div", style={"display": "none"}),
                     ],
                     style={
                         "float": "left",
@@ -3206,6 +3208,46 @@ def update_control_panel_on_var_to_bin_change(click_data, selected_data, var_to_
             return [{"display": "none"}, {}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}]
         else: 
             return [{"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}]
+
+"""
+Interactive Binning Page:
+Update categorical create new bin control panel's dropdown 
+options and value when user changes the var to bin in predictor
+variable dropdown
+"""
+@app.callback(
+    [
+        Output("categoric_create_new_bin_dropdown", "options"),
+        Output("categoric_create_new_bin_dropdown", "value"),
+    ],
+    Input("predictor_var_ib_dropdown", "value"),
+)
+def update_categoric_create_new_bin_dropdown(var_to_bin):
+    unique_val_list = sorted(df[var_to_bin].unique().tolist())
+    return [convert_column_list_to_dropdown_options(unique_val_list), unique_val_list]
+        
+    
+"""
+Interactive Binning Page:
+Show/Hide categorical create new bin control panel preview changes 
+when user clicks on the 'create new bin' button
+"""
+@app.callback(
+    Output("categoric_create_new_bin_preview_changes_div", "style"),
+    [
+        Input("categoric_create_new_bin_button", "n_clicks"),
+        Input("categoric_create_new_bin_hide_details_button", "n_clicks"),
+    ],
+    prevent_initial_call=True,
+)
+def show_categoric_create_new_bin_preview_changes_div(n_clicks, n_clicks2):
+    triggered = dash.callback_context.triggered
+    
+    if triggered[0]['prop_id'] == "categoric_create_new_bin_button.n_clicks":
+        return {}
+    else:
+        return {"display": "none"}
+
 
 ###########################################################################
 ############################ Debugging Purpose ############################
