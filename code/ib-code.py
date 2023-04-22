@@ -1121,6 +1121,72 @@ class BinningMachine:
 
         return dframe
 
+def generate_categoric_old_div_children(old_bin_list=[], dtype=None):
+    if dtype == None: 
+        return []
+    if len(old_bin_list) == 0:
+        return []
+    
+    if dtype == "categorical":
+        s = "Element"
+    else:
+        s = "Range"
+    
+    idx = 1
+    old_element_list = list()
+    for old_bin in old_bin_list:
+        old_element_list.append(
+            html.Div([
+                html.Div([html.P("(" + str(idx) + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                html.Div([html.P("Old Bin Name: " + old_bin[0]), html.P("Old Bin " + s + "(s): " + old_bin[1])], style={"float": "left", "width": "85%", "fontSize": 14}),
+            ])
+        )
+        idx += 1
+        
+    return old_element_list
+
+
+def generate_categoric_new_div_children(new_bin_list=[], dtype=None):
+    if dtype == None: 
+        return []
+    if len(new_bin_list) == 0:
+        return []
+    
+    if dtype == "categorical":
+        s = "Element"
+    else:
+        s = "Range"
+    
+    idx = 1
+    new_element_list = list()
+    for new_bin in new_bin_list:
+        new_element_list.append(
+            html.Div([
+                html.Div([html.P("(" + str(idx) + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                html.Div([html.P("New Bin Name: " + new_bin[0]), html.P("New Bin "+ s + "(s): " + new_bin[1])], style={"float": "left", "width": "85%", "fontSize": 14}),
+            ]),
+        )
+        idx += 1
+    
+    return new_element_list
+
+
+def generate_bin_changes_div_children(old_bin_list=[], new_bin_list=[], dtype=None):
+    if dtype == None:
+        return []
+    
+    old_element_list = generate_categoric_old_div_children(old_bin_list=old_bin_list, dtype=dtype)
+    new_element_list = generate_categoric_new_div_children(new_bin_list, dtype=dtype)
+        
+    return [
+        html.P("Preview Changes:", style={"fontWeight": "bold", "textDecoration": "underline"}),
+        html.P("Old Bin(s):", style={"fontWeight": "bold", "fontSize": 14}),
+        # 1 old bin elements, TODO: extract it out
+        html.Div(old_element_list),
+        html.P("Will be changed to:", style={"fontWeight": "bold", "fontSize": 14}),
+        # 1 new bin elements, TODO: extract it out
+        html.Div(new_element_list),
+    ]
 
 """
 All
@@ -1584,24 +1650,7 @@ interactive_binning_page_layout = html.Div([
                                    id="categoric_create_new_bin_button"),
                         html.Div(style={"height": 13}),
                         html.Div([
-                            html.P("Preview Changes:", style={
-                                   "fontWeight": "bold", "textDecoration": "underline"}),
-                            html.P("Old Bin(s):", style={
-                                   "fontWeight": "bold", "fontSize": 14}),
-                            # 1 old bin elements, TODO: extract it out
-                            html.Div([
-                                html.Div(
-                                    [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
-                                html.Div([html.P("Old Bin Name: " + "Rent or Mortgage"), html.P("Old Bin Element(s): " + \
-                                                                                                "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),
-                            ], id="categoric_create_new_bin_old_bin_info"),
-                            html.P("Will be changed to:", style={
-                                   "fontWeight": "bold", "fontSize": 14}),
-                            # 1 new bin elements, TODO: extract it out
-                            html.Div([
-                                html.Div(
-                                    [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
-                                html.Div([html.P("New Bin Name: " + "Rent or Mortgage"), html.P("New Bin Element(s): " + "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),], id="categoric_create_new_bin_changed_to_info"),
+                            html.Div([], id="categoric_create_new_bin_changes_div"),
                             SaveButton(
                                 "Submit", inline=True, id="categoric_create_new_bin_submit_button"),
                             SaveButton("Hide Details", inline=True, backgroundColor="#8097E6",
@@ -3487,6 +3536,33 @@ def show_categoric_create_new_bin_preview_changes_div(n_clicks, n_clicks2):
     else:
         return {"display": "none"}
 
+    
+"""
+Interactive Binning Page:
+Update categoric create new bin preview changes info
+when user clicks on the 'Create New Bin' button
+"""
+@app.callback(
+    Output("categoric_create_new_bin_changes_div", "children"),
+    Input("categoric_create_new_bin_button", "n_clicks"),
+    [
+        State("categoric_create_new_bin_name_input", "value"),
+        State("categoric_create_new_bin_dropdown", "value"),
+        State("predictor_var_ib_dropdown", "value"),
+        State("temp_col_bins_settings", "data"),
+    ],
+)
+def update_categoric_create_new_bin_preview_changes_info(n_clicks, new_name, bin_element_list, var_to_bin, temp_col_bins_settings_data):
+    col_bin_settings = json.loads(temp_col_bins_settings_data)
+    
+    #col_bin_list = None
+    # If it is no binning OR automated binning, have to translate it to list
+    #if isinstance(col_bins_settings["bins"], dict) == True or col_bins_settings["bins"] == "none":
+    #    col_bin_list = BinningMachine.convert_auto_bin_def_to_custom_def(col_bins_settings["bins"])
+    
+    #old_bin_list, new_bin_list = InteractiveBinningMachine.get_categoric_create_new_bin_changes(new_name, bin_element_list, var_to_bin, col_bin_settings)
+    
+    return generate_bin_changes_div_children(old_bin_list=[["Rent or Mortgage", "['RENT', 'MORTGAGE']"], ["Risky", "['OTHERS']"]], new_bin_list=[["Rent or Mortgage", "['RENT', 'MORTGAGE']"]], dtype="categorical")
 
 ###########################################################################
 ############################ Debugging Purpose ############################
