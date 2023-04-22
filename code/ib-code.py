@@ -1891,9 +1891,9 @@ interactive_binning_page_layout = html.Div([
             # Categorical Rename Bin Control Panel
             html.Div([
                 html.Div([
-                    SaveButton("Add Elements", inline=True, width="12%"),
+                    SaveButton("Add Elements", inline=True, width="12%", id="categoric_rename_panel_add_elements_nav_button"),
                     SaveButton("Split Bin", inline=True,
-                               width="9%", marginLeft="0.5%"),
+                               width="9%", marginLeft="0.5%", id="categoric_rename_panel_split_nav_button"),
                     SaveButton("Rename Bin", inline=True,
                                width="12%", marginLeft="0.5%"),
                 ]),
@@ -1912,46 +1912,22 @@ interactive_binning_page_layout = html.Div([
                         html.P("Selected Bin Info: ", style={
                                "fontWeight": "bold"}),
                         # TODO: extract this out
-                        html.P("Bin Name: " + "Rent or Mortgage",
-                               style={"fontSize": 14}),
-                        html.P("Bin Element(s): " + \
-                               "['RENT', 'MORTGAGE]", style={"fontSize": 14}),
-                        html.P("Population Good Count: " + \
-                               "11754", style={"fontSize": 14}),
-                        html.P("Population Bad Count: " + \
-                               "5119", style={"fontSize": 14}),
+                        html.Div(id="categoric_rename_panel_selected_bin_info"),
 
                         html.P("Enter the new bin name: ",
                                style={"fontWeight": "bold"}),
-                        dcc.Input(style={"marginBottom": 10}),
-                        SaveButton("Rename Bin"),
+                        dcc.Input(style={"marginBottom": 10}, id="categoric_rename_panel_new_bin_name_input"),
+                        SaveButton("Rename Bin", id="categoric_rename_panel_rename_button"),
                         html.Div(style={"height": 13}),
-                        html.P("Preview Changes:", style={
-                               "fontWeight": "bold", "textDecoration": "underline"}),
-                        html.P("Old Bin(s):", style={
-                               "fontWeight": "bold", "fontSize": 14}),
-                        # 1 old bin elements, TODO: extract it out
                         html.Div([
-                            html.Div(
-                                [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
-                            html.Div([html.P("Old Bin Name: " + "Rent or Mortgage"), html.P("Old Bin Element(s): " + \
-                                     "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),
-                        ]),
-                        html.P("Will be changed to:", style={
-                               "fontWeight": "bold", "fontSize": 14}),
-                        # 1 new bin elements, TODO: extract it out
-                        html.Div([
-                            html.Div(
-                                [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
-                            html.Div([html.P("New Bin Name: " + "Rent or Mortgage"), html.P("New Bin Element(s): " + \
-                                     "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),
-                        ]),
-                        SaveButton("Submit", inline=True),
-                        SaveButton("Hide Details", inline=True,
-                                   backgroundColor="#8097E6", marginLeft=5),
-                        html.Div(style={"height": 13, "clear": "both"}),
-                        html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
-                               style={"lineHeight": "99%", "fontSize": 14}),
+                            html.Div([], id="categoric_rename_panel_changes_div"),
+                            SaveButton("Submit", inline=True, id="categoric_rename_panel_submit_button"),
+                            SaveButton("Hide Details", inline=True,
+                                       backgroundColor="#8097E6", marginLeft=5, id="categoric_rename_panel_hide_details_button"),
+                            html.Div(style={"height": 13, "clear": "both"}),
+                            html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
+                                   style={"lineHeight": "99%", "fontSize": 14}),
+                        ], id="categoric_rename_panel_preview_changes_div", style={"display": "none"})
                     ],
                     style={
                         "marginTop": 13,
@@ -2008,25 +1984,27 @@ interactive_binning_page_layout = html.Div([
                         html.P("Enter the new bin name: ",
                                style={"fontWeight": "bold"}),
                         dcc.Input(style={"marginBottom": 10}),
-                        SaveButton("Merge Bins"),
+                        SaveButton("Merge Bins", id="categoric_merge_panel_merge_button"),
                         html.Div(style={"height": 13}),
-                        html.P("Preview Changes:", style={
-                               "fontWeight": "bold", "textDecoration": "underline"}),
-                        html.P("Will be changed to:", style={
-                               "fontWeight": "bold", "fontSize": 14}),
-                        # 1 new bin elements, TODO: extract it out
                         html.Div([
-                            html.Div(
-                                [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
-                            html.Div([html.P("New Bin Name: " + "Rent or Mortgage"), html.P("New Bin Element(s): " + \
-                                     "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),
-                        ]),
-                        SaveButton("Submit", inline=True),
-                        SaveButton("Hide Details", inline=True,
-                                   backgroundColor="#8097E6", marginLeft=5),
-                        html.Div(style={"height": 13, "clear": "both"}),
-                        html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
-                               style={"lineHeight": "99%", "fontSize": 14}),
+                            html.P("Preview Changes:", style={
+                                   "fontWeight": "bold", "textDecoration": "underline"}),
+                            html.P("Will be changed to:", style={
+                                   "fontWeight": "bold", "fontSize": 14}),
+                            # 1 new bin elements, TODO: extract it out
+                            html.Div([
+                                html.Div(
+                                    [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                                html.Div([html.P("New Bin Name: " + "Rent or Mortgage"), html.P("New Bin Element(s): " + \
+                                         "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                            ]),
+                            SaveButton("Submit", inline=True, id="categoric_merge_panel_submit_button"),
+                            SaveButton("Hide Details", inline=True,
+                                       backgroundColor="#8097E6", marginLeft=5, id="categoric_merge_panel_hide_details_button"),
+                            html.Div(style={"height": 13, "clear": "both"}),
+                            html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
+                                   style={"lineHeight": "99%", "fontSize": 14}),
+                        ], id="categoric_merge_bin_panel_preview_changes_div", style={"display": "none"}),
                     ],
                     style={
                         "float": "left",
@@ -3492,10 +3470,12 @@ variable to be binned
         Input("categoric_add_elements_panel_to_rename_button", "n_clicks"),
         Input("categoric_split_panel_add_elements_nav_button", "n_clicks"),
         Input("categoric_split_panel_rename_nav_button", "n_clicks"),
+        Input("categoric_rename_panel_add_elements_nav_button", "n_clicks"),
+        Input("categoric_rename_panel_split_nav_button", "n_clicks"),
     ],
     State("bins_settings", "data"),
 )
-def update_control_panel_on_var_to_bin_change(click_data, selected_data, var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clicks4, bins_settings_data):
+def update_control_panel_on_var_to_bin_change(click_data, selected_data, var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clicks4, n_clicks5, n_clicks6, bins_settings_data):
     triggered = dash.callback_context.triggered
 
     if triggered[0]['prop_id'] == 'categoric_add_elements_panel_to_split_button.n_clicks':
@@ -3506,6 +3486,10 @@ def update_control_panel_on_var_to_bin_change(click_data, selected_data, var_to_
         return [{"display": "none"}, {}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}]
     if triggered[0]['prop_id'] == 'categoric_split_panel_rename_nav_button.n_clicks':
         return [{"display": "none"}, {"display": "none"}, {"display": "none"}, {}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}]
+    if triggered[0]['prop_id'] == 'categoric_rename_panel_add_elements_nav_button.n_clicks':
+        return [{"display": "none"}, {}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}]
+    if triggered[0]['prop_id'] == 'categoric_rename_panel_split_nav_button.n_clicks':
+        return [{"display": "none"}, {"display": "none"}, {}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}]
     
     bins_settings_dict = json.loads(bins_settings_data)
     bins_settings_list = bins_settings_dict["variable"]
@@ -3664,6 +3648,34 @@ def update_categoric_create_new_bin_preview_changes_info(n_clicks, new_name, bin
 
 """
 Interactive Binning Page:
+Update categoric rename preview changes info
+when user clicks on the 'Rename Bin' button
+"""
+@app.callback(
+    Output("categoric_rename_panel_changes_div", "children"),
+    Input("categoric_rename_panel_rename_button", "n_clicks"),
+    [
+        State("categoric_rename_panel_new_bin_name_input", "value"),
+        State("predictor_var_ib_dropdown", "value"),
+        State("temp_col_bins_settings", "data"),
+    ],
+)
+def update_categoric_create_new_bin_preview_changes_info(n_clicks, new_name, var_to_bin, temp_col_bins_settings_data):
+    col_bin_settings = json.loads(temp_col_bins_settings_data)
+    
+    #col_bin_list = None
+    # If it is no binning OR automated binning, have to translate it to list
+    #if isinstance(col_bins_settings["bins"], dict) == True or col_bins_settings["bins"] == "none":
+    #    col_bin_list = BinningMachine.convert_auto_bin_def_to_custom_def(col_bins_settings["bins"])
+    
+    #old_bin_list, new_bin_list = InteractiveBinningMachine.get_categoric_create_new_bin_changes(new_name, bin_element_list, var_to_bin, col_bin_settings)
+    
+    return generate_bin_changes_div_children(old_bin_list=[["Rent or Mortgage", "['RENT', 'MORTGAGE']"], ["Risky", "['OTHERS']"]], new_bin_list=[["Rent or Mortgage", "['RENT', 'MORTGAGE']"]], dtype="categorical")
+
+
+
+"""
+Interactive Binning Page:
 Show/Hide categorical add elements control panel preview changes 
 when user clicks on the 'Add Elements' button
 """
@@ -3735,8 +3747,8 @@ def update_categoric_add_elements_dropdown(click_data, temp_col_bins_settings_da
     options_li = [x for x in temp_chart_info["unique_bins"] if x not in bin_elements]
     
     return [convert_column_list_to_dropdown_options(options_li), []]
-    
-    
+ 
+       
 """
 Interactive Binning Page:
 Show/Hide categorical split control panel preview changes 
@@ -3760,6 +3772,48 @@ def show_categoric_split_preview_changes_div(n_clicks, n_clicks2):
 
 """
 Interactive Binning Page:
+Show/Hide categorical rename control panel preview changes 
+when user clicks on the 'Rename Bin' button
+"""
+@app.callback(
+    Output("categoric_rename_panel_preview_changes_div", "style"),
+    [
+        Input("categoric_rename_panel_rename_button", "n_clicks"),
+        Input("categoric_rename_panel_hide_details_button", "n_clicks"),
+    ],
+    prevent_initial_call=True,
+)
+def show_categoric_split_preview_changes_div(n_clicks, n_clicks2):
+    triggered = dash.callback_context.triggered
+
+    if triggered[0]['prop_id'] == "categoric_rename_panel_rename_button.n_clicks":
+        return {}
+    else:
+        return {"display": "none"}
+
+"""
+Interactive Binning Page:
+Show/Hide categorical merge bin control panel preview changes 
+when user clicks on the 'Merge Bin' button
+"""
+@app.callback(
+    Output("categoric_merge_bin_panel_preview_changes_div", "style"),
+    [
+        Input("categoric_merge_panel_merge_button", "n_clicks"),
+        Input("categoric_merge_panel_hide_details_button", "n_clicks"),
+    ],
+    prevent_initial_call=True,
+)
+def show_categoric_split_preview_changes_div(n_clicks, n_clicks2):
+    triggered = dash.callback_context.triggered
+
+    if triggered[0]['prop_id'] == "categoric_merge_panel_merge_button.n_clicks":
+        return {}
+    else:
+        return {"display": "none"}
+    
+"""
+Interactive Binning Page:
 Update selected bin info for categoric split panel
 based on user clicks
 """
@@ -3775,6 +3829,26 @@ def update_categoric_split_panel_selected_bin_info(click_data, temp_chart_info_d
     temp_chart_info = json.loads(temp_chart_info_data)
     temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
     return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=click_data)
+  
+
+"""
+Interactive Binning Page:
+Update selected bin info for categoric rename panel
+based on user clicks
+"""
+@app.callback(
+    Output("categoric_rename_panel_selected_bin_info", "children"),
+    Input("mixed_chart", "clickData"),
+    [
+        State("temp_chart_info", "data"),
+        State("temp_col_bins_settings", "data"),
+    ],
+)
+def update_categoric_split_panel_selected_bin_info(click_data, temp_chart_info_data, temp_col_bins_settings_data):
+    temp_chart_info = json.loads(temp_chart_info_data)
+    temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
+    return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=click_data)
+    
     
     
 """
