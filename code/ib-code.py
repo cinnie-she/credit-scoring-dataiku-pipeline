@@ -1188,6 +1188,31 @@ def generate_bin_changes_div_children(old_bin_list=[], new_bin_list=[], dtype=No
         html.Div(new_element_list),
     ]
 
+
+def generate_selected_bin_info_div_children(temp_chart_info, temp_col_bins_settings, click_data):
+    if click_data is not None:
+        bin_name = click_data["points"][0]["x"]
+        bin_elements = temp_col_bins_settings["bins"]
+        bin_idx = click_data["points"][0]["pointIndex"]
+        bin_bad_count = temp_chart_info["bad_count_list"][bin_idx]
+        bin_gd_count = temp_chart_info["total_count_list"][bin_idx] - bin_bad_count
+        bin_woe = temp_chart_info["woe_list"][bin_idx]
+        return [
+            html.P("Bin Name: " + str(bin_name), style={"fontSize": 14}),
+            html.P("Bin Element(s): " + str(bin_elements), style={"fontSize": 14}),
+            html.P("Population Good Count: " + str(bin_gd_count), style={"fontSize": 14}),
+            html.P("Population Bad Count: " + str(bin_bad_count), style={"fontSize": 14}),
+            html.P("Bin WOE: " + "{:.4f}".format(bin_woe), style={"fontSize": 14}),
+        ]
+    else:
+        return [
+            html.P("Bin Name:", style={"fontSize": 14}),
+            html.P("Bin Element(s): ", style={"fontSize": 14}),
+            html.P("Population Good Count:", style={"fontSize": 14}),
+            html.P("Population Bad Count: ", style={"fontSize": 14}),
+            html.P("Bin WOE: ", style={"fontSize": 14}),
+        ]
+
 """
 All
 """
@@ -1674,9 +1699,9 @@ interactive_binning_page_layout = html.Div([
                 html.Div([
                     SaveButton("Add Elements", inline=True, width="12%"),
                     SaveButton("Split Bin", inline=True,
-                               width="9%", marginLeft="0.5%"),
+                               width="9%", marginLeft="0.5%", id="categoric_add_elements_panel_to_split_button"),
                     SaveButton("Rename Bin", inline=True,
-                               width="12%", marginLeft="0.5%"),
+                               width="12%", marginLeft="0.5%", id="categoric_add_elements_panel_to_rename_button"),
                 ]),
                 html.Div(
                     [
@@ -1698,18 +1723,11 @@ interactive_binning_page_layout = html.Div([
                         html.P("Selected Bin Info: ", style={
                                "fontWeight": "bold"}),
                         # TODO: extract this out
-                        html.P("Bin Name: " + "Rent or Mortgage",
-                               style={"fontSize": 14}),
-                        html.P("Bin Element(s): " + \
-                               "['RENT', 'MORTGAGE]", style={"fontSize": 14}),
-                        html.P("Population Good Count: " + \
-                               "11754", style={"fontSize": 14}),
-                        html.P("Population Bad Count: " + \
-                               "5119", style={"fontSize": 14}),
+                        html.Div(id="categoric_add_elements_panel_selected_bin_info"),
 
                         html.P("Enter the new bin name: ",
                                style={"fontWeight": "bold"}),
-                        dcc.Input(style={"marginBottom": 10}),
+                        dcc.Input(style={"marginBottom": 10}, id="categoric_add_elements_panel_name_input"),
                         html.P("Select elements to be added into the bin:",
                                style={"fontWeight": "bold"}),
                         dcc.Dropdown(
@@ -1718,10 +1736,12 @@ interactive_binning_page_layout = html.Div([
                             value=[],
                             multi=True,
                             style={"marginBottom": 13},
+                            id="categoric_add_elements_panel_dropdown",
                         ),
-                        SaveButton("Add Elements"),
+                        SaveButton("Add Elements", id="categoric_add_elements_panel_add_button"),
                         html.Div(style={"height": 13}),
-                        html.P("Preview Changes:", style={
+                        html.Div([
+                            html.P("Preview Changes:", style={
                                "fontWeight": "bold", "textDecoration": "underline"}),
                         html.P("Old Bin(s):", style={
                                "fontWeight": "bold", "fontSize": 14}),
@@ -1731,22 +1751,23 @@ interactive_binning_page_layout = html.Div([
                                 [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
                             html.Div([html.P("Old Bin Name: " + "Rent or Mortgage"), html.P("Old Bin Element(s): " + \
                                      "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),
-                        ]),
-                        html.P("Will be changed to:", style={
-                               "fontWeight": "bold", "fontSize": 14}),
-                        # 1 new bin elements, TODO: extract it out
-                        html.Div([
-                            html.Div(
-                                [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
-                            html.Div([html.P("New Bin Name: " + "Rent or Mortgage"), html.P("New Bin Element(s): " + \
-                                     "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),
-                        ]),
-                        SaveButton("Submit", inline=True),
-                        SaveButton("Hide Details", inline=True,
-                                   backgroundColor="#8097E6", marginLeft=5),
-                        html.Div(style={"height": 13, "clear": "both"}),
-                        html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
-                               style={"lineHeight": "99%", "fontSize": 14}),
+                            ]),
+                            html.P("Will be changed to:", style={
+                                   "fontWeight": "bold", "fontSize": 14}),
+                            # 1 new bin elements, TODO: extract it out
+                            html.Div([
+                                html.Div(
+                                    [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                                html.Div([html.P("New Bin Name: " + "Rent or Mortgage"), html.P("New Bin Element(s): " + \
+                                         "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                            ]),
+                            SaveButton("Submit", inline=True, id="categoric_add_elements_panel_submit_button"),
+                            SaveButton("Hide Details", inline=True,
+                                       backgroundColor="#8097E6", marginLeft=5, id="categoric_add_elements_panel_hide_details_button"),
+                            html.Div(style={"height": 13, "clear": "both"}),
+                            html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
+                                   style={"lineHeight": "99%", "fontSize": 14}),
+                        ], id="categoric_add_elements_panel_preview_changes_div", style={"display": "none"}),
                     ],
                     style={
                         "marginTop": 13,
@@ -3459,12 +3480,19 @@ variable to be binned
         Input("mixed_chart", "clickData"),
         Input("mixed_chart", "selectedData"),
         Input("predictor_var_ib_dropdown", "value"),
+        Input("categoric_add_elements_panel_to_split_button", "n_clicks"),
+        Input("categoric_add_elements_panel_to_rename_button", "n_clicks"),
     ],
     State("bins_settings", "data"),
 )
-def update_control_panel_on_var_to_bin_change(click_data, selected_data, var_to_bin, bins_settings_data):
+def update_control_panel_on_var_to_bin_change(click_data, selected_data, var_to_bin, n_clicks, n_clicks2, bins_settings_data):
     triggered = dash.callback_context.triggered
 
+    if triggered[0]['prop_id'] == 'categoric_add_elements_panel_to_split_button.n_clicks':
+        return [{"display": "none"}, {"display": "none"}, {}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}]
+    if triggered[0]['prop_id'] == 'categoric_add_elements_panel_to_rename_button.n_clicks':
+        return [{"display": "none"}, {"display": "none"}, {"display": "none"}, {}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}]
+    
     bins_settings_dict = json.loads(bins_settings_data)
     bins_settings_list = bins_settings_dict["variable"]
     col_bins_settings = None
@@ -3564,6 +3592,48 @@ def update_categoric_create_new_bin_preview_changes_info(n_clicks, new_name, bin
     
     return generate_bin_changes_div_children(old_bin_list=[["Rent or Mortgage", "['RENT', 'MORTGAGE']"], ["Risky", "['OTHERS']"]], new_bin_list=[["Rent or Mortgage", "['RENT', 'MORTGAGE']"]], dtype="categorical")
 
+
+"""
+Interactive Binning Page:
+Show/Hide categorical add elements control panel preview changes 
+when user clicks on the 'Add Elements' button
+"""
+
+
+@app.callback(
+    Output("categoric_add_elements_panel_preview_changes_div", "style"),
+    [
+        Input("categoric_add_elements_panel_add_button", "n_clicks"),
+        Input("categoric_add_elements_panel_hide_details_button", "n_clicks"),
+    ],
+    prevent_initial_call=True,
+)
+def show_categoric_create_new_bin_preview_changes_div(n_clicks, n_clicks2):
+    triggered = dash.callback_context.triggered
+
+    if triggered[0]['prop_id'] == "categoric_add_elements_panel_add_button.n_clicks":
+        return {}
+    else:
+        return {"display": "none"}
+    
+"""
+Interactive Binning Page:
+Update selected bin info for categoric add elements panel
+based on user clicks
+"""
+@app.callback(
+    Output("categoric_add_elements_panel_selected_bin_info", "children"),
+    Input("mixed_chart", "clickData"),
+    [
+        State("temp_chart_info", "data"),
+        State("temp_col_bins_settings", "data"),
+    ],
+)
+def update_categoric_add_elements_panel_selected_bin_info(click_data, temp_chart_info_data, temp_col_bins_settings_data):
+    temp_chart_info = json.loads(temp_chart_info_data)
+    temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
+    return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=click_data)
+    
 ###########################################################################
 ############################ Debugging Purpose ############################
 ###########################################################################
