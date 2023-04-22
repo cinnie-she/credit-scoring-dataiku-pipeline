@@ -1110,12 +1110,13 @@ class BinningMachine:
             if col_bins_settings["type"] == "numerical":
                 def_li = list()
                 for bin in unique_bin:
-                    def_li.append({"name": get_str_from_ranges([[bin, bin+1]]), "ranges": [[bin, bin+1]]})
+                    def_li.append({"name": str(bin), "ranges": [[bin, bin+0.0000001]]})
+                return BinningMachine.perform_numerical_custom_binning(col_df, def_li)
             else:
                 def_li = list()
                 for bin in unique_bin:
-                    def_li.append({"name": str([bin]), "elements": [bin]})
-            return (def_li, col_df.iloc[:, 0])  # no binning
+                    def_li.append({"name": str(bin), "elements": [bin]})
+                return BinningMachine.perform_categorical_custom_binning(col_df, def_li)
         elif isinstance(col_bins_settings["bins"], dict):  # auto binning
             if col_bins_settings["bins"]["algo"] == "equal width":
                 if col_bins_settings["bins"]["method"] == "width":
@@ -3677,6 +3678,40 @@ def update_categoric_add_elements_panel_selected_bin_info(click_data, temp_chart
     temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
     return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=click_data)
     
+"""
+Interactive Binning Page:
+Update categoric add elements panel dropdown options and value
+when user click on a bar
+"""
+@app.callback(
+    [
+        Output("categoric_add_elements_panel_dropdown", "options"),
+        Output("categoric_add_elements_panel_dropdown", "value"),
+    ],
+    Input("mixed_chart", "clickData"),
+    [
+        State("temp_col_bins_settings", "data"),
+        State("temp_chart_info", "data"),
+    ],
+)
+def update_categoric_add_elements_dropdown(click_data, temp_col_bins_settings_data, temp_chart_info_data):
+    if click_data is None:
+        return [convert_column_list_to_dropdown_options([]), []]
+    
+    clicked_bin_name = click_data["points"][0]["x"]
+    temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
+    temp_chart_info = json.loads(temp_chart_info_data)
+    
+    bin_elements = None
+    for bin_def in temp_col_bins_settings["bins"]:
+        if bin_def["name"] == clicked_bin_name:
+            bin_elements = bin_def["elements"]
+    
+    options_li = [x for x in temp_chart_info["unique_bins"] if x not in bin_elements]
+    
+    return [convert_column_list_to_dropdown_options(options_li), []]
+    
+    
 ###########################################################################
 ############################ Debugging Purpose ############################
 ###########################################################################
@@ -3753,20 +3788,23 @@ def update_good_bad_def_text_in_ib(data):
 
 @app.callback(
     Output("test_select", "children"),
-    Input("mixed_chart", "selectedData"),
+    Input("temp_binned_col", "data"),
 )
-def output_selected_data_info(selected_data):
-    return str(selected_data)
+def output_selected_data_info(temp_binned_col_data):
+    temp_binned_col_dict = json.loads(temp_binned_col_data)
+    temp_df = pd.DataFrame(temp_binned_col_dict)
+    return str(temp_df['binned_col'])
 
 # Get click data info in ib page
 
 
 @app.callback(
     Output("test_click", "children"),
-    Input("mixed_chart", "clickData"),
+    Input("temp_chart_info", "data"),
 )
-def output_selected_data_info(click_data):
-    return str(click_data)
+def output_selected_data_info(temp_chart_info_data):
+    temp_chart_info = json.loads(temp_chart_info_data)
+    return str(temp_chart_info)
 
 ###########################################################################
 ############ Not important for our development after this line ############
