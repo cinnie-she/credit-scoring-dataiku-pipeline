@@ -3170,10 +3170,16 @@ variable to be binned
         Output("numerical_rename_bin_control_panel", "style"),
         Output("numerical_merge_bins_control_panel", "style"),
     ],
-    Input("predictor_var_ib_dropdown", "value"),
+    [
+        Input("mixed_chart", "clickData"),
+        Input("mixed_chart", "selectedData"),
+        Input("predictor_var_ib_dropdown", "value"),
+    ],
     State("bins_settings", "data"),
 )
-def update_control_panel_on_var_to_bin_change(var_to_bin, bins_settings_data):
+def update_control_panel_on_var_to_bin_change(click_data, selected_data, var_to_bin, bins_settings_data):
+    triggered = dash.callback_context.triggered
+    
     bins_settings_dict = json.loads(bins_settings_data)
     bins_settings_list = bins_settings_dict["variable"]
     col_bins_settings = None
@@ -3183,9 +3189,23 @@ def update_control_panel_on_var_to_bin_change(var_to_bin, bins_settings_data):
             break
     
     if col_bins_settings["type"] == "numerical":
-        return [{"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {}, {"display": "none"}, {"display": "none"}, {"display": "none"}]
+        if click_data == None and selected_data == None:
+            # Create New Bin
+            return [{"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {}, {"display": "none"}, {"display": "none"}, {"display": "none"}]
+        elif click_data != None and selected_data == None:
+            # Adjust Cutpoints
+            return [{"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {}, {"display": "none"}, {"display": "none"}]
+        else: 
+            return [{"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {}]
     else:
-        return [{}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}]
+        if click_data == None and selected_data == None:
+            # Create New Bin
+            return [{}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}]
+        elif click_data != None and selected_data == None:
+            # Add Elements
+            return [{"display": "none"}, {}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}]
+        else: 
+            return [{"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}]
 
 ###########################################################################
 ############################ Debugging Purpose ############################
