@@ -1510,7 +1510,8 @@ interactive_binning_page_layout = html.Div([
                         figure=generate_mixed_chart_fig(),
                         id="mixed_chart",
                     ),
-                    html.P("Tips: If you would like to de-select the bar(s), simply click on the WOE line.", style={"marginTop": 20}),
+                    html.P("Tips 1: If you would like to de-select the bar(s), simply click on the WOE line.", style={"marginTop": 20}),
+                    html.P("Tips 2: You could use the 'Box Select' or 'Lasso Select' tools on the top right corner to select multiple bars."),
                 ],
                 style=white_panel_style,
             ),
@@ -3103,9 +3104,10 @@ def update_mixed_chart_on_var_to_bin_change(temp_chart_info_data, click_data, se
     [
         Input("mixed_chart", "clickData"),
         Input("mixed_chart", "selectedData"),
+        Input("predictor_var_ib_dropdown", "value"),
     ],
 )
-def erase_click_data(click_data, selected_data):
+def erase_click_data(click_data, selected_data, var_to_bin):
     if click_data is not None and click_data["points"][0]["curveNumber"] == 2:
         click_data = None
         selected_data = None
@@ -3115,7 +3117,10 @@ def erase_click_data(click_data, selected_data):
     triggered = dash.callback_context.triggered
     if triggered[0]['prop_id'] == 'mixed_chart.clickData':
         selected_data = None
-     
+    if triggered[0]['prop_id'] == 'predictor_var_ib_dropdown.value':
+        click_data = None
+        selected_data = None
+    
     return [click_data, selected_data]
     
     
