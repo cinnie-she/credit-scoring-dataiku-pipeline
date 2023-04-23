@@ -1237,6 +1237,12 @@ def generate_bin_changes_div_children(old_bin_list=[], new_bin_list=[], dtype=No
         return [html.P("Error: Please select element(s) from the dropdown menu.", style={"color": "red", "fontSize": 14})]
     if old_bin_list == -4 or new_bin_list == -4:
         return [html.P("Error: All elements of the bin has been included, no splitting could be performed.", style={"color": "red", "fontSize": 14})]
+    if old_bin_list == -5 or new_bin_list == -5:
+        return [html.P("Error: Some of the numerical range(s) for bad definition has lower bound >= upper bound which is invalid.", style={"color": "red", "fontSize": 14})]
+    if old_bin_list == -6 or new_bin_list == -6:
+        return [html.P("Error: Please indicate the ranges to be included in the new bin. You could add it by clicking the 'Add' button above.", style={"color": "red", "fontSize": 14})]
+    
+        
     
     children = list()
     
@@ -1492,6 +1498,24 @@ class InteractiveBinningMachine:
         
         return (temp_col_bins_settings, [], new_bin_list)
         
+    @staticmethod
+    def numeric_create_new_bin(new_bin_name, new_bin_ranges, temp_col_bins_settings):
+        if len(new_bin_ranges) == 0:
+            return (temp_col_bins_settings, -6, -6) 
+        
+        if InteractiveBinningMachine.validate_new_name(new_bin_name, temp_col_bins_settings) == False:
+            return (temp_col_bins_settings, -1, -1)
+        
+        old_bin_list = list()
+        new_bin_list = list()
+        
+        bin_to_remove_idx_li = list()
+        
+        # for all bins, remove overlapped ranges with new_bin_ranges
+        for idx in range(len(temp_col_bins_settings["bins"])):
+            pass
+        
+        pass
         
     @staticmethod
     def validate_new_name(new_name, temp_col_bins_settings, selected_bin_name=None):
@@ -1510,7 +1534,68 @@ class InteractiveBinningMachine:
             return True
     
     
-            
+def decode_ib_ranges(ranges):
+    if len(ranges) == 0:
+        return []
+    numeric_list = list()  # initialization
+    # print(len(ranges))
+    for numeric_info in ranges:
+        single_def_list = list()
+        # print(f"numeric_info: {numeric_info}")
+        a_range = [numeric_info[0], numeric_info[1]]
+        # The 2 bounds are valid, now check if any overlapping with previously saved data
+        has_column_overlap = False
+        for def_idx, saved_def in enumerate(numeric_list):
+            # print(f"def_idx: {def_idx}, saved_def: {saved_def}")
+            has_column_overlap = True
+            has_range_overlap = False
+            overlapped_def_range_idxes = list()
+            # Merge range to element list
+            for def_range_idx, def_range in enumerate(saved_def):
+                if len(overlapped_def_range_idxes) != 0:
+                    a_range = numeric_list[def_idx][overlapped_def_range_idxes[0]]
+
+                if a_range[0] <= def_range[0] and a_range[1] >= def_range[1]:
+                    has_range_overlap = True
+                    numeric_list[def_idx][def_range_idx] = [
+                        a_range[0], a_range[1]]
+                    overlapped_def_range_idxes.insert(0, def_range_idx)
+                elif def_range[0] <= a_range[0] and def_range[1] >= a_range[1]:
+                    has_range_overlap = True
+                elif a_range[0] <= def_range[0] and a_range[1] >= def_range[0] and a_range[1] <= def_range[1]:
+                    has_range_overlap = True
+                    numeric_list[def_idx][def_range_idx] = [
+                        a_range[0], def_range[1]]
+                    overlapped_def_range_idxes.insert(0, def_range_idx)
+                elif a_range[0] >= def_range[0] and a_range[0] <= def_range[1] and a_range[1] >= def_range[1]:
+                    has_range_overlap = True
+                    numeric_list[def_idx][def_range_idx] = [
+                        def_range[0], a_range[1]]
+                    overlapped_def_range_idxes.insert(0, def_range_idx)
+            if len(overlapped_def_range_idxes) != 0:
+                del overlapped_def_range_idxes[0]
+                for i in sorted(overlapped_def_range_idxes, reverse=True):
+                    del numeric_list[def_idx][i]
+            if has_range_overlap == False:
+                numeric_list[def_idx].append(a_range)
+            break
+        if has_column_overlap == False:
+            single_def_list = [a_range]
+            numeric_list.append(single_def_list)
+    
+    return numeric_list[0]
+  
+
+def validate_numerical_bounds(numeric_info_list):
+    for numeric_info in numeric_info_list:
+        a_range = [numeric_info[0], numeric_info[1]]
+        try:
+            if a_range[1] <= a_range[0]:
+                return False
+        except:
+            return False
+    return True
+    
 """
 All
 """
@@ -2272,12 +2357,15 @@ interactive_binning_page_layout = html.Div([
                         html.Div(style={"height": 13}),
                         html.Div([
                             html.Div([], id="numeric_create_new_bin_panel_changes_div"),
-                            SaveButton("Submit", inline=True, id="numeric_create_new_bin_panel_submit_button"),
-                            SaveButton("Hide Details", inline=True,
-                                       backgroundColor="#8097E6", marginLeft=5, id="numeric_create_new_bin_hide_details_button"),
-                            html.Div(style={"height": 13, "clear": "both"}),
-                            html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
-                                   style={"lineHeight": "99%", "fontSize": 14}),
+                            html.P(id="test_ranges"),
+                            html.Div([
+                                SaveButton("Submit", inline=True, id="numeric_create_new_bin_panel_submit_button"),
+                                SaveButton("Hide Details", inline=True,
+                                           backgroundColor="#8097E6", marginLeft=5, id="numeric_create_new_bin_hide_details_button"),
+                                html.Div(style={"height": 13, "clear": "both"}),
+                                html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
+                                       style={"lineHeight": "99%", "fontSize": 14}),
+                            ], id="numeric_create_new_bin_panel_submit_div"),
                         ], id="numeric_create_new_bin_preview_changes_div", style={"display": "none"}),
                         
                     ],
@@ -3945,25 +4033,36 @@ Update numeric create new bin preview changes info
 when user clicks on the 'Create New Bin' button
 """
 @app.callback(
-    Output("numeric_create_new_bin_panel_changes_div", "children"),
+    [
+        Output("numeric_create_new_bin_panel_changes_div", "children"),
+        Output("numeric_create_new_bin_panel_submit_div", "style"),
+        Output("test_ranges", "children"),
+    ],
     Input("numeric_create_new_bin_panel_create_new_bin_button", "n_clicks"),
     [
         State("numeric_create_new_bin_panel_new_bin_name_input", "value"),
         State("predictor_var_ib_dropdown", "value"),
         State("temp_col_bins_settings", "data"),
+        State({"index": ALL, "type": "numeric_create_new_bin_lower"}, "value"),
+        State({"index": ALL, "type": "numeric_create_new_bin_upper"}, "value"),
     ],
 )
-def update_numeric_create_new_bin_preview_changes_info(n_clicks, new_name, var_to_bin, temp_col_bins_settings_data):
+def update_numeric_create_new_bin_preview_changes_info(n_clicks, new_name, var_to_bin, temp_col_bins_settings_data, lower_list, upper_list):
     col_bin_settings = json.loads(temp_col_bins_settings_data)
     
-    #col_bin_list = None
-    # If it is no binning OR automated binning, have to translate it to list
-    #if isinstance(col_bins_settings["bins"], dict) == True or col_bins_settings["bins"] == "none":
-    #    col_bin_list = BinningMachine.convert_auto_bin_def_to_custom_def(col_bins_settings["bins"])
+    ranges = tuple(zip(lower_list, upper_list))
     
+    # validate first
+    isValid = validate_numerical_bounds(ranges)
+    
+    if isValid == False:
+        style = {"display": "none"}
+        return [generate_bin_changes_div_children(old_bin_list=-5, new_bin_list=-5, dtype="numerical"), style, "not valid"]
+    
+    ranges = decode_ib_ranges(ranges)
     #old_bin_list, new_bin_list = InteractiveBinningMachine.get_categoric_create_new_bin_changes(new_name, bin_element_list, var_to_bin, col_bin_settings)
     
-    return generate_bin_changes_div_children(old_bin_list=[["0-20", "[[0, 20)]"], ["30-50", "[[30, 50)]"]], new_bin_list=[["0-50", "[[0, 50)]"]], dtype="numerical")
+    return [generate_bin_changes_div_children(old_bin_list=[["0-20", "[[0, 20)]"], ["30-50", "[[30, 50)]"]], new_bin_list=[["0-50", "[[0, 50)]"]], dtype="numerical"), str(ranges)]
 
 
 """
