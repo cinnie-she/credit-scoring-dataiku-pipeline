@@ -1901,13 +1901,15 @@ interactive_binning_page_layout = html.Div([
                         html.Div(style={"height": 13}),
                         html.Div([
                             html.Div([], id="categoric_create_new_bin_changes_div"),
-                            SaveButton(
-                                "Submit", inline=True, id="categoric_create_new_bin_submit_button"),
-                            SaveButton("Hide Details", inline=True, backgroundColor="#8097E6",
-                                       marginLeft=5, id="categoric_create_new_bin_hide_details_button"),
-                            html.Div(style={"height": 13, "clear": "both"}),
-                            html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
-                                   style={"lineHeight": "99%", "fontSize": 14}),
+                            html.Div([
+                                SaveButton(
+                                    "Submit", inline=True, id="categoric_create_new_bin_submit_button"),
+                                SaveButton("Hide Details", inline=True, backgroundColor="#8097E6",
+                                           marginLeft=5, id="categoric_create_new_bin_hide_details_button"),
+                                html.Div(style={"height": 13, "clear": "both"}),
+                                html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
+                                       style={"lineHeight": "99%", "fontSize": 14}),
+                            ], id="categoric_create_new_bin_submit_div"),
                         ], id="categoric_create_new_bin_preview_changes_div", style={"display": "none"}),
                     ],
                     style={
@@ -1967,12 +1969,14 @@ interactive_binning_page_layout = html.Div([
                         html.Div(style={"height": 13}),
                         html.Div([
                             html.Div([], id="categoric_add_elements_panel_changes_div"),
-                            SaveButton("Submit", inline=True, id="categoric_add_elements_panel_submit_button"),
-                            SaveButton("Hide Details", inline=True,
-                                       backgroundColor="#8097E6", marginLeft=5, id="categoric_add_elements_panel_hide_details_button"),
-                            html.Div(style={"height": 13, "clear": "both"}),
-                            html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
-                                   style={"lineHeight": "99%", "fontSize": 14}),
+                            html.Div([
+                                SaveButton("Submit", inline=True, id="categoric_add_elements_panel_submit_button"),
+                                SaveButton("Hide Details", inline=True,
+                                           backgroundColor="#8097E6", marginLeft=5, id="categoric_add_elements_panel_hide_details_button"),
+                                html.Div(style={"height": 13, "clear": "both"}),
+                                html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
+                                       style={"lineHeight": "99%", "fontSize": 14}),
+                            ], id="categoric_add_elements_panel_submit_div"),
                         ], id="categoric_add_elements_panel_preview_changes_div", style={"display": "none"}),
                     ],
                     style={
@@ -2087,12 +2091,14 @@ interactive_binning_page_layout = html.Div([
                         html.Div(style={"height": 13}),
                         html.Div([
                             html.Div([], id="categoric_rename_panel_changes_div"),
-                            SaveButton("Submit", inline=True, id="categoric_rename_panel_submit_button"),
-                            SaveButton("Hide Details", inline=True,
-                                       backgroundColor="#8097E6", marginLeft=5, id="categoric_rename_panel_hide_details_button"),
-                            html.Div(style={"height": 13, "clear": "both"}),
-                            html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
-                                   style={"lineHeight": "99%", "fontSize": 14}),
+                            html.Div([
+                                SaveButton("Submit", inline=True, id="categoric_rename_panel_submit_button"),
+                                SaveButton("Hide Details", inline=True,
+                                           backgroundColor="#8097E6", marginLeft=5, id="categoric_rename_panel_hide_details_button"),
+                                html.Div(style={"height": 13, "clear": "both"}),
+                                html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
+                                       style={"lineHeight": "99%", "fontSize": 14}),
+                            ], id="categoric_rename_panel_submit_div"),
                         ], id="categoric_rename_panel_preview_changes_div", style={"display": "none"})
                     ],
                     style={
@@ -3629,7 +3635,10 @@ Update categoric create new bin preview changes info
 when user clicks on the 'Create New Bin' button
 """
 @app.callback(
-    Output("categoric_create_new_bin_changes_div", "children"),
+    [
+        Output("categoric_create_new_bin_changes_div", "children"),
+        Output("categoric_create_new_bin_submit_div", "style"),
+    ],
     Input("categoric_create_new_bin_button", "n_clicks"),
     [
         State("categoric_create_new_bin_name_input", "value"),
@@ -3642,7 +3651,11 @@ def update_categoric_create_new_bin_preview_changes_info(n_clicks, new_name, bin
     
     _, old_bin_list, new_bin_list = InteractiveBinningMachine.categoric_create_new_bin(new_bin_name=new_name, new_bin_element_li=bin_element_list, temp_col_bins_settings=col_bin_settings)
     
-    return generate_bin_changes_div_children(old_bin_list=old_bin_list, new_bin_list=new_bin_list, dtype="categorical")
+    style = {}
+    if not isinstance(old_bin_list, list) or not isinstance(new_bin_list, list):
+        style = {"display": "none"}
+    
+    return [generate_bin_changes_div_children(old_bin_list=old_bin_list, new_bin_list=new_bin_list, dtype="categorical"), style]
 
 
 """
@@ -3651,7 +3664,10 @@ Update categoric add elements preview changes info
 when user clicks on the 'Add Elements' button
 """
 @app.callback(
-    Output("categoric_add_elements_panel_changes_div", "children"),
+    [
+        Output("categoric_add_elements_panel_changes_div", "children"),
+        Output("categoric_add_elements_panel_submit_div", "style"),
+    ],
     Input("categoric_add_elements_panel_add_button", "n_clicks"),
     [
         State("categoric_add_elements_panel_name_input", "value"),
@@ -3665,7 +3681,11 @@ def update_categoric_add_elements_panel_preview_changes_info(n_clicks, new_name,
     
     _, old_bin_list, new_bin_list = InteractiveBinningMachine.categoric_add_elements(selected_bin_name=click_data["points"][0]["x"], new_bin_name=new_name, elements_to_add_li=bin_element_list, temp_col_bins_settings=col_bin_settings)
     
-    return generate_bin_changes_div_children(old_bin_list=old_bin_list, new_bin_list=new_bin_list, dtype="categorical")
+    style = {}
+    if not isinstance(old_bin_list, list) or not isinstance(new_bin_list, list):
+        style = {"display": "none"}
+    
+    return [generate_bin_changes_div_children(old_bin_list=old_bin_list, new_bin_list=new_bin_list, dtype="categorical"), style]
 
 """
 Interactive Binning Page:
@@ -3834,7 +3854,10 @@ Update categoric rename preview changes info
 when user clicks on the 'Rename Bin' button
 """
 @app.callback(
-    Output("categoric_rename_panel_changes_div", "children"),
+    [
+        Output("categoric_rename_panel_changes_div", "children"),
+        Output("categoric_rename_panel_submit_div", "style"),
+    ],
     Input("categoric_rename_panel_rename_button", "n_clicks"),
     [
         State("categoric_rename_panel_new_bin_name_input", "value"),
@@ -3847,7 +3870,11 @@ def update_categoric_create_new_bin_preview_changes_info(n_clicks, new_name, tem
     
     _, old_bin_list, new_bin_list = InteractiveBinningMachine.categoric_rename_bin(selected_bin_name=click_data["points"][0]["x"], new_bin_name=new_name, temp_col_bins_settings=col_bin_settings)
     
-    return generate_bin_changes_div_children(old_bin_list=old_bin_list, new_bin_list=new_bin_list, dtype="categorical")
+    style = {}
+    if not isinstance(old_bin_list, list) or not isinstance(new_bin_list, list):
+        style = {"display": "none"}
+    
+    return [generate_bin_changes_div_children(old_bin_list=old_bin_list, new_bin_list=new_bin_list, dtype="categorical"), style]
 
 
 
