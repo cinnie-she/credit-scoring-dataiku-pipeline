@@ -1249,7 +1249,7 @@ def generate_bin_changes_div_children(old_bin_list=[], new_bin_list=[], dtype=No
     return children
 
 
-def generate_selected_bin_info_div_children(temp_chart_info, temp_col_bins_settings, click_data):
+def generate_selected_bin_info_div_children(temp_chart_info, temp_col_bins_settings, click_data, dtype):
     if click_data is not None:
         children = list()
         points = click_data["points"]
@@ -1262,16 +1262,29 @@ def generate_selected_bin_info_div_children(temp_chart_info, temp_col_bins_setti
                 continue
             else:
                 selected_bin_names.add(bin_name)
-            bin_elements = None
-            for bin_def in bin_defs:
-                if bin_def["name"] == bin_name:
-                    bin_elements = bin_def["elements"]
+            
+            if dtype == "categorical":
+                bin_elements = None
+                for bin_def in bin_defs:
+                    if bin_def["name"] == bin_name:
+                        bin_elements = bin_def["elements"]
+            else:
+                bin_ranges = None
+                for bin_def in bin_defs:
+                    if bin_def["name"] == bin_name:
+                        bin_ranges = bin_def["ranges"]
+                        
             bin_idx = point["pointIndex"]
             bin_bad_count = temp_chart_info["bad_count_list"][bin_idx]
             bin_gd_count = temp_chart_info["total_count_list"][bin_idx] - bin_bad_count
             bin_woe = temp_chart_info["woe_list"][bin_idx]
             children.append(html.P("Bin Name: " + str(bin_name), style={"fontSize": 14}))
-            children.append(html.P("Bin Element(s): " + str(bin_elements), style={"fontSize": 14}))
+            
+            if dtype == "categorical":
+                children.append(html.P("Bin Element(s): " + str(bin_elements), style={"fontSize": 14}))
+            else:
+                children.append(html.P("Bin Range(s): " + get_str_from_ranges(bin_ranges), style={"fontSize": 14}))
+            
             children.append(html.P("Population Good Count: " + str(bin_gd_count), style={"fontSize": 14}))
             children.append(html.P("Population Bad Count: " + str(bin_bad_count), style={"fontSize": 14}))
             children.append(html.P("Bin WOE: " + "{:.4f}".format(bin_woe), style={"fontSize": 14}))
@@ -2099,13 +2112,7 @@ interactive_binning_page_layout = html.Div([
                         html.P("Selected Bin Info: ", style={
                                "fontWeight": "bold"}),
                         # TODO: extract this out
-                        html.P("Bin Name: " + "Young", style={"fontSize": 14}),
-                        html.P("Bin Element(s): " + \
-                               "[[0, 25)]", style={"fontSize": 14}),
-                        html.P("Population Good Count: " + \
-                               "11754", style={"fontSize": 14}),
-                        html.P("Population Bad Count: " + \
-                               "5119", style={"fontSize": 14}),
+                        html.Div([], id="numeric_adjust_cutpoints_panel_selected_bin_info_div"),
 
                         html.P("Enter the new bin name: ",
                                style={"fontWeight": "bold"}),
@@ -2181,13 +2188,7 @@ interactive_binning_page_layout = html.Div([
                         html.P("Selected Bin Info: ", style={
                                "fontWeight": "bold"}),
                         # TODO: extract this out
-                        html.P("Bin Name: " + "Young", style={"fontSize": 14}),
-                        html.P("Bin Element(s): " + \
-                               "[[0, 25)]", style={"fontSize": 14}),
-                        html.P("Population Good Count: " + \
-                               "11754", style={"fontSize": 14}),
-                        html.P("Population Bad Count: " + \
-                               "5119", style={"fontSize": 14}),
+                        html.Div([], id="numeric_rename_panel_selected_bin_info_div"),
 
                         html.P("Enter the new bin name: ",
                                style={"fontWeight": "bold"}),
@@ -2253,27 +2254,7 @@ interactive_binning_page_layout = html.Div([
                         # TODO: extract this out
                         html.P("Selected Bin Info: ", style={
                                "fontWeight": "bold"}),
-                        html.P("Bin Name: " + "Young", style={"fontSize": 14}),
-                        html.P("Bin Element(s): " + \
-                               "[[0, 25]]", style={"fontSize": 14}),
-                        html.P("Population Good Count: " + \
-                               "11754", style={"fontSize": 14}),
-                        html.P("Population Bad Count: " + \
-                               "5119", style={"fontSize": 14}),
-                        html.Hr(
-                            style={"marginTop": 8, "marginBottom": 8, "marginLeft": 0, "marginRight": 0}),
-
-                        html.P("Bin Name: " + "Elderly",
-                               style={"fontSize": 14}),
-                        html.P("Bin Element(s): " + \
-                               "[[60, 100]]", style={"fontSize": 14}),
-                        html.P("Population Good Count: " + \
-                               "11754", style={"fontSize": 14}),
-                        html.P("Population Bad Count: " + \
-                               "5119", style={"fontSize": 14}),
-                        html.Hr(
-                            style={"marginTop": 8, "marginBottom": 8, "marginLeft": 0, "marginRight": 0}),
-
+                        html.Div([], id="numeric_merge_panel_selected_bin_info_div"),
                         html.P("Enter the new bin name: ",
                                style={"fontWeight": "bold"}),
                         dcc.Input(style={"marginBottom": 10}),
@@ -3737,7 +3718,7 @@ based on user clicks
 def update_categoric_add_elements_panel_selected_bin_info(click_data, temp_chart_info_data, temp_col_bins_settings_data):
     temp_chart_info = json.loads(temp_chart_info_data)
     temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
-    return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=click_data)
+    return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=click_data, dtype="categorical")
  
 """
 Interactive Binning Page:
@@ -3755,9 +3736,28 @@ based on user's selections
 def update_categoric_merge_panel_selected_bin_info(selected_data, temp_chart_info_data, temp_col_bins_settings_data):
     temp_chart_info = json.loads(temp_chart_info_data)
     temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
-    return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=selected_data)
+    return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=selected_data, dtype="categorical")
   
+"""
+Interactive Binning Page:
+Update selected bin info for numeric merge panel
+based on user's selections
+"""
+@app.callback(
+    Output("numeric_merge_panel_selected_bin_info_div", "children"),
+    Input("mixed_chart", "selectedData"),
+    [
+        State("temp_chart_info", "data"),
+        State("temp_col_bins_settings", "data"),
+    ],
+)
+def update_numeric_merge_panel_selected_bin_info(selected_data, temp_chart_info_data, temp_col_bins_settings_data):
+    temp_chart_info = json.loads(temp_chart_info_data)
+    temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
+    return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=selected_data, dtype="numerical")
     
+
+
 """
 Interactive Binning Page:
 Update categoric add elements panel dropdown options and value
@@ -3961,7 +3961,7 @@ based on user clicks
 def update_categoric_split_panel_selected_bin_info(click_data, temp_chart_info_data, temp_col_bins_settings_data):
     temp_chart_info = json.loads(temp_chart_info_data)
     temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
-    return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=click_data)
+    return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=click_data, dtype="categorical")
   
     
     
@@ -3984,7 +3984,48 @@ based on user clicks
 def update_categoric_split_panel_selected_bin_info(click_data, temp_chart_info_data, temp_col_bins_settings_data):
     temp_chart_info = json.loads(temp_chart_info_data)
     temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
-    return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=click_data)
+    return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=click_data, dtype="categorical")
+ 
+    
+    
+"""
+Interactive Binning Page:
+Update selected bin info for numeric adjust cutpoints panel
+based on user clicks
+"""
+@app.callback(
+    Output("numeric_adjust_cutpoints_panel_selected_bin_info_div", "children"),
+    Input("mixed_chart", "clickData"),
+    [
+        State("temp_chart_info", "data"),
+        State("temp_col_bins_settings", "data"),
+    ],
+)
+def update_numeric_adjust_cutpoints_panel_selected_bin_info(click_data, temp_chart_info_data, temp_col_bins_settings_data):
+    temp_chart_info = json.loads(temp_chart_info_data)
+    temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
+    return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=click_data, dtype="numerical")
+  
+    
+    
+"""
+Interactive Binning Page:
+Update selected bin info for numeric adjust cutpoints panel
+based on user clicks
+"""
+@app.callback(
+    Output("numeric_rename_panel_selected_bin_info_div", "children"),
+    Input("mixed_chart", "clickData"),
+    [
+        State("temp_chart_info", "data"),
+        State("temp_col_bins_settings", "data"),
+    ],
+)
+def update_numeric_adjust_cutpoints_panel_selected_bin_info(click_data, temp_chart_info_data, temp_col_bins_settings_data):
+    temp_chart_info = json.loads(temp_chart_info_data)
+    temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
+    return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=click_data, dtype="numerical")
+  
     
     
     
