@@ -3378,6 +3378,7 @@ refresh button in automated binning panel
         Input("categoric_rename_panel_submit_button", "n_clicks"),
         Input("categoric_add_elements_panel_submit_button", "n_clicks"),
         Input("categoric_merge_panel_submit_button", "n_clicks"),
+        Input("categoric_split_panel_submit_button", "n_clicks"),
     ],
     [
         State("bins_settings", "data"),
@@ -3397,9 +3398,11 @@ refresh button in automated binning panel
         State("categoric_add_elements_panel_dropdown", "value"),
         State("categoric_merge_panel_new_bin_name_input", "value"),
         State("mixed_chart", "selectedData"),
+        State("categoric_split_panel_new_bin_name_input", "value"),
+        State("categoric_split_panel_dropdown", "value"),
     ],
 )
-def update_temp_bins_settings(var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clicks4, n_clicks5, bins_settings_data, auto_bin_algo, equal_width_method, width, ew_num_bins, equal_freq_method, freq, ef_num_bins, temp_col_bins_settings_data, categoric_create_new_bin_name_input, categoric_create_new_bin_dropdown, categoric_rename_panel_new_bin_name_input, click_data, categoric_add_elements_panel_name_input, categoric_add_elements_panel_dropdown, categoric_merge_panel_new_bin_name_input, selected_data):
+def update_temp_bins_settings(var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clicks4, n_clicks5, n_clicks6, bins_settings_data, auto_bin_algo, equal_width_method, width, ew_num_bins, equal_freq_method, freq, ef_num_bins, temp_col_bins_settings_data, categoric_create_new_bin_name_input, categoric_create_new_bin_dropdown, categoric_rename_panel_new_bin_name_input, click_data, categoric_add_elements_panel_name_input, categoric_add_elements_panel_dropdown, categoric_merge_panel_new_bin_name_input, selected_data, categoric_split_panel_new_bin_name_input, categoric_split_panel_dropdown):
     triggered = dash.callback_context.triggered
     
     if triggered[0]['prop_id'] == "categoric_create_new_bin_submit_button.n_clicks":
@@ -3454,7 +3457,19 @@ def update_temp_bins_settings(var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clic
         temp_df['binned_col'] = binned_series.values
         
         return [json.dumps(new_settings), json.dumps(temp_df.to_dict())]
+    
+    if triggered[0]['prop_id'] == "categoric_split_panel_submit_button.n_clicks":
+        temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
+    
+        new_settings, _, __ = InteractiveBinningMachine.categoric_split_bin(selected_bin_name=click_data["points"][0]["x"], new_bin_name=categoric_split_panel_new_bin_name_input, elements_to_split_out_li=categoric_split_panel_dropdown, temp_col_bins_settings=temp_col_bins_settings)
+    
+        def_li, binned_series = BinningMachine.perform_binning_on_col(
+        df.loc[:, [new_settings["column"]]], new_settings)
+        temp_df = df.copy()
+        temp_df['binned_col'] = binned_series.values
         
+        return [json.dumps(new_settings), json.dumps(temp_df.to_dict())]
+    
     bins_settings_dict = json.loads(bins_settings_data)
     bins_settings_list = bins_settings_dict["variable"]
     col_bins_settings = None
