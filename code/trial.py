@@ -1,73 +1,21 @@
-def generate_categoric_old_div_children(old_bin_list=[], dtype=None):
-    if dtype == None: 
-        return []
-    if len(old_bin_list) == 0:
-        return []
-    
-    if dtype == "categorical":
-        s = "Element"
-    else:
-        s = "Range"
-    
-    idx = 1
-    old_element_list = list()
-    for old_bin in old_bin_list:
-        old_element_list.append(
-            [[
-                [
-                [["(" + str(idx) + ") "]],
-                [[["Old Bin Name: " + old_bin[0]], ["Old Bin " + s + "(s): " + old_bin[1]]]]
-            ]]]
-        )
-        idx += 1
+def categoric_rename_bin(selected_bin_name, new_bin_name, temp_col_bins_settings):
+        if selected_bin_name == new_bin_name:
+            return (temp_col_bins_settings, [], [])
         
-    return old_element_list
+        old_bin_list = list()
+        new_bin_list = list()
+        
+        for idx in range(len(temp_col_bins_settings["bins"])):
+            if temp_col_bins_settings["bins"][idx]["name"] == selected_bin_name:
+                old_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(temp_col_bins_settings["bins"][idx]["elements"])])
+                temp_col_bins_settings["bins"][idx]["name"] = new_bin_name
+                new_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(temp_col_bins_settings["bins"][idx]["elements"])])
+                break
+                
+        return (temp_col_bins_settings, old_bin_list, new_bin_list)
+    
+temp_col_bins_settings = {"column": "loan_grade", "type": "categorical", "bins": [{"name": "A", "elements": ['A']}, {"name": "B", "elements": ['B']}, {"name": "C", "elements": ['C']}]}
+selected_bin_name = "B"
+new_bin_name = "HI"
 
-
-def generate_categoric_new_div_children(new_bin_list=[], dtype=None):
-    if dtype == None: 
-        return []
-    if len(new_bin_list) == 0:
-        return []
-    
-    if dtype == "categorical":
-        s = "Element"
-    else:
-        s = "Range"
-    
-    idx = 1
-    new_element_list = list()
-    for new_bin in new_bin_list:
-        new_element_list.append(
-            [[
-                [[["(" + str(idx) + ") "]],
-                [[["New Bin Name: " + new_bin[0]], ["New Bin "+ s + "(s): " + new_bin[1]]],]]]
-            ],
-        )
-        idx += 1
-    
-    return new_element_list
-
-def generate_bin_changes_div_children(old_bin_list=[], new_bin_list=[], dtype=None):
-    if dtype == None:
-        return []
-    
-    children = list()
-    
-    children.append(["Preview Changes:"])
-    
-    if len(old_bin_list) != 0:
-        old_element_list = generate_categoric_old_div_children(old_bin_list=old_bin_list, dtype=dtype)
-        children.append(["Old Bin(s):"])
-        children.append([old_element_list])
-    
-    if len(new_bin_list) != 0:
-        children.append(["Will be changed to:"])
-        new_element_list = generate_categoric_new_div_children(new_bin_list, dtype=dtype)
-        children.append([new_element_list])
-    else:
-        children.append(["No changes."])
-
-    return children
-
-print(generate_bin_changes_div_children(old_bin_list=[], new_bin_list=[["Rent or Mortgage", "['RENT', 'MORTGAGE']"]], dtype="categorical"))
+print(categoric_rename_bin(selected_bin_name, new_bin_name, temp_col_bins_settings))
