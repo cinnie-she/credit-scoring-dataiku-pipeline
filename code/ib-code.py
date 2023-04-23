@@ -3620,16 +3620,29 @@ def update_mixed_chart_on_var_to_bin_change(temp_chart_info_data, click_data, se
         Input("mixed_chart", "clickData"),
         Input("mixed_chart", "selectedData"),
         Input("predictor_var_ib_dropdown", "value"),
+        Input("categoric_add_elements_panel_submit_button", "n_clicks"),
+        Input("categoric_split_panel_submit_button", "n_clicks"),
+        Input("categoric_rename_panel_submit_button", "n_clicks"),
+        Input("categoric_merge_panel_submit_button", "n_clicks"),
     ],
 )
-def erase_click_data(click_data, selected_data, var_to_bin):
+def erase_click_data(click_data, selected_data, var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clicks4):
+    triggered = dash.callback_context.triggered
+    
+    if triggered[0]['prop_id'] == 'categoric_add_elements_panel_submit_button.n_clicks' or triggered[0]['prop_id'] == 'categoric_split_panel_submit_button.n_clicks' or triggered[0]['prop_id'] == 'categoric_rename_panel_submit_button.n_clicks':
+        clicked_data = None
+        return [clicked_data, selected_data]
+    
+    if triggered[0]['prop_id'] == 'categoric_merge_panel_submit_button.n_clicks':
+        selected_data = None
+        return [click_data, selected_data]
+    
     if click_data is not None and click_data["points"][0]["curveNumber"] == 2:
         click_data = None
         selected_data = None
     if selected_data is not None:
         click_data = None
 
-    triggered = dash.callback_context.triggered
     if triggered[0]['prop_id'] == 'mixed_chart.clickData':
         selected_data = None
     if triggered[0]['prop_id'] == 'predictor_var_ib_dropdown.value':
@@ -3795,8 +3808,6 @@ def show_categoric_create_new_bin_preview_changes_div(n_clicks, n_clicks2, n_cli
 
     if triggered[0]['prop_id'] == "categoric_create_new_bin_button.n_clicks":
         return {}
-    elif triggered[0]['prop_id'] == "categoric_create_new_bin_hide_details_button.n_clicks":
-        return {"display": "none"}
     else:
         return {"display": "none"}
 
@@ -4071,10 +4082,11 @@ when user clicks on the 'Add Elements' button
     [
         Input("categoric_add_elements_panel_add_button", "n_clicks"),
         Input("categoric_add_elements_panel_hide_details_button", "n_clicks"),
+        Input("categoric_add_elements_panel_submit_button", "n_clicks"),
     ],
     prevent_initial_call=True,
 )
-def show_categoric_create_new_bin_preview_changes_div(n_clicks, n_clicks2):
+def show_categoric_create_new_bin_preview_changes_div(n_clicks, n_clicks2, n_clicks3):
     triggered = dash.callback_context.triggered
 
     if triggered[0]['prop_id'] == "categoric_add_elements_panel_add_button.n_clicks":
@@ -4145,6 +4157,7 @@ when user click on a bar
 """
 @app.callback(
     [
+        Output("categoric_add_elements_panel_name_input", "value"),
         Output("categoric_add_elements_panel_dropdown", "options"),
         Output("categoric_add_elements_panel_dropdown", "value"),
     ],
@@ -4167,7 +4180,7 @@ def update_categoric_add_elements_dropdown(click_data, temp_col_bins_settings_da
     
     options_li = [x for x in unique_element if x not in bin_elements]
     
-    return [convert_column_list_to_dropdown_options(options_li), []]
+    return ["", convert_column_list_to_dropdown_options(options_li), []]
  
        
 """
@@ -4180,10 +4193,11 @@ when user clicks on the 'Split Bin' button
     [
         Input("categoric_split_panel_split_button", "n_clicks"),
         Input("categoric_split_panel_hide_details_button", "n_clicks"),
+        Input("categoric_split_panel_submit_button", "n_clicks"),
     ],
     prevent_initial_call=True,
 )
-def show_categoric_split_preview_changes_div(n_clicks, n_clicks2):
+def show_categoric_split_preview_changes_div(n_clicks, n_clicks2, n_clicks3):
     triggered = dash.callback_context.triggered
 
     if triggered[0]['prop_id'] == "categoric_split_panel_split_button.n_clicks":
@@ -4201,10 +4215,11 @@ when user clicks on the 'Rename Bin' button
     [
         Input("categoric_rename_panel_rename_button", "n_clicks"),
         Input("categoric_rename_panel_hide_details_button", "n_clicks"),
+        Input("categoric_rename_panel_submit_button", "n_clicks"),
     ],
     prevent_initial_call=True,
 )
-def show_categoric_split_preview_changes_div(n_clicks, n_clicks2):
+def show_categoric_split_preview_changes_div(n_clicks, n_clicks2, n_clicks3):
     triggered = dash.callback_context.triggered
 
     if triggered[0]['prop_id'] == "categoric_rename_panel_rename_button.n_clicks":
@@ -4222,10 +4237,11 @@ when user clicks on the 'Merge Bin' button
     [
         Input("categoric_merge_panel_merge_button", "n_clicks"),
         Input("categoric_merge_panel_hide_details_button", "n_clicks"),
+        Input("categoric_merge_panel_submit_button", "n_clicks"),
     ],
     prevent_initial_call=True,
 )
-def show_categoric_split_preview_changes_div(n_clicks, n_clicks2):
+def show_categoric_split_preview_changes_div(n_clicks, n_clicks2, n_clicks3):
     triggered = dash.callback_context.triggered
 
     if triggered[0]['prop_id'] == "categoric_merge_panel_merge_button.n_clicks":
@@ -4415,6 +4431,7 @@ variable dropdown
 """
 @app.callback(
     [
+        Output("categoric_split_panel_new_bin_name_input", "value"),
         Output("categoric_split_panel_dropdown", "options"),
         Output("categoric_split_panel_dropdown", "value"),
     ],
@@ -4433,7 +4450,7 @@ def update_categoric_create_new_bin_dropdown(click_data, temp_col_bins_settings_
         if bin_def["name"] == clicked_bin_name:
             bin_elements = bin_def["elements"]
     
-    return [convert_column_list_to_dropdown_options(bin_elements), bin_elements]
+    return ["", convert_column_list_to_dropdown_options(bin_elements), bin_elements]
     
 
 """
@@ -4556,7 +4573,30 @@ def edit_numeric_create_new_bin_panel_ranges(add_clicks, remove_clicks, lower_li
     ]
     
     return new_list
-    
+
+
+"""
+Interactive Binning Page:
+Remove categoric rename bin panel input when submit button is clicked
+"""
+@app.callback(
+    Output("categoric_rename_panel_new_bin_name_input", "value"),
+    Input("categoric_rename_panel_submit_button", "n_clicks"),
+)
+def clear_categoric_rename_bin_panel_input(n_clicks):
+    return ""
+
+"""
+Interactive Binning Page:
+Remove categoric merge bin panel input when submit button is clicked
+"""
+@app.callback(
+    Output("categoric_merge_panel_new_bin_name_input", "value"),
+    Input("categoric_merge_panel_submit_button", "n_clicks"),
+)
+def clear_categoric_merge_bin_panel_input(n_clicks):
+    return ""
+
 ###########################################################################
 ############################ Debugging Purpose ############################
 ###########################################################################
