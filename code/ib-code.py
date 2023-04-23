@@ -1543,7 +1543,40 @@ class InteractiveBinningMachine:
                 break
                 
         return (temp_col_bins_settings, old_bin_list, new_bin_list)
+    
+    @staticmethod
+    def numeric_merge_bins(selected_bin_name_li, new_bin_name, temp_col_bins_settings):
+        new_bin_ranges_li = list()
+        bin_to_remove_idx_li = list()
+        # Add elements to bin if it is one of the selected bins
+        for idx in range(len(temp_col_bins_settings["bins"])):
+            if temp_col_bins_settings["bins"][idx]["name"] in selected_bin_name_li:
+                for r in temp_col_bins_settings["bins"][idx]["ranges"]:
+                    new_bin_ranges_li.append(r)
+                bin_to_remove_idx_li.append(idx)
         
+        for idx in sorted(bin_to_remove_idx_li, reverse=True):
+            del temp_col_bins_settings["bins"][idx]
+        
+        decoded_new_bin_ranges_li = decode_ib_ranges(new_bin_ranges_li)
+        
+        if new_bin_name == "" or new_bin_name == None:
+            new_bin_name = get_str_from_ranges(decoded_new_bin_ranges_li)
+            
+        if InteractiveBinningMachine.validate_new_name(new_bin_name, temp_col_bins_settings) == False:
+            return (temp_col_bins_settings, -1, -1)
+        
+        new_bin = {
+            "name": new_bin_name,
+            "ranges": decoded_new_bin_ranges_li,
+        }
+        
+        temp_col_bins_settings["bins"].append(new_bin)
+        
+        new_bin_list = [[new_bin_name, get_str_from_ranges(decoded_new_bin_ranges_li)]]
+        
+        return (temp_col_bins_settings, [], new_bin_list)
+    
     @staticmethod
     def validate_new_name(new_name, temp_col_bins_settings, selected_bin_name=None):
         # Return false if name has already been use. otherwise, return True
@@ -2555,12 +2588,14 @@ interactive_binning_page_layout = html.Div([
                         html.Div(style={"height": 13}),
                         html.Div([
                             html.Div([], id="numeric_merge_panel_changes_div"),
-                            SaveButton("Submit", inline=True),
-                            SaveButton("Hide Details", inline=True,
-                                       backgroundColor="#8097E6", marginLeft=5, id="numeric_merge_panel_hide_details_button"),
-                            html.Div(style={"height": 13, "clear": "both"}),
-                            html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
-                                   style={"lineHeight": "99%", "fontSize": 14}),
+                            html.Div([
+                                SaveButton("Submit", inline=True),
+                                SaveButton("Hide Details", inline=True,
+                                           backgroundColor="#8097E6", marginLeft=5, id="numeric_merge_panel_hide_details_button"),
+                                html.Div(style={"height": 13, "clear": "both"}),
+                                html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
+                                       style={"lineHeight": "99%", "fontSize": 14}),
+                            ], id="numeric_merge_panel_submit_div"),
                         ], id="numeric_merge_panel_preview_changes_div", style={"display": "none"}),
                     ],
                     style={
@@ -4166,25 +4201,32 @@ Update numeric merge preview changes info
 when user clicks on the 'Merge Bins' button
 """
 @app.callback(
-    Output("numeric_merge_panel_changes_div", "children"),
+    [
+        Output("numeric_merge_panel_changes_div", "children"),
+        Output("numeric_merge_panel_submit_div", "style"),
+    ],
     Input("numeric_merge_panel_merge_button", "n_clicks"),
     [
         State("numeric_merge_panel_new_bin_name_input", "value"),
-        State("predictor_var_ib_dropdown", "value"),
         State("temp_col_bins_settings", "data"),
+        State("mixed_chart", "selectedData"),
     ],
 )
-def update_numeric_create_new_bin_preview_changes_info(n_clicks, new_name, var_to_bin, temp_col_bins_settings_data):
+def update_numeric_create_new_bin_preview_changes_info(n_clicks, new_name, temp_col_bins_settings_data, selected_data):
     col_bin_settings = json.loads(temp_col_bins_settings_data)
     
-    #col_bin_list = None
-    # If it is no binning OR automated binning, have to translate it to list
-    #if isinstance(col_bins_settings["bins"], dict) == True or col_bins_settings["bins"] == "none":
-    #    col_bin_list = BinningMachine.convert_auto_bin_def_to_custom_def(col_bins_settings["bins"])
+    selected_bin_name_set = set()
+    for point in selected_data["points"]:
+        selected_bin_name_set.add(point["x"])
+    selected_bin_name_li = list(selected_bin_name_set)
     
-    #old_bin_list, new_bin_list = InteractiveBinningMachine.get_categoric_create_new_bin_changes(new_name, bin_element_list, var_to_bin, col_bin_settings)
+    _, old_bin_list, new_bin_list = InteractiveBinningMachine.numeric_merge_bins(selected_bin_name_li=selected_bin_name_li, new_bin_name=new_name, temp_col_bins_settings=col_bin_settings)
     
-    return generate_bin_changes_div_children(old_bin_list=[], new_bin_list=[["0-50", "[[0, 50)]"]], dtype="numerical")
+    style = {}
+    if not isinstance(old_bin_list, list) or not isinstance(new_bin_list, list):
+        style = {"display": "none"}
+    
+    return [generate_bin_changes_div_children(old_bin_list=old_bin_list, new_bin_list=new_bin_list, dtype="numerical"), style]
 
 
 """
