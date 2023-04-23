@@ -1235,6 +1235,8 @@ def generate_bin_changes_div_children(old_bin_list=[], new_bin_list=[], dtype=No
         return [html.P("Error: The new name is the same as the old one.", style={"color": "red", "fontSize": 14})]
     if old_bin_list == -3 or new_bin_list == -3:
         return [html.P("Error: Please select element(s) from the dropdown menu.", style={"color": "red", "fontSize": 14})]
+    if old_bin_list == -4 or new_bin_list == -4:
+        return [html.P("Error: All elements of the bin has been included, no splitting could be performed.", style={"color": "red", "fontSize": 14})]
     
     children = list()
     
@@ -1397,7 +1399,40 @@ class InteractiveBinningMachine:
     
     @staticmethod
     def categoric_split_bin(selected_bin_name, new_bin_name, elements_to_split_out_li, temp_col_bins_settings):
-        pass
+        if len(elements_to_split_out_li) == 0:
+            return (temp_col_bins_settings, -3, -3)
+        
+        if InteractiveBinningMachine.validate_new_name(new_bin_name, temp_col_bins_settings, selected_bin_name=selected_bin_name) == False:
+            return (temp_col_bins_settings, -1, -1)
+        
+        old_bin_list = list()
+        new_bin_list = list()
+        
+        for idx in range(len(temp_col_bins_settings["bins"])):
+            if temp_col_bins_settings["bins"][idx]["name"] == selected_bin_name:
+                if set(temp_col_bins_settings["bins"][idx]["elements"]) == set(elements_to_split_out_li):
+                    return (temp_col_bins_settings, -4, -4)
+                old_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(temp_col_bins_settings["bins"][idx]["elements"])])
+                # Remove user indicated elements from selected bin
+                temp_col_bins_settings["bins"][idx]["elements"] = [x for x in temp_col_bins_settings["bins"][idx]["elements"] if x not in elements_to_split_out_li]
+                new_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(temp_col_bins_settings["bins"][idx]["elements"])])
+                break
+            
+        if new_bin_name == "" or new_bin_name == None:
+            new_bin_name = str(elements_to_split_out_li)
+            
+        new_bin = {
+            "name": new_bin_name,
+            "elements": elements_to_split_out_li,
+        }
+        
+        temp_col_bins_settings["bins"].append(new_bin)
+        
+        new_bin_list.append([new_bin_name, str(elements_to_split_out_li)])
+        
+        return (temp_col_bins_settings, old_bin_list, new_bin_list)
+        
+                
     
     @staticmethod
     def categoric_rename_bin(selected_bin_name, new_bin_name, temp_col_bins_settings):
@@ -2073,12 +2108,14 @@ interactive_binning_page_layout = html.Div([
                         html.Div(style={"height": 13}),
                         html.Div([
                             html.Div([], id="categoric_split_panel_changes_div"),
-                            SaveButton("Submit", inline=True, id="categoric_split_panel_submit_button"),
-                            SaveButton("Hide Details", inline=True,
-                                       backgroundColor="#8097E6", marginLeft=5, id="categoric_split_panel_hide_details_button"),
-                            html.Div(style={"height": 13, "clear": "both"}),
-                            html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
-                                   style={"lineHeight": "99%", "fontSize": 14}),
+                            html.Div([
+                                SaveButton("Submit", inline=True, id="categoric_split_panel_submit_button"),
+                                SaveButton("Hide Details", inline=True,
+                                           backgroundColor="#8097E6", marginLeft=5, id="categoric_split_panel_hide_details_button"),
+                                html.Div(style={"height": 13, "clear": "both"}),
+                                html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
+                                       style={"lineHeight": "99%", "fontSize": 14}),
+                            ], id="categoric_split_panel_submit_div"),
                         ], id="categoric_split_panel_preview_changes_div", style={"display": "none"}),
                     ],
                     style={
@@ -3806,26 +3843,28 @@ Update categoric split preview changes info
 when user clicks on the 'Split Bin' button
 """
 @app.callback(
-    Output("categoric_split_panel_changes_div", "children"),
+    [
+        Output("categoric_split_panel_changes_div", "children"),
+        Output("categoric_split_panel_submit_div", "style"),
+    ],
     Input("categoric_split_panel_split_button", "n_clicks"),
     [
         State("categoric_split_panel_new_bin_name_input", "value"),
         State("categoric_split_panel_dropdown", "value"),
-        State("predictor_var_ib_dropdown", "value"),
         State("temp_col_bins_settings", "data"),
+        State("mixed_chart", "clickData"),
     ],
 )
-def update_categoric_create_new_bin_preview_changes_info(n_clicks, new_name, bin_element_list, var_to_bin, temp_col_bins_settings_data):
+def update_categoric_create_new_bin_preview_changes_info(n_clicks, new_name, bin_element_list, temp_col_bins_settings_data, click_data):
     col_bin_settings = json.loads(temp_col_bins_settings_data)
     
-    #col_bin_list = None
-    # If it is no binning OR automated binning, have to translate it to list
-    #if isinstance(col_bins_settings["bins"], dict) == True or col_bins_settings["bins"] == "none":
-    #    col_bin_list = BinningMachine.convert_auto_bin_def_to_custom_def(col_bins_settings["bins"])
+    _, old_bin_list, new_bin_list = InteractiveBinningMachine.categoric_split_bin(selected_bin_name=click_data["points"][0]["x"], new_bin_name=new_name, elements_to_split_out_li=bin_element_list, temp_col_bins_settings=col_bin_settings)
     
-    #old_bin_list, new_bin_list = InteractiveBinningMachine.get_categoric_create_new_bin_changes(new_name, bin_element_list, var_to_bin, col_bin_settings)
+    style = {}
+    if not isinstance(old_bin_list, list) or not isinstance(new_bin_list, list):
+        style = {"display": "none"}
     
-    return generate_bin_changes_div_children(old_bin_list=[["Rent or Mortgage", "['RENT', 'MORTGAGE']"], ["Risky", "['OTHERS']"]], new_bin_list=[["Rent or Mortgage", "['RENT', 'MORTGAGE']"]], dtype="categorical")
+    return [generate_bin_changes_div_children(old_bin_list=old_bin_list, new_bin_list=new_bin_list, dtype="categorical"), style]
 
 """
 Interactive Binning Page:
