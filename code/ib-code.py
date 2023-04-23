@@ -1230,41 +1230,55 @@ def generate_bin_changes_div_children(old_bin_list=[], new_bin_list=[], dtype=No
     if dtype == None:
         return []
     
-    old_element_list = generate_categoric_old_div_children(old_bin_list=old_bin_list, dtype=dtype)
-    new_element_list = generate_categoric_new_div_children(new_bin_list, dtype=dtype)
-        
-    return [
-        html.P("Preview Changes:", style={"fontWeight": "bold", "textDecoration": "underline"}),
-        html.P("Old Bin(s):", style={"fontWeight": "bold", "fontSize": 14}),
-        # 1 old bin elements, TODO: extract it out
-        html.Div(old_element_list),
-        html.P("Will be changed to:", style={"fontWeight": "bold", "fontSize": 14}),
-        # 1 new bin elements, TODO: extract it out
-        html.Div(new_element_list),
-    ]
+    children = list()
+    
+    children.append(html.P("Preview Changes:", style={"fontWeight": "bold", "textDecoration": "underline"}))
+    
+    if len(old_bin_list) != 0:
+        old_element_list = generate_categoric_old_div_children(old_bin_list=old_bin_list, dtype=dtype)
+        children.append(html.P("Old Bin(s):", style={"fontWeight": "bold", "fontSize": 14}))
+        children.append(html.Div(old_element_list))
+    
+    if len(new_bin_list) != 0:
+        children.append(html.P("Will be changed to:", style={"fontWeight": "bold", "fontSize": 14}))
+        new_element_list = generate_categoric_new_div_children(new_bin_list, dtype=dtype)
+        children.append(html.Div(new_element_list))
+    else:
+        children.append(html.P("No changes."))
+
+    return children
 
 
 def generate_selected_bin_info_div_children(temp_chart_info, temp_col_bins_settings, click_data):
     if click_data is not None:
-        bin_name = click_data["points"][0]["x"]
+        children = list()
+        points = click_data["points"]
         bin_defs = temp_col_bins_settings["bins"]
+        selected_bin_names = set()
         
-        bin_elements = None
-        for bin_def in bin_defs:
-            if bin_def["name"] == bin_name:
-                bin_elements = bin_def["elements"]
+        for point in points:
+            bin_name = point["x"]
+            if bin_name in selected_bin_names:
+                continue
+            else:
+                selected_bin_names.add(bin_name)
+            bin_elements = None
+            for bin_def in bin_defs:
+                if bin_def["name"] == bin_name:
+                    bin_elements = bin_def["elements"]
+            bin_idx = point["pointIndex"]
+            bin_bad_count = temp_chart_info["bad_count_list"][bin_idx]
+            bin_gd_count = temp_chart_info["total_count_list"][bin_idx] - bin_bad_count
+            bin_woe = temp_chart_info["woe_list"][bin_idx]
+            children.append(html.P("Bin Name: " + str(bin_name), style={"fontSize": 14}))
+            children.append(html.P("Bin Element(s): " + str(bin_elements), style={"fontSize": 14}))
+            children.append(html.P("Population Good Count: " + str(bin_gd_count), style={"fontSize": 14}))
+            children.append(html.P("Population Bad Count: " + str(bin_bad_count), style={"fontSize": 14}))
+            children.append(html.P("Bin WOE: " + "{:.4f}".format(bin_woe), style={"fontSize": 14}))
+            if len(points) > 1:
+                children.append(html.Hr(style={"marginTop": 8, "marginBottom": 8, "marginLeft": 0, "marginRight": 0}))
         
-        bin_idx = click_data["points"][0]["pointIndex"]
-        bin_bad_count = temp_chart_info["bad_count_list"][bin_idx]
-        bin_gd_count = temp_chart_info["total_count_list"][bin_idx] - bin_bad_count
-        bin_woe = temp_chart_info["woe_list"][bin_idx]
-        return [
-            html.P("Bin Name: " + str(bin_name), style={"fontSize": 14}),
-            html.P("Bin Element(s): " + str(bin_elements), style={"fontSize": 14}),
-            html.P("Population Good Count: " + str(bin_gd_count), style={"fontSize": 14}),
-            html.P("Population Bad Count: " + str(bin_bad_count), style={"fontSize": 14}),
-            html.P("Bin WOE: " + "{:.4f}".format(bin_woe), style={"fontSize": 14}),
-        ]
+        return children
     else:
         return [
             html.P("Bin Name:", style={"fontSize": 14}),
@@ -1957,47 +1971,16 @@ interactive_binning_page_layout = html.Div([
                                     "fontSize": 14}),
                         ], style={"listStyleType": "square", "lineHeight": "97%"}),
                         # TODO: extract this out
-                        html.P("Selected Bin Info: ", style={
-                               "fontWeight": "bold"}),
-                        html.P("Bin Name: " + "Rent or Mortgage",
-                               style={"fontSize": 14}),
-                        html.P("Bin Element(s): " + \
-                               "['RENT', 'MORTGAGE]", style={"fontSize": 14}),
-                        html.P("Population Good Count: " + \
-                               "11754", style={"fontSize": 14}),
-                        html.P("Population Bad Count: " + \
-                               "5119", style={"fontSize": 14}),
-                        html.Hr(
-                            style={"marginTop": 8, "marginBottom": 8, "marginLeft": 0, "marginRight": 0}),
-
-                        html.P("Bin Name: " + "Rent or Mortgage",
-                               style={"fontSize": 14}),
-                        html.P("Bin Element(s): " + \
-                               "['RENT', 'MORTGAGE]", style={"fontSize": 14}),
-                        html.P("Population Good Count: " + \
-                               "11754", style={"fontSize": 14}),
-                        html.P("Population Bad Count: " + \
-                               "5119", style={"fontSize": 14}),
-                        html.Hr(
-                            style={"marginTop": 8, "marginBottom": 8, "marginLeft": 0, "marginRight": 0}),
+                        html.P("Selected Bin Info: ", style={"fontWeight": "bold"}),
+                        html.Div([], id="categoric_merge_panel_selected_bin_info_div"),
 
                         html.P("Enter the new bin name: ",
                                style={"fontWeight": "bold"}),
-                        dcc.Input(style={"marginBottom": 10}),
+                        dcc.Input(style={"marginBottom": 10}, id="categoric_merge_panel_new_bin_name_input"),
                         SaveButton("Merge Bins", id="categoric_merge_panel_merge_button"),
                         html.Div(style={"height": 13}),
                         html.Div([
-                            html.P("Preview Changes:", style={
-                                   "fontWeight": "bold", "textDecoration": "underline"}),
-                            html.P("Will be changed to:", style={
-                                   "fontWeight": "bold", "fontSize": 14}),
-                            # 1 new bin elements, TODO: extract it out
-                            html.Div([
-                                html.Div(
-                                    [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
-                                html.Div([html.P("New Bin Name: " + "Rent or Mortgage"), html.P("New Bin Element(s): " + \
-                                         "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),
-                            ]),
+                            html.Div([], id="categoric_merge_panel_changes_div"),
                             SaveButton("Submit", inline=True, id="categoric_merge_panel_submit_button"),
                             SaveButton("Hide Details", inline=True,
                                        backgroundColor="#8097E6", marginLeft=5, id="categoric_merge_panel_hide_details_button"),
@@ -3645,6 +3628,32 @@ def update_categoric_create_new_bin_preview_changes_info(n_clicks, new_name, bin
     
     return generate_bin_changes_div_children(old_bin_list=[["Rent or Mortgage", "['RENT', 'MORTGAGE']"], ["Risky", "['OTHERS']"]], new_bin_list=[["Rent or Mortgage", "['RENT', 'MORTGAGE']"]], dtype="categorical")
 
+"""
+Interactive Binning Page:
+Update categoric merge preview changes info
+when user clicks on the 'Merge Bins' button
+"""
+@app.callback(
+    Output("categoric_merge_panel_changes_div", "children"),
+    Input("categoric_merge_panel_merge_button", "n_clicks"),
+    [
+        State("categoric_merge_panel_new_bin_name_input", "value"),
+        State("predictor_var_ib_dropdown", "value"),
+        State("temp_col_bins_settings", "data"),
+    ],
+)
+def update_categoric_create_new_bin_preview_changes_info(n_clicks, new_name, var_to_bin, temp_col_bins_settings_data):
+    col_bin_settings = json.loads(temp_col_bins_settings_data)
+    
+    #col_bin_list = None
+    # If it is no binning OR automated binning, have to translate it to list
+    #if isinstance(col_bins_settings["bins"], dict) == True or col_bins_settings["bins"] == "none":
+    #    col_bin_list = BinningMachine.convert_auto_bin_def_to_custom_def(col_bins_settings["bins"])
+    
+    #old_bin_list, new_bin_list = InteractiveBinningMachine.get_categoric_create_new_bin_changes(new_name, bin_element_list, var_to_bin, col_bin_settings)
+    
+    return generate_bin_changes_div_children(old_bin_list=[], new_bin_list=[["Rent or Mortgage", "['RENT', 'MORTGAGE']"]], dtype="categorical")
+
 
 """
 Interactive Binning Page:
@@ -3714,6 +3723,25 @@ def update_categoric_add_elements_panel_selected_bin_info(click_data, temp_chart
     temp_chart_info = json.loads(temp_chart_info_data)
     temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
     return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=click_data)
+ 
+"""
+Interactive Binning Page:
+Update selected bin info for categoric merge panel
+based on user's selections
+"""
+@app.callback(
+    Output("categoric_merge_panel_selected_bin_info_div", "children"),
+    Input("mixed_chart", "selectedData"),
+    [
+        State("temp_chart_info", "data"),
+        State("temp_col_bins_settings", "data"),
+    ],
+)
+def update_categoric_merge_panel_selected_bin_info(selected_data, temp_chart_info_data, temp_col_bins_settings_data):
+    temp_chart_info = json.loads(temp_chart_info_data)
+    temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
+    return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=selected_data)
+  
     
 """
 Interactive Binning Page:
@@ -3830,6 +3858,10 @@ def update_categoric_split_panel_selected_bin_info(click_data, temp_chart_info_d
     temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
     return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=click_data)
   
+    
+    
+
+
 
 """
 Interactive Binning Page:
@@ -3957,23 +3989,20 @@ def update_good_bad_def_text_in_ib(data):
 
 @app.callback(
     Output("test_select", "children"),
-    Input("temp_binned_col", "data"),
+    Input("mixed_chart", "selectedData"),
 )
-def output_selected_data_info(temp_binned_col_data):
-    temp_binned_col_dict = json.loads(temp_binned_col_data)
-    temp_df = pd.DataFrame(temp_binned_col_dict)
-    return str(temp_df['binned_col'])
+def output_selected_data_info(selected_data):
+    return str(selected_data)
 
 # Get click data info in ib page
 
 
 @app.callback(
     Output("test_click", "children"),
-    Input("temp_chart_info", "data"),
+    Input("mixed_chart", "clickData"),
 )
-def output_selected_data_info(temp_chart_info_data):
-    temp_chart_info = json.loads(temp_chart_info_data)
-    return str(temp_chart_info)
+def output_selected_data_info(click_data):
+    return str(click_data)
 
 ###########################################################################
 ############ Not important for our development after this line ############
