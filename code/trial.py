@@ -6,15 +6,15 @@ def decode(ranges):
     if len(ranges) == 0:
         return []
     numeric_list = list()  # initialization
-    print(len(ranges))
+    # print(len(ranges))
     for numeric_info in ranges:
         single_def_list = list()
-        print(f"numeric_info: {numeric_info}")
+        # print(f"numeric_info: {numeric_info}")
         a_range = [numeric_info[0], numeric_info[1]]
         # The 2 bounds are valid, now check if any overlapping with previously saved data
         has_column_overlap = False
         for def_idx, saved_def in enumerate(numeric_list):
-            print(f"def_idx: {def_idx}, saved_def: {saved_def}")
+            # print(f"def_idx: {def_idx}, saved_def: {saved_def}")
             has_column_overlap = True
             has_range_overlap = False
             overlapped_def_range_idxes = list()
@@ -46,14 +46,10 @@ def decode(ranges):
                     del numeric_list[def_idx][i]
             if has_range_overlap == False:
                 numeric_list[def_idx].append(a_range)
-                print("hi2")
-                print(numeric_list)
             break
         if has_column_overlap == False:
             single_def_list = [a_range]
             numeric_list.append(single_def_list)
-            print("Hi")
-            print(numeric_list)
     
     return numeric_list[0]
 
