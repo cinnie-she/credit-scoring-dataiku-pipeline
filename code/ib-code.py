@@ -3624,9 +3624,10 @@ def update_mixed_chart_on_var_to_bin_change(temp_chart_info_data, click_data, se
         Input("categoric_split_panel_submit_button", "n_clicks"),
         Input("categoric_rename_panel_submit_button", "n_clicks"),
         Input("categoric_merge_panel_submit_button", "n_clicks"),
+        Input("auto_bin_refresh_button", "n_clicks"),
     ],
 )
-def erase_click_data(click_data, selected_data, var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clicks4):
+def erase_click_data(click_data, selected_data, var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clicks4, n_clicks5):
     triggered = dash.callback_context.triggered
     
     if triggered[0]['prop_id'] == 'categoric_add_elements_panel_submit_button.n_clicks' or triggered[0]['prop_id'] == 'categoric_split_panel_submit_button.n_clicks' or triggered[0]['prop_id'] == 'categoric_rename_panel_submit_button.n_clicks':
@@ -3634,6 +3635,11 @@ def erase_click_data(click_data, selected_data, var_to_bin, n_clicks, n_clicks2,
         return [clicked_data, selected_data]
     
     if triggered[0]['prop_id'] == 'categoric_merge_panel_submit_button.n_clicks':
+        selected_data = None
+        return [click_data, selected_data]
+    
+    if triggered[0]['prop_id'] == 'auto_bin_refresh_button.n_clicks':
+        click_data = None
         selected_data = None
         return [click_data, selected_data]
     
