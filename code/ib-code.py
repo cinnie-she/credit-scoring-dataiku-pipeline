@@ -2038,7 +2038,10 @@ interactive_binning_page_layout = html.Div([
                         dcc.Input(style={"marginBottom": 10}, id="numeric_create_new_bin_panel_new_bin_name_input"),
                         html.P("Indicate the ranges to be included in the new bin:", style={
                                "fontWeight": "bold"}),
-                        # TODO!! --> Add dynamic range list
+                        
+                        html.Ol([], style={"fontSize": 14}, id="numeric_create_new_bin_panel_range_list"),
+                        html.Div([], style={"height": 10, "clear": "both"}),
+                        
                         SaveButton("Add", inline=True, id="numeric_create_new_bin_panel_add_button"),
                         SaveButton("Remove", inline=True, marginLeft=8, id="numeric_create_new_bin_panel_remove_button"),
                         html.Div([], style={"clear": "both", "height": 8}),
@@ -2100,15 +2103,19 @@ interactive_binning_page_layout = html.Div([
                         dcc.Input(style={"marginBottom": 10}, id="numeric_adjust_cutpoints_panel_new_bin_name_input"),
                         html.P("Indicate the range(s) to be added into the bin:", style={
                                "fontWeight": "bold"}),
+                        
+                        html.Ol([], style={"fontSize": 14}, id="numeric_adjust_cutpoints_panel_range_list"),
+                        html.Div([], style={"height": 10, "clear": "both"}),
+                        
                         # TODO!! --> Add dynamic range list
-                        SaveButton("Add", inline=True),
-                        SaveButton("Remove", inline=True, marginLeft=8),
+                        SaveButton("Add", inline=True, id="numeric_adjust_cutpoints_panel_add_button"),
+                        SaveButton("Remove", inline=True, marginLeft=8, id="numeric_adjust_cutpoints_panel_remove_button"),
                         html.Div([], style={"clear": "both", "height": 8}),
                         SaveButton("Adjust Cutpoints", id="numeric_adjust_cutpoints_panel_adjust_cutpoints_button"),
                         html.Div(style={"height": 13}),
                         html.Div([
                             html.Div([], id="numeric_adjust_cutpoints_panel_changes_div"),
-                            SaveButton("Submit", inline=True),
+                            SaveButton("Submit", inline=True, id="numeric_adjust_cutpoints_panel_submit_button"),
                             SaveButton("Hide Details", inline=True,
                                        backgroundColor="#8097E6", marginLeft=5, id="numeric_adjust_cutpoints_panel_hide_details_button"),
                             html.Div(style={"height": 13, "clear": "both"}),
@@ -4098,6 +4105,126 @@ def update_categoric_create_new_bin_dropdown(click_data, temp_col_bins_settings_
     return [convert_column_list_to_dropdown_options(bin_elements), bin_elements]
     
 
+"""
+Interactive Binning Page:
+Add/Remove ranges from numerical create new bin control panel
+"""
+@app.callback(
+    Output("numeric_create_new_bin_panel_range_list", "children"),
+    [
+        Input("numeric_create_new_bin_panel_add_button", "n_clicks"),
+        Input("numeric_create_new_bin_panel_remove_button", "n_clicks"),
+    ],
+    [
+        State({"index": ALL, "type": "numeric_create_new_bin_lower"}, "value"),
+        State({"index": ALL, "type": "numeric_create_new_bin_upper"}, "value"),
+        State({"index": ALL, "type": "numeric_create_new_bin_checkbox"}, "value"),
+    ],
+)
+def edit_numeric_create_new_bin_panel_ranges(add_clicks, remove_clicks, lower_list, upper_list, checkbox_list):
+    triggered = [t["prop_id"] for t in dash.callback_context.triggered]
+    adding = len([i for i in triggered if i ==
+                 "numeric_create_new_bin_panel_add_button.n_clicks"])
+    removing = len([i for i in triggered if i ==
+                   "numeric_create_new_bin_panel_remove_button.n_clicks"])
+    new_spec = [
+        (lower, upper, selected) for lower, upper, selected in zip(lower_list, upper_list, checkbox_list)
+        if not (removing and selected)
+    ]
+    if adding:
+        new_spec.append((0, 1, []))
+    new_list = [
+        html.Div([
+            html.P(str(idx+1) + ".", style={"float": "left", "marginRight": 10}),
+            dcc.Input(
+                type="number",
+                min=0,
+                value=lower,
+                id={"index": idx, "type": "numeric_create_new_bin_lower"},
+                style={"width": 100, "float": "left"},
+            ),
+            html.P(
+                "一", style={"float": "left", "marginLeft": 7, "fontWeight": "bold"}
+            ),
+            dcc.Input(
+                type="number",
+                min=0,
+                value=upper,
+                id={"index": idx, "type": "numeric_create_new_bin_upper"},
+                style={"width": 100, "float": "left", "marginLeft": 7},
+            ),
+            dcc.Checklist(
+                id={"index": idx, "type": "numeric_create_new_bin_checkbox"},
+                options=[{"label": "", "value": "selected"}],
+                value=selected,
+                style={"display": "inline", "marginLeft": 7, "marginBottom": 7},
+            ),
+        ], style={"display": "flex", "alignItems": "flex-end", "marginTop": 10},)
+        for idx, (lower, upper, selected) in enumerate(new_spec)
+    ]
+    
+    return new_list
+    
+   
+"""
+Interactive Binning Page:
+Add/Remove ranges from numerical adjust cutpoints control panel
+"""
+@app.callback(
+    Output("numeric_adjust_cutpoints_panel_range_list", "children"),
+    [
+        Input("numeric_adjust_cutpoints_panel_add_button", "n_clicks"),
+        Input("numeric_adjust_cutpoints_panel_remove_button", "n_clicks"),
+    ],
+    [
+        State({"index": ALL, "type": "numeric_adjust_cutpoints_lower"}, "value"),
+        State({"index": ALL, "type": "numeric_adjust_cutpoints_upper"}, "value"),
+        State({"index": ALL, "type": "numeric_adjust_cutpoints_checkbox"}, "value"),
+    ],
+)
+def edit_numeric_create_new_bin_panel_ranges(add_clicks, remove_clicks, lower_list, upper_list, checkbox_list):
+    triggered = [t["prop_id"] for t in dash.callback_context.triggered]
+    adding = len([i for i in triggered if i ==
+                 "numeric_adjust_cutpoints_panel_add_button.n_clicks"])
+    removing = len([i for i in triggered if i ==
+                   "numeric_adjust_cutpoints_panel_remove_button.n_clicks"])
+    new_spec = [
+        (lower, upper, selected) for lower, upper, selected in zip(lower_list, upper_list, checkbox_list)
+        if not (removing and selected)
+    ]
+    if adding:
+        new_spec.append((0, 1, []))
+    new_list = [
+        html.Div([
+            html.P(str(idx+1) + ".", style={"float": "left", "marginRight": 10}),
+            dcc.Input(
+                type="number",
+                min=0,
+                value=lower,
+                id={"index": idx, "type": "numeric_adjust_cutpoints_lower"},
+                style={"width": 100, "float": "left"},
+            ),
+            html.P(
+                "一", style={"float": "left", "marginLeft": 7, "fontWeight": "bold"}
+            ),
+            dcc.Input(
+                type="number",
+                min=0,
+                value=upper,
+                id={"index": idx, "type": "numeric_adjust_cutpoints_upper"},
+                style={"width": 100, "float": "left", "marginLeft": 7},
+            ),
+            dcc.Checklist(
+                id={"index": idx, "type": "numeric_adjust_cutpoints_checkbox"},
+                options=[{"label": "", "value": "selected"}],
+                value=selected,
+                style={"display": "inline", "marginLeft": 7, "marginBottom": 7},
+            ),
+        ], style={"display": "flex", "alignItems": "flex-end", "marginTop": 10},)
+        for idx, (lower, upper, selected) in enumerate(new_spec)
+    ]
+    
+    return new_list
     
 ###########################################################################
 ############################ Debugging Purpose ############################
