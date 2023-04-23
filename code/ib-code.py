@@ -3760,14 +3760,18 @@ variable dropdown
 
 @app.callback(
     [
+        Output("categoric_create_new_bin_name_input", "value"),
         Output("categoric_create_new_bin_dropdown", "options"),
         Output("categoric_create_new_bin_dropdown", "value"),
     ],
-    Input("predictor_var_ib_dropdown", "value"),
+    [
+        Input("predictor_var_ib_dropdown", "value"),
+        Input("categoric_create_new_bin_submit_button", "n_clicks"),
+    ],
 )
-def update_categoric_create_new_bin_dropdown(var_to_bin):
+def update_categoric_create_new_bin_dropdown(var_to_bin, n_clicks):
     unique_val_list = sorted(df[var_to_bin].unique().tolist())
-    return [convert_column_list_to_dropdown_options(unique_val_list), unique_val_list]
+    return ["", convert_column_list_to_dropdown_options(unique_val_list), unique_val_list]
 
 
 """
@@ -3782,14 +3786,17 @@ when user clicks on the 'create new bin' button
     [
         Input("categoric_create_new_bin_button", "n_clicks"),
         Input("categoric_create_new_bin_hide_details_button", "n_clicks"),
+        Input("categoric_create_new_bin_submit_button", "n_clicks")
     ],
     prevent_initial_call=True,
 )
-def show_categoric_create_new_bin_preview_changes_div(n_clicks, n_clicks2):
+def show_categoric_create_new_bin_preview_changes_div(n_clicks, n_clicks2, n_clicks3):
     triggered = dash.callback_context.triggered
 
     if triggered[0]['prop_id'] == "categoric_create_new_bin_button.n_clicks":
         return {}
+    elif triggered[0]['prop_id'] == "categoric_create_new_bin_hide_details_button.n_clicks":
+        return {"display": "none"}
     else:
         return {"display": "none"}
 
