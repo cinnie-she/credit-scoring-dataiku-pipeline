@@ -1301,6 +1301,52 @@ def generate_selected_bin_info_div_children(temp_chart_info, temp_col_bins_setti
             html.P("Bin WOE: ", style={"fontSize": 14}),
         ]
 
+    
+# A class for handling interactive binning logics
+class InteractiveBinningMachine:
+    @staticmethod
+    def categoric_create_new_bin(new_bin_name, new_bin_element_li, temp_col_bins_settings):
+        if len(new_bin_element_li) == 0:
+            return (temp_col_bins_settings, [], [])
+        
+        old_bin_list = list()
+        new_bin_list = list()
+        
+        bin_to_remove_idx_li = list()
+        # for all bins, remove overlapped elements with new_bin_element_li
+        for idx in range(len(temp_col_bins_settings["bins"])):
+            intersaction = set(temp_col_bins_settings["bins"][idx]["elements"]) & set(new_bin_element_li)
+            if bool(intersaction) == True:
+                if temp_col_bins_settings["bins"][idx]["elements"] == new_bin_element_li and temp_col_bins_settings["bins"][idx]["name"] == new_bin_name:
+                    return (temp_col_bins_settings, [], [])
+                old_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(temp_col_bins_settings["bins"][idx]["elements"])])
+                intersaction_li = list(intersaction)
+                temp_col_bins_settings["bins"][idx]["elements"] = [x for x in temp_col_bins_settings["bins"][idx]["elements"] if x not in intersaction_li]
+            
+                if len(temp_col_bins_settings["bins"][idx]["elements"]) == 0:
+                    bin_to_remove_idx_li.append(idx)
+                else:
+                    new_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(temp_col_bins_settings["bins"][idx]["elements"])])
+        
+        for idx in sorted(bin_to_remove_idx_li, reverse=True):
+            del temp_col_bins_settings["bins"][idx]
+        
+        # add the new bin to bins settings
+        if new_bin_name == "" or new_bin_name == None:
+            new_bin_name = str(new_bin_element_li)
+            
+        new_bin = {
+            "name": new_bin_name,
+            "elements": new_bin_element_li
+        }
+        
+        new_bin_list.append([new_bin_name, str(new_bin_element_li)])
+        
+        temp_col_bins_settings["bins"].append(new_bin)
+        
+        return (temp_col_bins_settings, old_bin_list, new_bin_list)
+        
+    
 """
 All
 """
@@ -1830,6 +1876,7 @@ interactive_binning_page_layout = html.Div([
                         html.Div(style={"height": 13}),
                         html.Div([
                             html.Div([], id="categoric_add_elements_panel_changes_div"),
+                            html.P(id="test_preview"),
                             SaveButton("Submit", inline=True, id="categoric_add_elements_panel_submit_button"),
                             SaveButton("Hide Details", inline=True,
                                        backgroundColor="#8097E6", marginLeft=5, id="categoric_add_elements_panel_hide_details_button"),
@@ -3493,21 +3540,15 @@ when user clicks on the 'Create New Bin' button
     [
         State("categoric_create_new_bin_name_input", "value"),
         State("categoric_create_new_bin_dropdown", "value"),
-        State("predictor_var_ib_dropdown", "value"),
         State("temp_col_bins_settings", "data"),
     ],
 )
-def update_categoric_create_new_bin_preview_changes_info(n_clicks, new_name, bin_element_list, var_to_bin, temp_col_bins_settings_data):
+def update_categoric_create_new_bin_preview_changes_info(n_clicks, new_name, bin_element_list, temp_col_bins_settings_data):
     col_bin_settings = json.loads(temp_col_bins_settings_data)
     
-    #col_bin_list = None
-    # If it is no binning OR automated binning, have to translate it to list
-    #if isinstance(col_bins_settings["bins"], dict) == True or col_bins_settings["bins"] == "none":
-    #    col_bin_list = BinningMachine.convert_auto_bin_def_to_custom_def(col_bins_settings["bins"])
+    new_settings, old_bin_list, new_bin_list = InteractiveBinningMachine.categoric_create_new_bin(new_bin_name=new_name, new_bin_element_li=bin_element_list, temp_col_bins_settings=col_bin_settings)
     
-    #old_bin_list, new_bin_list = InteractiveBinningMachine.get_categoric_create_new_bin_changes(new_name, bin_element_list, var_to_bin, col_bin_settings)
-    
-    return generate_bin_changes_div_children(old_bin_list=[["Rent or Mortgage", "['RENT', 'MORTGAGE']"], ["Risky", "['OTHERS']"]], new_bin_list=[["Rent or Mortgage", "['RENT', 'MORTGAGE']"]], dtype="categorical")
+    return generate_bin_changes_div_children(old_bin_list=old_bin_list, new_bin_list=new_bin_list, dtype="categorical")
 
 
 """
