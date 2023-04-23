@@ -2756,7 +2756,6 @@ def edit_bad_numeric_def_list(add_clicks, remove_clicks_list, numeric_col_data, 
                 ),
                 dcc.Input(
                     type="number",
-                    min=0,
                     value=lower,
                     id={"index": idx, "type": "bad_numerical_lower"},
                     style={"width": 150, "float": "left", "marginLeft": 20},
@@ -2770,7 +2769,6 @@ def edit_bad_numeric_def_list(add_clicks, remove_clicks_list, numeric_col_data, 
                 ),
                 dcc.Input(
                     type="number",
-                    min=0,
                     value=upper,
                     id={"index": idx, "type": "bad_numerical_upper"},
                     style={"width": 150, "float": "left", "marginLeft": 10},
@@ -2844,7 +2842,6 @@ def edit_indeterminate_numeric_def_list(add_clicks, remove_clicks_list, numeric_
                 ),
                 dcc.Input(
                     type="number",
-                    min=0,
                     value=lower,
                     id={"index": idx, "type": "indeterminate_numerical_lower"},
                     style={"width": 150, "float": "left", "marginLeft": 20},
@@ -2858,7 +2855,6 @@ def edit_indeterminate_numeric_def_list(add_clicks, remove_clicks_list, numeric_
                 ),
                 dcc.Input(
                     type="number",
-                    min=0,
                     value=upper,
                     id={"index": idx, "type": "indeterminate_numerical_upper"},
                     style={"width": 150, "float": "left", "marginLeft": 10},
@@ -4062,7 +4058,7 @@ def update_numeric_create_new_bin_preview_changes_info(n_clicks, new_name, var_t
     ranges = decode_ib_ranges(ranges)
     #old_bin_list, new_bin_list = InteractiveBinningMachine.get_categoric_create_new_bin_changes(new_name, bin_element_list, var_to_bin, col_bin_settings)
     
-    return [generate_bin_changes_div_children(old_bin_list=[["0-20", "[[0, 20)]"], ["30-50", "[[30, 50)]"]], new_bin_list=[["0-50", "[[0, 50)]"]], dtype="numerical"), str(ranges)]
+    return [generate_bin_changes_div_children(old_bin_list=[["0-20", "[[0, 20)]"], ["30-50", "[[30, 50)]"]], new_bin_list=[["0-50", "[[0, 50)]"]], dtype="numerical"), {}, str(ranges)]
 
 
 """
@@ -4591,7 +4587,6 @@ def edit_numeric_create_new_bin_panel_ranges(add_clicks, remove_clicks, lower_li
             html.P(str(idx+1) + ".", style={"float": "left", "marginRight": 10}),
             dcc.Input(
                 type="number",
-                min=0,
                 value=lower,
                 id={"index": idx, "type": "numeric_create_new_bin_lower"},
                 style={"width": 100, "float": "left"},
@@ -4601,7 +4596,6 @@ def edit_numeric_create_new_bin_panel_ranges(add_clicks, remove_clicks, lower_li
             ),
             dcc.Input(
                 type="number",
-                min=0,
                 value=upper,
                 id={"index": idx, "type": "numeric_create_new_bin_upper"},
                 style={"width": 100, "float": "left", "marginLeft": 7},
@@ -4652,7 +4646,6 @@ def edit_numeric_create_new_bin_panel_ranges(add_clicks, remove_clicks, lower_li
             html.P(str(idx+1) + ".", style={"float": "left", "marginRight": 10}),
             dcc.Input(
                 type="number",
-                min=0,
                 value=lower,
                 id={"index": idx, "type": "numeric_adjust_cutpoints_lower"},
                 style={"width": 100, "float": "left"},
@@ -4662,7 +4655,6 @@ def edit_numeric_create_new_bin_panel_ranges(add_clicks, remove_clicks, lower_li
             ),
             dcc.Input(
                 type="number",
-                min=0,
                 value=upper,
                 id={"index": idx, "type": "numeric_adjust_cutpoints_upper"},
                 style={"width": 100, "float": "left", "marginLeft": 7},
