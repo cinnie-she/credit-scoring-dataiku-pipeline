@@ -3317,9 +3317,15 @@ def update_equal_freq_input_section(method):
 
 """
 Interactive Binning Page:
-Initialize temp_bins_settings when user select predictor
-var to bin & Update temp_bins_settings when user clicks on 
+Initialize temp_bins_settings when user 
+- Select predictor var to bin
+- Update temp_bins_settings when user clicks on 
 refresh button in automated binning panel
+- Click categoric create new bin submit button
+- Click categoric add elements submit button
+- Click categoric split bin submit button [TBC]
+- Click categoric rename bin submit button
+- Click categoric merge bins submit button
 """
 
 
@@ -3331,6 +3337,10 @@ refresh button in automated binning panel
     [
         Input("predictor_var_ib_dropdown", "value"),
         Input("auto_bin_refresh_button", "n_clicks"),
+        Input("categoric_create_new_bin_submit_button", "n_clicks"),
+        Input("categoric_rename_panel_submit_button", "n_clicks"),
+        Input("categoric_add_elements_panel_submit_button", "n_clicks"),
+        Input("categoric_merge_panel_submit_button", "n_clicks"),
     ],
     [
         State("bins_settings", "data"),
@@ -3341,11 +3351,73 @@ refresh button in automated binning panel
         State("equal_freq_radio_button", "value"),
         State("equal_freq_freq_input", "value"),
         State("equal_freq_num_bin_input", "value"),
+        State("temp_col_bins_settings", "data"),
+        State("categoric_create_new_bin_name_input", "value"),
+        State("categoric_create_new_bin_dropdown", "value"),
+        State("categoric_rename_panel_new_bin_name_input", "value"),
+        State("mixed_chart", "clickData"),
+        State("categoric_add_elements_panel_name_input", "value"),
+        State("categoric_add_elements_panel_dropdown", "value"),
+        State("categoric_merge_panel_new_bin_name_input", "value"),
+        State("mixed_chart", "selectedData"),
     ],
 )
-def update_temp_bins_settings(var_to_bin, n_clicks, bins_settings_data, auto_bin_algo, equal_width_method, width, ew_num_bins, equal_freq_method, freq, ef_num_bins):
+def update_temp_bins_settings(var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clicks4, n_clicks5, bins_settings_data, auto_bin_algo, equal_width_method, width, ew_num_bins, equal_freq_method, freq, ef_num_bins, temp_col_bins_settings_data, categoric_create_new_bin_name_input, categoric_create_new_bin_dropdown, categoric_rename_panel_new_bin_name_input, click_data, categoric_add_elements_panel_name_input, categoric_add_elements_panel_dropdown, categoric_merge_panel_new_bin_name_input, selected_data):
     triggered = dash.callback_context.triggered
+    
+    if triggered[0]['prop_id'] == "categoric_create_new_bin_submit_button.n_clicks":
+        temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
+        
+        new_settings, _, __ = InteractiveBinningMachine.categoric_create_new_bin(new_bin_name=categoric_create_new_bin_name_input, new_bin_element_li=categoric_create_new_bin_dropdown, temp_col_bins_settings=temp_col_bins_settings)
 
+        def_li, binned_series = BinningMachine.perform_binning_on_col(
+        df.loc[:, [new_settings["column"]]], new_settings)
+        temp_df = df.copy()
+        temp_df['binned_col'] = binned_series.values
+        
+        return [json.dumps(new_settings), json.dumps(temp_df.to_dict())]
+        
+    if triggered[0]['prop_id'] == "categoric_rename_panel_submit_button.n_clicks":
+        temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
+        
+        new_settings, _, __ = InteractiveBinningMachine.categoric_rename_bin(selected_bin_name=click_data["points"][0]["x"], new_bin_name=categoric_rename_panel_new_bin_name_input, temp_col_bins_settings=temp_col_bins_settings)
+        
+        def_li, binned_series = BinningMachine.perform_binning_on_col(
+        df.loc[:, [new_settings["column"]]], new_settings)
+        temp_df = df.copy()
+        temp_df['binned_col'] = binned_series.values
+        
+        return [json.dumps(new_settings), json.dumps(temp_df.to_dict())]
+    
+    if triggered[0]['prop_id'] == "categoric_add_elements_panel_submit_button.n_clicks":
+        temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
+        
+        new_settings, _, __ = InteractiveBinningMachine.categoric_add_elements(selected_bin_name=click_data["points"][0]["x"], new_bin_name=categoric_add_elements_panel_name_input, elements_to_add_li=categoric_add_elements_panel_dropdown, temp_col_bins_settings=temp_col_bins_settings)
+        
+        def_li, binned_series = BinningMachine.perform_binning_on_col(
+        df.loc[:, [new_settings["column"]]], new_settings)
+        temp_df = df.copy()
+        temp_df['binned_col'] = binned_series.values
+        
+        return [json.dumps(new_settings), json.dumps(temp_df.to_dict())]
+    
+    if triggered[0]['prop_id'] == "categoric_merge_panel_submit_button.n_clicks":
+        temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
+    
+        selected_bin_name_set = set()
+        for point in selected_data["points"]:
+            selected_bin_name_set.add(point["x"])
+        selected_bin_name_li = list(selected_bin_name_set)
+
+        new_settings, _, __ = InteractiveBinningMachine.categoric_merge_bins(selected_bin_name_li=selected_bin_name_li, new_bin_name=categoric_merge_panel_new_bin_name_input, temp_col_bins_settings=temp_col_bins_settings)
+    
+        def_li, binned_series = BinningMachine.perform_binning_on_col(
+        df.loc[:, [new_settings["column"]]], new_settings)
+        temp_df = df.copy()
+        temp_df['binned_col'] = binned_series.values
+        
+        return [json.dumps(new_settings), json.dumps(temp_df.to_dict())]
+        
     bins_settings_dict = json.loads(bins_settings_data)
     bins_settings_list = bins_settings_dict["variable"]
     col_bins_settings = None
@@ -4016,25 +4088,23 @@ when user click on a bar
         Output("categoric_add_elements_panel_dropdown", "value"),
     ],
     Input("mixed_chart", "clickData"),
-    [
-        State("temp_col_bins_settings", "data"),
-        State("temp_chart_info", "data"),
-    ],
+    State("temp_col_bins_settings", "data"),
 )
-def update_categoric_add_elements_dropdown(click_data, temp_col_bins_settings_data, temp_chart_info_data):
+def update_categoric_add_elements_dropdown(click_data, temp_col_bins_settings_data):
     if click_data is None:
         return [convert_column_list_to_dropdown_options([]), []]
     
     clicked_bin_name = click_data["points"][0]["x"]
     temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
-    temp_chart_info = json.loads(temp_chart_info_data)
     
     bin_elements = None
     for bin_def in temp_col_bins_settings["bins"]:
         if bin_def["name"] == clicked_bin_name:
             bin_elements = bin_def["elements"]
     
-    options_li = [x for x in temp_chart_info["unique_bins"] if x not in bin_elements]
+    unique_element = df[temp_col_bins_settings["column"]].unique().tolist()
+    
+    options_li = [x for x in unique_element if x not in bin_elements]
     
     return [convert_column_list_to_dropdown_options(options_li), []]
  
