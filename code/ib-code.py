@@ -2029,34 +2029,37 @@ interactive_binning_page_layout = html.Div([
                         SaveButton("Add", inline=True),
                         SaveButton("Remove", inline=True, marginLeft=8),
                         html.Div([], style={"clear": "both", "height": 8}),
-                        SaveButton("Create New Bin"),
+                        SaveButton("Create New Bin", id="numeric_create_new_bin_panel_create_new_bin_button"),
                         html.Div(style={"height": 13}),
-                        html.P("Preview Changes:", style={
-                               "fontWeight": "bold", "textDecoration": "underline"}),
-                        html.P("Old Bin(s):", style={
-                               "fontWeight": "bold", "fontSize": 14}),
-                        # 1 old bin elements, TODO: extract it out
                         html.Div([
-                            html.Div(
-                                [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
-                            html.Div([html.P("Old Bin Name: " + "0-20"), html.P("Old Bin Range(s): " + \
-                                     "[[0, 20)]")], style={"float": "left", "width": "85%", "fontSize": 14}),
-                        ]),
-                        html.P("Will be changed to:", style={
-                               "fontWeight": "bold", "fontSize": 14}),
-                        # 1 new bin elements, TODO: extract it out
-                        html.Div([
-                            html.Div(
-                                [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
-                            html.Div([html.P("New Bin Name: " + "0-30"), html.P("New Bin Range(s): " + \
-                                     "[[[0, 30)]]")], style={"float": "left", "width": "85%", "fontSize": 14}),
-                        ]),
-                        SaveButton("Submit", inline=True),
-                        SaveButton("Hide Details", inline=True,
-                                   backgroundColor="#8097E6", marginLeft=5),
-                        html.Div(style={"height": 13, "clear": "both"}),
-                        html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
-                               style={"lineHeight": "99%", "fontSize": 14}),
+                            html.P("Preview Changes:", style={
+                                   "fontWeight": "bold", "textDecoration": "underline"}),
+                            html.P("Old Bin(s):", style={
+                                   "fontWeight": "bold", "fontSize": 14}),
+                            # 1 old bin elements, TODO: extract it out
+                            html.Div([
+                                html.Div(
+                                    [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                                html.Div([html.P("Old Bin Name: " + "0-20"), html.P("Old Bin Range(s): " + \
+                                         "[[0, 20)]")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                            ]),
+                            html.P("Will be changed to:", style={
+                                   "fontWeight": "bold", "fontSize": 14}),
+                            # 1 new bin elements, TODO: extract it out
+                            html.Div([
+                                html.Div(
+                                    [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                                html.Div([html.P("New Bin Name: " + "0-30"), html.P("New Bin Range(s): " + \
+                                         "[[[0, 30)]]")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                            ]),
+                            SaveButton("Submit", inline=True),
+                            SaveButton("Hide Details", inline=True,
+                                       backgroundColor="#8097E6", marginLeft=5, id="numeric_create_new_bin_hide_details_button"),
+                            html.Div(style={"height": 13, "clear": "both"}),
+                            html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
+                                   style={"lineHeight": "99%", "fontSize": 14}),
+                        ], id="numeric_create_new_bin_preview_changes_div", style={"display": "none"}),
+                        
                     ],
                     style={
                         "float": "left",
@@ -2074,7 +2077,7 @@ interactive_binning_page_layout = html.Div([
                 html.Div([
                     SaveButton("Adjust Cutpoints", inline=True, width="16.5%"),
                     SaveButton("Rename Bin", inline=True,
-                               width="16.5%", marginLeft="1%"),
+                               width="16.5%", marginLeft="1%", id="numeric_adjust_cutpoints_panel_rename_nav_button"),
                 ]),
                 html.Div(
                     [
@@ -2113,34 +2116,36 @@ interactive_binning_page_layout = html.Div([
                         SaveButton("Add", inline=True),
                         SaveButton("Remove", inline=True, marginLeft=8),
                         html.Div([], style={"clear": "both", "height": 8}),
-                        SaveButton("Adjust Cutpoints"),
+                        SaveButton("Adjust Cutpoints", id="numeric_adjust_cutpoints_panel_adjust_cutpoints_button"),
                         html.Div(style={"height": 13}),
-                        html.P("Preview Changes:", style={
-                               "fontWeight": "bold", "textDecoration": "underline"}),
-                        html.P("Old Bin(s):", style={
-                               "fontWeight": "bold", "fontSize": 14}),
-                        # 1 old bin elements, TODO: extract it out
                         html.Div([
-                            html.Div(
-                                [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
-                            html.Div([html.P("Old Bin Name: " + "Young"), html.P("Old Bin Element(s): " + \
-                                     "[[0, 25)]")], style={"float": "left", "width": "85%", "fontSize": 14}),
-                        ]),
-                        html.P("Will be changed to:", style={
-                               "fontWeight": "bold", "fontSize": 14}),
-                        # 1 new bin elements, TODO: extract it out
-                        html.Div([
-                            html.Div(
-                                [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
-                            html.Div([html.P("New Bin Name: " + "Risky"), html.P("New Bin Element(s): " + \
-                                     "[[0, 25)]")], style={"float": "left", "width": "85%", "fontSize": 14}),
-                        ]),
-                        SaveButton("Submit", inline=True),
-                        SaveButton("Hide Details", inline=True,
-                                   backgroundColor="#8097E6", marginLeft=5),
-                        html.Div(style={"height": 13, "clear": "both"}),
-                        html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
-                               style={"lineHeight": "99%", "fontSize": 14}),
+                            html.P("Preview Changes:", style={
+                                   "fontWeight": "bold", "textDecoration": "underline"}),
+                            html.P("Old Bin(s):", style={
+                                   "fontWeight": "bold", "fontSize": 14}),
+                            # 1 old bin elements, TODO: extract it out
+                            html.Div([
+                                html.Div(
+                                    [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                                html.Div([html.P("Old Bin Name: " + "Young"), html.P("Old Bin Element(s): " + \
+                                         "[[0, 25)]")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                            ]),
+                            html.P("Will be changed to:", style={
+                                   "fontWeight": "bold", "fontSize": 14}),
+                            # 1 new bin elements, TODO: extract it out
+                            html.Div([
+                                html.Div(
+                                    [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                                html.Div([html.P("New Bin Name: " + "Risky"), html.P("New Bin Element(s): " + \
+                                         "[[0, 25)]")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                            ]),
+                            SaveButton("Submit", inline=True),
+                            SaveButton("Hide Details", inline=True,
+                                       backgroundColor="#8097E6", marginLeft=5, id="numeric_adjust_cutpoints_panel_hide_details_button"),
+                            html.Div(style={"height": 13, "clear": "both"}),
+                            html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
+                                   style={"lineHeight": "99%", "fontSize": 14}),
+                        ], id="numeric_adjust_cutpoints_panel_preview_changes_div", style={"display": "none"}),
                     ],
                     style={
                         "marginTop": 13,
@@ -2157,7 +2162,7 @@ interactive_binning_page_layout = html.Div([
             # Numerical Rename Bin Control Panel
             html.Div([
                 html.Div([
-                    SaveButton("Adjust Cutpoints", inline=True, width="16.5%"),
+                    SaveButton("Adjust Cutpoints", inline=True, width="16.5%", id="numeric_rename_panel_adjust_cutpoints_nav_button"),
                     SaveButton("Rename Bin", inline=True,
                                width="16.5%", marginLeft="1%"),
                 ]),
@@ -2187,34 +2192,36 @@ interactive_binning_page_layout = html.Div([
                         html.P("Enter the new bin name: ",
                                style={"fontWeight": "bold"}),
                         dcc.Input(style={"marginBottom": 10}),
-                        SaveButton("Rename Bin"),
+                        SaveButton("Rename Bin", id="numeric_rename_panel_rename_button"),
                         html.Div(style={"height": 13}),
-                        html.P("Preview Changes:", style={
-                               "fontWeight": "bold", "textDecoration": "underline"}),
-                        html.P("Old Bin(s):", style={
-                               "fontWeight": "bold", "fontSize": 14}),
-                        # 1 old bin elements, TODO: extract it out
                         html.Div([
-                            html.Div(
-                                [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
-                            html.Div([html.P("Old Bin Name: " + "Young"), html.P("Old Bin Element(s): " + \
-                                     "[[0, 25)]")], style={"float": "left", "width": "85%", "fontSize": 14}),
-                        ]),
-                        html.P("Will be changed to:", style={
-                               "fontWeight": "bold", "fontSize": 14}),
-                        # 1 new bin elements, TODO: extract it out
-                        html.Div([
-                            html.Div(
-                                [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
-                            html.Div([html.P("New Bin Name: " + "Risky"), html.P("New Bin Element(s): " + \
-                                     "[[0, 25)]")], style={"float": "left", "width": "85%", "fontSize": 14}),
-                        ]),
-                        SaveButton("Submit", inline=True),
-                        SaveButton("Hide Details", inline=True,
-                                   backgroundColor="#8097E6", marginLeft=5),
-                        html.Div(style={"height": 13, "clear": "both"}),
-                        html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
-                               style={"lineHeight": "99%", "fontSize": 14}),
+                            html.P("Preview Changes:", style={
+                                   "fontWeight": "bold", "textDecoration": "underline"}),
+                            html.P("Old Bin(s):", style={
+                                   "fontWeight": "bold", "fontSize": 14}),
+                            # 1 old bin elements, TODO: extract it out
+                            html.Div([
+                                html.Div(
+                                    [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                                html.Div([html.P("Old Bin Name: " + "Young"), html.P("Old Bin Element(s): " + \
+                                         "[[0, 25)]")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                            ]),
+                            html.P("Will be changed to:", style={
+                                   "fontWeight": "bold", "fontSize": 14}),
+                            # 1 new bin elements, TODO: extract it out
+                            html.Div([
+                                html.Div(
+                                    [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                                html.Div([html.P("New Bin Name: " + "Risky"), html.P("New Bin Element(s): " + \
+                                         "[[0, 25)]")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                            ]),
+                            SaveButton("Submit", inline=True),
+                            SaveButton("Hide Details", inline=True,
+                                       backgroundColor="#8097E6", marginLeft=5, id="numeric_rename_panel_hide_details_button"),
+                            html.Div(style={"height": 13, "clear": "both"}),
+                            html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
+                                   style={"lineHeight": "99%", "fontSize": 14}),
+                        ], id="numeric_rename_panel_preview_changes_div", style={"display": "none"}),
                     ],
                     style={
                         "marginTop": 13,
@@ -2271,25 +2278,27 @@ interactive_binning_page_layout = html.Div([
                                style={"fontWeight": "bold"}),
                         dcc.Input(style={"marginBottom": 10}),
 
-                        SaveButton("Merge Bins"),
+                        SaveButton("Merge Bins", id="numeric_merge_panel_merge_button"),
                         html.Div(style={"height": 13}),
-                        html.P("Preview Changes:", style={
-                               "fontWeight": "bold", "textDecoration": "underline"}),
-                        html.P("Will be changed to:", style={
-                               "fontWeight": "bold", "fontSize": 14}),
-                        # 1 new bin elements, TODO: extract it out
                         html.Div([
-                            html.Div(
-                                [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
-                            html.Div([html.P("New Bin Name: " + "Rent or Mortgage"), html.P("New Bin Element(s): " + \
-                                     "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),
-                        ]),
-                        SaveButton("Submit", inline=True),
-                        SaveButton("Hide Details", inline=True,
-                                   backgroundColor="#8097E6", marginLeft=5),
-                        html.Div(style={"height": 13, "clear": "both"}),
-                        html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
-                               style={"lineHeight": "99%", "fontSize": 14}),
+                            html.P("Preview Changes:", style={
+                                   "fontWeight": "bold", "textDecoration": "underline"}),
+                            html.P("Will be changed to:", style={
+                                   "fontWeight": "bold", "fontSize": 14}),
+                            # 1 new bin elements, TODO: extract it out
+                            html.Div([
+                                html.Div(
+                                    [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
+                                html.Div([html.P("New Bin Name: " + "Rent or Mortgage"), html.P("New Bin Element(s): " + \
+                                         "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),
+                            ]),
+                            SaveButton("Submit", inline=True),
+                            SaveButton("Hide Details", inline=True,
+                                       backgroundColor="#8097E6", marginLeft=5, id="numeric_merge_panel_hide_details_button"),
+                            html.Div(style={"height": 13, "clear": "both"}),
+                            html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
+                                   style={"lineHeight": "99%", "fontSize": 14}),
+                        ], id="numeric_merge_panel_preview_changes_div", style={"display": "none"}),
                     ],
                     style={
                         "float": "left",
@@ -3455,10 +3464,12 @@ variable to be binned
         Input("categoric_split_panel_rename_nav_button", "n_clicks"),
         Input("categoric_rename_panel_add_elements_nav_button", "n_clicks"),
         Input("categoric_rename_panel_split_nav_button", "n_clicks"),
+        Input("numeric_adjust_cutpoints_panel_rename_nav_button", "n_clicks"),
+        Input("numeric_rename_panel_adjust_cutpoints_nav_button", "n_clicks"),
     ],
     State("bins_settings", "data"),
 )
-def update_control_panel_on_var_to_bin_change(click_data, selected_data, var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clicks4, n_clicks5, n_clicks6, bins_settings_data):
+def update_control_panel_on_var_to_bin_change(click_data, selected_data, var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clicks4, n_clicks5, n_clicks6, n_clicks7, n_clicks8, bins_settings_data):
     triggered = dash.callback_context.triggered
 
     if triggered[0]['prop_id'] == 'categoric_add_elements_panel_to_split_button.n_clicks':
@@ -3473,6 +3484,10 @@ def update_control_panel_on_var_to_bin_change(click_data, selected_data, var_to_
         return [{"display": "none"}, {}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}]
     if triggered[0]['prop_id'] == 'categoric_rename_panel_split_nav_button.n_clicks':
         return [{"display": "none"}, {"display": "none"}, {}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}]
+    if triggered[0]['prop_id'] == 'numeric_adjust_cutpoints_panel_rename_nav_button.n_clicks':
+        return [{"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {}, {"display": "none"}]
+    if triggered[0]['prop_id'] == 'numeric_rename_panel_adjust_cutpoints_nav_button.n_clicks':
+        return [{"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {}, {"display": "none"}, {"display": "none"}]
     
     bins_settings_dict = json.loads(bins_settings_data)
     bins_settings_list = bins_settings_dict["variable"]
@@ -3839,7 +3854,97 @@ def show_categoric_split_preview_changes_div(n_clicks, n_clicks2):
         return {}
     else:
         return {"display": "none"}
+   
+
+
+"""
+Interactive Binning Page:
+Show/Hide numerical adjust cutpoint control panel preview changes 
+when user clicks on the 'Adjust Cutpoints' button
+"""
+@app.callback(
+    Output("numeric_create_new_bin_preview_changes_div", "style"),
+    [
+        Input("numeric_create_new_bin_panel_create_new_bin_button", "n_clicks"),
+        Input("numeric_create_new_bin_hide_details_button", "n_clicks"),
+    ],
+    prevent_initial_call=True,
+)
+def show_categoric_split_preview_changes_div(n_clicks, n_clicks2):
+    triggered = dash.callback_context.triggered
+
+    if triggered[0]['prop_id'] == "numeric_create_new_bin_panel_create_new_bin_button.n_clicks":
+        return {}
+    else:
+        return {"display": "none"}
+
     
+"""
+Interactive Binning Page:
+Show/Hide numerical adjust cutpoint control panel preview changes 
+when user clicks on the 'Adjust Cutpoints' button
+"""
+@app.callback(
+    Output("numeric_adjust_cutpoints_panel_preview_changes_div", "style"),
+    [
+        Input("numeric_adjust_cutpoints_panel_adjust_cutpoints_button", "n_clicks"),
+        Input("numeric_adjust_cutpoints_panel_hide_details_button", "n_clicks"),
+    ],
+    prevent_initial_call=True,
+)
+def show_categoric_split_preview_changes_div(n_clicks, n_clicks2):
+    triggered = dash.callback_context.triggered
+
+    if triggered[0]['prop_id'] == "numeric_adjust_cutpoints_panel_adjust_cutpoints_button.n_clicks":
+        return {}
+    else:
+        return {"display": "none"}
+    
+   
+"""
+Interactive Binning Page:
+Show/Hide numerical rename control panel preview changes 
+when user clicks on the 'Rename bin' button
+"""
+@app.callback(
+    Output("numeric_rename_panel_preview_changes_div", "style"),
+    [
+        Input("numeric_rename_panel_rename_button", "n_clicks"),
+        Input("numeric_rename_panel_hide_details_button", "n_clicks"),
+    ],
+    prevent_initial_call=True,
+)
+def show_categoric_split_preview_changes_div(n_clicks, n_clicks2):
+    triggered = dash.callback_context.triggered
+
+    if triggered[0]['prop_id'] == "numeric_rename_panel_rename_button.n_clicks":
+        return {}
+    else:
+        return {"display": "none"}
+
+    
+"""
+Interactive Binning Page:
+Show/Hide numerical merge control panel preview changes 
+when user clicks on the 'Merge' button
+"""
+@app.callback(
+    Output("numeric_merge_panel_preview_changes_div", "style"),
+    [
+        Input("numeric_merge_panel_merge_button", "n_clicks"),
+        Input("numeric_merge_panel_hide_details_button", "n_clicks"),
+    ],
+    prevent_initial_call=True,
+)
+def show_categoric_split_preview_changes_div(n_clicks, n_clicks2):
+    triggered = dash.callback_context.triggered
+
+    if triggered[0]['prop_id'] == "numeric_merge_panel_merge_button.n_clicks":
+        return {}
+    else:
+        return {"display": "none"}
+    
+
 """
 Interactive Binning Page:
 Update selected bin info for categoric split panel
