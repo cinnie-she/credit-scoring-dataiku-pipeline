@@ -1342,6 +1342,9 @@ class InteractiveBinningMachine:
         if new_bin_name == "" or new_bin_name == None:
             new_bin_name = str(new_bin_element_li)
             
+        if InteractiveBinningMachine.validate_new_name(new_bin_name, temp_col_bins_settings) == False:
+            return (temp_col_bins_settings, -1, -1)
+            
         new_bin = {
             "name": new_bin_name,
             "elements": new_bin_element_li
@@ -1414,6 +1417,9 @@ class InteractiveBinningMachine:
                 if new_bin_name == "" or new_bin_name == None:
                     new_bin_name = str(temp_col_bins_settings["bins"][idx]["elements"])
                 
+                if InteractiveBinningMachine.validate_new_name(new_bin_name, temp_col_bins_settings) == False:
+                    return (temp_col_bins_settings, -1, -1)
+                
                 temp_col_bins_settings["bins"][idx]["name"] = new_bin_name
                 new_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(temp_col_bins_settings["bins"][idx]["elements"])])
                 break
@@ -1433,12 +1439,12 @@ class InteractiveBinningMachine:
         
         for idx in sorted(bin_to_remove_idx_li, reverse=True):
             del temp_col_bins_settings["bins"][idx]
+           
+        if new_bin_name == "" or new_bin_name == None:
+            new_bin_name = str(new_bin_element_list)
             
         if InteractiveBinningMachine.validate_new_name(new_bin_name, temp_col_bins_settings) == False:
             return (temp_col_bins_settings, -1, -1)
-            
-        if new_bin_name == "" or new_bin_name == None:
-            new_bin_name = str(new_bin_element_list)
         
         new_bin = {
             "name": new_bin_name,
@@ -1450,7 +1456,6 @@ class InteractiveBinningMachine:
         new_bin_list = [[new_bin_name, str(new_bin_element_list)]]
         
         return (temp_col_bins_settings, [], new_bin_list)
-        
         
         
     @staticmethod
