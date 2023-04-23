@@ -2035,37 +2035,18 @@ interactive_binning_page_layout = html.Div([
                         ], style={"listStyleType": "square", "lineHeight": "97%"}),
                         html.P("Enter the new bin name: ",
                                style={"fontWeight": "bold"}),
-                        dcc.Input(style={"marginBottom": 10}),
+                        dcc.Input(style={"marginBottom": 10}, id="numeric_create_new_bin_panel_new_bin_name_input"),
                         html.P("Indicate the ranges to be included in the new bin:", style={
                                "fontWeight": "bold"}),
                         # TODO!! --> Add dynamic range list
-                        SaveButton("Add", inline=True),
-                        SaveButton("Remove", inline=True, marginLeft=8),
+                        SaveButton("Add", inline=True, id="numeric_create_new_bin_panel_add_button"),
+                        SaveButton("Remove", inline=True, marginLeft=8, id="numeric_create_new_bin_panel_remove_button"),
                         html.Div([], style={"clear": "both", "height": 8}),
                         SaveButton("Create New Bin", id="numeric_create_new_bin_panel_create_new_bin_button"),
                         html.Div(style={"height": 13}),
                         html.Div([
-                            html.P("Preview Changes:", style={
-                                   "fontWeight": "bold", "textDecoration": "underline"}),
-                            html.P("Old Bin(s):", style={
-                                   "fontWeight": "bold", "fontSize": 14}),
-                            # 1 old bin elements, TODO: extract it out
-                            html.Div([
-                                html.Div(
-                                    [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
-                                html.Div([html.P("Old Bin Name: " + "0-20"), html.P("Old Bin Range(s): " + \
-                                         "[[0, 20)]")], style={"float": "left", "width": "85%", "fontSize": 14}),
-                            ]),
-                            html.P("Will be changed to:", style={
-                                   "fontWeight": "bold", "fontSize": 14}),
-                            # 1 new bin elements, TODO: extract it out
-                            html.Div([
-                                html.Div(
-                                    [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
-                                html.Div([html.P("New Bin Name: " + "0-30"), html.P("New Bin Range(s): " + \
-                                         "[[[0, 30)]]")], style={"float": "left", "width": "85%", "fontSize": 14}),
-                            ]),
-                            SaveButton("Submit", inline=True),
+                            html.Div([], id="numeric_create_new_bin_panel_changes_div"),
+                            SaveButton("Submit", inline=True, id="numeric_create_new_bin_panel_submit_button"),
                             SaveButton("Hide Details", inline=True,
                                        backgroundColor="#8097E6", marginLeft=5, id="numeric_create_new_bin_hide_details_button"),
                             html.Div(style={"height": 13, "clear": "both"}),
@@ -2116,7 +2097,7 @@ interactive_binning_page_layout = html.Div([
 
                         html.P("Enter the new bin name: ",
                                style={"fontWeight": "bold"}),
-                        dcc.Input(style={"marginBottom": 10}),
+                        dcc.Input(style={"marginBottom": 10}, id="numeric_adjust_cutpoints_panel_new_bin_name_input"),
                         html.P("Indicate the range(s) to be added into the bin:", style={
                                "fontWeight": "bold"}),
                         # TODO!! --> Add dynamic range list
@@ -2126,26 +2107,7 @@ interactive_binning_page_layout = html.Div([
                         SaveButton("Adjust Cutpoints", id="numeric_adjust_cutpoints_panel_adjust_cutpoints_button"),
                         html.Div(style={"height": 13}),
                         html.Div([
-                            html.P("Preview Changes:", style={
-                                   "fontWeight": "bold", "textDecoration": "underline"}),
-                            html.P("Old Bin(s):", style={
-                                   "fontWeight": "bold", "fontSize": 14}),
-                            # 1 old bin elements, TODO: extract it out
-                            html.Div([
-                                html.Div(
-                                    [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
-                                html.Div([html.P("Old Bin Name: " + "Young"), html.P("Old Bin Element(s): " + \
-                                         "[[0, 25)]")], style={"float": "left", "width": "85%", "fontSize": 14}),
-                            ]),
-                            html.P("Will be changed to:", style={
-                                   "fontWeight": "bold", "fontSize": 14}),
-                            # 1 new bin elements, TODO: extract it out
-                            html.Div([
-                                html.Div(
-                                    [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
-                                html.Div([html.P("New Bin Name: " + "Risky"), html.P("New Bin Element(s): " + \
-                                         "[[0, 25)]")], style={"float": "left", "width": "85%", "fontSize": 14}),
-                            ]),
+                            html.Div([], id="numeric_adjust_cutpoints_panel_changes_div"),
                             SaveButton("Submit", inline=True),
                             SaveButton("Hide Details", inline=True,
                                        backgroundColor="#8097E6", marginLeft=5, id="numeric_adjust_cutpoints_panel_hide_details_button"),
@@ -2192,30 +2154,11 @@ interactive_binning_page_layout = html.Div([
 
                         html.P("Enter the new bin name: ",
                                style={"fontWeight": "bold"}),
-                        dcc.Input(style={"marginBottom": 10}),
+                        dcc.Input(style={"marginBottom": 10}, id="numeric_rename_panel_new_bin_name_input"),
                         SaveButton("Rename Bin", id="numeric_rename_panel_rename_button"),
                         html.Div(style={"height": 13}),
                         html.Div([
-                            html.P("Preview Changes:", style={
-                                   "fontWeight": "bold", "textDecoration": "underline"}),
-                            html.P("Old Bin(s):", style={
-                                   "fontWeight": "bold", "fontSize": 14}),
-                            # 1 old bin elements, TODO: extract it out
-                            html.Div([
-                                html.Div(
-                                    [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
-                                html.Div([html.P("Old Bin Name: " + "Young"), html.P("Old Bin Element(s): " + \
-                                         "[[0, 25)]")], style={"float": "left", "width": "85%", "fontSize": 14}),
-                            ]),
-                            html.P("Will be changed to:", style={
-                                   "fontWeight": "bold", "fontSize": 14}),
-                            # 1 new bin elements, TODO: extract it out
-                            html.Div([
-                                html.Div(
-                                    [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
-                                html.Div([html.P("New Bin Name: " + "Risky"), html.P("New Bin Element(s): " + \
-                                         "[[0, 25)]")], style={"float": "left", "width": "85%", "fontSize": 14}),
-                            ]),
+                            html.Div([], id="numeric_rename_panel_changes_div"),
                             SaveButton("Submit", inline=True),
                             SaveButton("Hide Details", inline=True,
                                        backgroundColor="#8097E6", marginLeft=5, id="numeric_rename_panel_hide_details_button"),
@@ -2257,22 +2200,12 @@ interactive_binning_page_layout = html.Div([
                         html.Div([], id="numeric_merge_panel_selected_bin_info_div"),
                         html.P("Enter the new bin name: ",
                                style={"fontWeight": "bold"}),
-                        dcc.Input(style={"marginBottom": 10}),
+                        dcc.Input(style={"marginBottom": 10}, id="numeric_merge_panel_new_bin_name_input"),
 
                         SaveButton("Merge Bins", id="numeric_merge_panel_merge_button"),
                         html.Div(style={"height": 13}),
                         html.Div([
-                            html.P("Preview Changes:", style={
-                                   "fontWeight": "bold", "textDecoration": "underline"}),
-                            html.P("Will be changed to:", style={
-                                   "fontWeight": "bold", "fontSize": 14}),
-                            # 1 new bin elements, TODO: extract it out
-                            html.Div([
-                                html.Div(
-                                    [html.P("(" + "1" + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
-                                html.Div([html.P("New Bin Name: " + "Rent or Mortgage"), html.P("New Bin Element(s): " + \
-                                         "['RENT', 'MORTGAGE']")], style={"float": "left", "width": "85%", "fontSize": 14}),
-                            ]),
+                            html.Div([], id="numeric_merge_panel_changes_div"),
                             SaveButton("Submit", inline=True),
                             SaveButton("Hide Details", inline=True,
                                        backgroundColor="#8097E6", marginLeft=5, id="numeric_merge_panel_hide_details_button"),
@@ -3649,6 +3582,113 @@ def update_categoric_create_new_bin_preview_changes_info(n_clicks, new_name, var
     #old_bin_list, new_bin_list = InteractiveBinningMachine.get_categoric_create_new_bin_changes(new_name, bin_element_list, var_to_bin, col_bin_settings)
     
     return generate_bin_changes_div_children(old_bin_list=[], new_bin_list=[["Rent or Mortgage", "['RENT', 'MORTGAGE']"]], dtype="categorical")
+
+
+"""
+Interactive Binning Page:
+Update numeric create new bin preview changes info
+when user clicks on the 'Create New Bin' button
+"""
+@app.callback(
+    Output("numeric_create_new_bin_panel_changes_div", "children"),
+    Input("numeric_create_new_bin_panel_create_new_bin_button", "n_clicks"),
+    [
+        State("numeric_create_new_bin_panel_new_bin_name_input", "value"),
+        State("predictor_var_ib_dropdown", "value"),
+        State("temp_col_bins_settings", "data"),
+    ],
+)
+def update_numeric_create_new_bin_preview_changes_info(n_clicks, new_name, var_to_bin, temp_col_bins_settings_data):
+    col_bin_settings = json.loads(temp_col_bins_settings_data)
+    
+    #col_bin_list = None
+    # If it is no binning OR automated binning, have to translate it to list
+    #if isinstance(col_bins_settings["bins"], dict) == True or col_bins_settings["bins"] == "none":
+    #    col_bin_list = BinningMachine.convert_auto_bin_def_to_custom_def(col_bins_settings["bins"])
+    
+    #old_bin_list, new_bin_list = InteractiveBinningMachine.get_categoric_create_new_bin_changes(new_name, bin_element_list, var_to_bin, col_bin_settings)
+    
+    return generate_bin_changes_div_children(old_bin_list=[["0-20", "[[0, 20)]"], ["30-50", "[[30, 50)]"]], new_bin_list=[["0-50", "[[0, 50)]"]], dtype="numerical")
+
+
+"""
+Interactive Binning Page:
+Update numeric adjust cutpoints preview changes info
+when user clicks on the 'Adjust Cutpoints' button
+"""
+@app.callback(
+    Output("numeric_adjust_cutpoints_panel_changes_div", "children"),
+    Input("numeric_adjust_cutpoints_panel_adjust_cutpoints_button", "n_clicks"),
+    [
+        State("numeric_adjust_cutpoints_panel_new_bin_name_input", "value"),
+        State("predictor_var_ib_dropdown", "value"),
+        State("temp_col_bins_settings", "data"),
+    ],
+)
+def update_numeric_create_new_bin_preview_changes_info(n_clicks, new_name, var_to_bin, temp_col_bins_settings_data):
+    col_bin_settings = json.loads(temp_col_bins_settings_data)
+    
+    #col_bin_list = None
+    # If it is no binning OR automated binning, have to translate it to list
+    #if isinstance(col_bins_settings["bins"], dict) == True or col_bins_settings["bins"] == "none":
+    #    col_bin_list = BinningMachine.convert_auto_bin_def_to_custom_def(col_bins_settings["bins"])
+    
+    #old_bin_list, new_bin_list = InteractiveBinningMachine.get_categoric_create_new_bin_changes(new_name, bin_element_list, var_to_bin, col_bin_settings)
+    
+    return generate_bin_changes_div_children(old_bin_list=[["0-20", "[[0, 20)]"], ["30-50", "[[30, 50)]"]], new_bin_list=[["0-50", "[[0, 50)]"]], dtype="numerical")
+
+
+"""
+Interactive Binning Page:
+Update numeric rename preview changes info
+when user clicks on the 'Rename Bin' button
+"""
+@app.callback(
+    Output("numeric_rename_panel_changes_div", "children"),
+    Input("numeric_rename_panel_rename_button", "n_clicks"),
+    [
+        State("numeric_rename_panel_new_bin_name_input", "value"),
+        State("predictor_var_ib_dropdown", "value"),
+        State("temp_col_bins_settings", "data"),
+    ],
+)
+def update_numeric_create_new_bin_preview_changes_info(n_clicks, new_name, var_to_bin, temp_col_bins_settings_data):
+    col_bin_settings = json.loads(temp_col_bins_settings_data)
+    
+    #col_bin_list = None
+    # If it is no binning OR automated binning, have to translate it to list
+    #if isinstance(col_bins_settings["bins"], dict) == True or col_bins_settings["bins"] == "none":
+    #    col_bin_list = BinningMachine.convert_auto_bin_def_to_custom_def(col_bins_settings["bins"])
+    
+    #old_bin_list, new_bin_list = InteractiveBinningMachine.get_categoric_create_new_bin_changes(new_name, bin_element_list, var_to_bin, col_bin_settings)
+    
+    return generate_bin_changes_div_children(old_bin_list=[["0-20", "[[0, 20)]"], ["30-50", "[[30, 50)]"]], new_bin_list=[["0-50", "[[0, 50)]"]], dtype="numerical")
+
+"""
+Interactive Binning Page:
+Update numeric merge preview changes info
+when user clicks on the 'Merge Bins' button
+"""
+@app.callback(
+    Output("numeric_merge_panel_changes_div", "children"),
+    Input("numeric_merge_panel_merge_button", "n_clicks"),
+    [
+        State("numeric_merge_panel_new_bin_name_input", "value"),
+        State("predictor_var_ib_dropdown", "value"),
+        State("temp_col_bins_settings", "data"),
+    ],
+)
+def update_numeric_create_new_bin_preview_changes_info(n_clicks, new_name, var_to_bin, temp_col_bins_settings_data):
+    col_bin_settings = json.loads(temp_col_bins_settings_data)
+    
+    #col_bin_list = None
+    # If it is no binning OR automated binning, have to translate it to list
+    #if isinstance(col_bins_settings["bins"], dict) == True or col_bins_settings["bins"] == "none":
+    #    col_bin_list = BinningMachine.convert_auto_bin_def_to_custom_def(col_bins_settings["bins"])
+    
+    #old_bin_list, new_bin_list = InteractiveBinningMachine.get_categoric_create_new_bin_changes(new_name, bin_element_list, var_to_bin, col_bin_settings)
+    
+    return generate_bin_changes_div_children(old_bin_list=[], new_bin_list=[["0-50", "[[0, 50)]"]], dtype="numerical")
 
 
 """
