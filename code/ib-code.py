@@ -2758,16 +2758,27 @@ def save_initial_bin_settings_to_shared_storage(
     for i in range(len(predictor_type)):
         pred = predictor_var_dropdown_values[i]
         pred_var_type = predictor_type[i]["props"]["children"][1]["props"]["value"]
-        bins_settings["variable"].append(
-            {
-                "column": pred,
-                "type": pred_var_type,
-                "bins": "none",
-            }
-        )
         if (pred_var_type == 'numerical'):
+            bins_settings["variable"].append(
+                {
+                    "column": pred,
+                    "type": pred_var_type,
+                    "bins": {
+                        "algo": "equal frequency",
+                        "method": "num_bins",
+                        "value": 10,
+                    },
+                }
+            )
             numerical_columns.append(pred)
         else:
+            bins_settings["variable"].append(
+                {
+                    "column": pred,
+                    "type": pred_var_type,
+                    "bins": "none",
+                }
+            )
             categorical_columns.append(pred)
 
     return json.dumps(bins_settings), json.dumps(numerical_columns), json.dumps(categorical_columns)
@@ -3428,12 +3439,14 @@ def update_auto_bin_panel_on_bin_var_change(var_to_bin, bins_settings_data):
         if var["column"] == var_to_bin:
             dtype = var["type"]
 
+    val = "none"
     if dtype == "categorical":
         options = [
             {"label": "No Binnings", "value": "none"},
         ]
         return ["none", options, "width", 1, 10, "frequency", 1000, 10]
     else:
+        val = "equal frequency"
         options = [
             {"label": "No Binnings", "value": "none"},
             {"label": "Equal Width", "value": "equal width"},
@@ -3442,7 +3455,7 @@ def update_auto_bin_panel_on_bin_var_change(var_to_bin, bins_settings_data):
                 "value": "equal frequency",
             },
         ]
-        return ["none", options, "width", 1, 10, "frequency", 1000, 10]
+        return [val, options, "width", 1, 10, "frequency", 1000, 10]
 
 
 """
@@ -4944,11 +4957,19 @@ export bins settings as json file
 @app.callback(
     Output("download_json", "data"),
     Input("download_bin_settings_button", "n_clicks"),
-    State("bins_settings", "data"),
+    [
+        State("bins_settings", "data"),
+        State("good_bad_def", "data"),
+    ],
     prevent_initial_call=True,
 )
-def export_bin_settings(n_clicks, bins_settings_data):
-    return dict(content=bins_settings_data, filename="bins_settings.json")
+def export_bin_settings(n_clicks, bins_settings_data, good_bad_def_data):
+    bins_settings = json.loads(bins_settings_data)
+    good_bad_def = json.loads(good_bad_def_data)
+    settings = dict()
+    settings["bins_settings"] = bins_settings
+    settings["good_bad_def"] = good_bad_def
+    return dict(content=json.dumps(settings), filename="settings.json")
     
 ###########################################################################
 ############################ Debugging Purpose ############################
