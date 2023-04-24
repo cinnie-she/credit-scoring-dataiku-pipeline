@@ -896,7 +896,7 @@ class BinningMachine:
 
             for bin_range in bin_ranges:
                 if val >= bin_range[0] and val < bin_range[1]:
-                    binned_result.append(f"[{bin_range[0]}, {bin_range[1]})")
+                    binned_result.append(f"[[{bin_range[0]}, {bin_range[1]})]")
                     break
         
         def_li = list()
@@ -940,7 +940,7 @@ class BinningMachine:
                 binned_result.append(None)
             for bin_range in bin_ranges:
                 if val >= bin_range[0] and val < bin_range[1]:
-                    binned_result.append(f"[{bin_range[0]}, {bin_range[1]})")
+                    binned_result.append(f"[[{bin_range[0]}, {bin_range[1]})]")
                     break
                 
         def_li = list()
@@ -983,7 +983,7 @@ class BinningMachine:
                 binned_result.append(None)
             else:
                 binned_result.append(
-                    f"[{interval_li[idx].left}, {interval_li[idx].right})")
+                    f"[[{interval_li[idx].left}, {interval_li[idx].right})]")
 
         def_set = set()
         for idx in range(len(interval_li)):
@@ -1024,7 +1024,7 @@ class BinningMachine:
                 binned_result.append(None)
             else:
                 binned_result.append(
-                    f"[{interval_li[idx].left}, {interval_li[idx].right})")
+                    f"[[{interval_li[idx].left}, {interval_li[idx].right})]")
 
         def_set = set()
         for idx in range(len(interval_li)):
@@ -2612,6 +2612,8 @@ interactive_binning_page_layout = html.Div([
     ),
     html.P(id="test_select"),
     html.P(id="test_click"),
+    html.P(id="test_temp_col_bins_settings"),
+    html.P(id="test_temp_chart_info"),
     html.Div([], style={"width": "100%", "height": 25, "clear": "left"}),
     html.Div(
         [
@@ -4916,6 +4918,26 @@ def output_selected_data_info(selected_data):
 )
 def output_selected_data_info(click_data):
     return str(click_data)
+
+
+# Get temp_col_bins_settings
+@app.callback(
+    Output("test_temp_col_bins_settings", "children"),
+    Input("temp_col_bins_settings", "data"),
+)
+def get_temp_col_bins_settings(data):
+    temp = json.loads(data)
+    return "temp_col_bins_settings: " + str(temp)
+
+
+# Get temp_col_bins_settings
+@app.callback(
+    Output("test_temp_chart_info", "children"),
+    Input("temp_chart_info", "data"),
+)
+def get_temp_col_bins_settings(data):
+    temp = json.loads(data)
+    return "temp_chart_info: " + str(temp)
 
 ###########################################################################
 ############ Not important for our development after this line ############
