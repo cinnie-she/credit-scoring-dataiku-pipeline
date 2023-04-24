@@ -29,6 +29,8 @@ def SharedDataStorage():
             dcc.Store(id="temp_col_bins_settings"),
             dcc.Store(id="temp_binned_col"),
             dcc.Store(id="temp_chart_info"),
+            dcc.Store(id="saved_settings"),
+            dcc.Store(id="temp_bins_settings"),
         ]
     )
 
@@ -2610,6 +2612,7 @@ interactive_binning_page_layout = html.Div([
             ], id="numerical_merge_bins_control_panel", style={"display": "none"}),
         ]
     ),
+    html.P(id="test_saved_settings"),
     html.P(id="test_select"),
     html.P(id="test_click"),
     html.P(id="test_temp_col_bins_settings"),
@@ -2698,7 +2701,7 @@ settings to shared storage
 
 @app.callback(
     [
-        Output("bins_settings", "data"),
+        Output("temp_bins_settings", "data"),
         Output("numerical_columns", "data"),
         Output("categorical_columns", "data"),
     ],
@@ -4828,6 +4831,46 @@ Remove numeric merge bin panel input when submit button is clicked
 def clear_numeric_merge_bin_panel_input(n_clicks):
     return ""
 
+"""
+Interactive Binning Page:
+Save temp_col_bins_settings to saved_settings when 
+confirm button is clicked on ib page
+"""
+@app.callback(
+    Output("saved_settings", "data"),
+    Input("confirm_ib_button", "n_clicks"),
+    State("temp_col_bins_settings", "data"),
+)
+def save_temp_to_saved_settings(n_clicks, data):
+    temp_col_bins_settings = json.loads(data)
+    return json.dumps(temp_col_bins_settings)
+
+
+@app.callback(
+    Output("bins_settings", "data"),
+    [
+        Input("temp_bins_settings", "data"),
+        Input("saved_settings", "data"),
+    ],
+    State("bins_settings", "data"),
+)
+def save_bins_settings(temp_bins_data, saved_settings_data, bins_settings_data):
+    triggered = dash.callback_context.triggered
+    
+    if triggered[0]['prop_id'] == "temp_bins_settings.data":
+        data = json.loads(temp_bins_data)
+        return json.dumps(data)
+    else:
+        data = json.loads(saved_settings_data)
+        bins_settings = json.loads(bins_settings_data)
+        
+        for idx in range(len(bins_settings["variable"])):
+            if bins_settings["variable"][idx]["column"] == data["column"]:
+                bins_settings["variable"][idx]["bins"] = data["bins"]
+                break
+        
+        return json.dumps(bins_settings)
+
 ###########################################################################
 ############################ Debugging Purpose ############################
 ###########################################################################
@@ -4938,6 +4981,17 @@ def get_temp_col_bins_settings(data):
 def get_temp_col_bins_settings(data):
     temp = json.loads(data)
     return "temp_chart_info: " + str(temp)
+
+
+# Get saved_settings
+@app.callback(
+    Output("test_saved_settings", "children"),
+    Input("saved_settings", "data"),
+)
+def get_saved_settings(data):
+    data = json.loads(data)
+    return "saved_settings " + str(data)
+
 
 ###########################################################################
 ############ Not important for our development after this line ############
