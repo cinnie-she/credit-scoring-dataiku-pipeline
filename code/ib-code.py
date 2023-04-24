@@ -4968,7 +4968,7 @@ def export_bin_settings(n_clicks, bins_settings_data, good_bad_def_data):
     good_bad_def = json.loads(good_bad_def_data)
     settings = dict()
     settings["bins_settings"] = bins_settings
-    settings["good_bad_def"] = good_bad_def
+    settings["good_bad_def"] = [good_bad_def]
     return dict(content=json.dumps(settings), filename="settings.json")
     
 ###########################################################################
