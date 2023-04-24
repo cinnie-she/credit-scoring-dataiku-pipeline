@@ -2589,7 +2589,7 @@ interactive_binning_page_layout = html.Div([
                         html.Div([
                             html.Div([], id="numeric_merge_panel_changes_div"),
                             html.Div([
-                                SaveButton("Submit", inline=True),
+                                SaveButton("Submit", inline=True, id="numeric_merge_panel_submit_button"),
                                 SaveButton("Hide Details", inline=True,
                                            backgroundColor="#8097E6", marginLeft=5, id="numeric_merge_panel_hide_details_button"),
                                 html.Div(style={"height": 13, "clear": "both"}),
@@ -3528,6 +3528,7 @@ refresh button in automated binning panel
         Input("categoric_merge_panel_submit_button", "n_clicks"),
         Input("categoric_split_panel_submit_button", "n_clicks"),
         Input("numeric_rename_panel_submit_button", "n_clicks"),
+        Input("numeric_merge_panel_submit_button", "n_clicks")
     ],
     [
         State("bins_settings", "data"),
@@ -3550,9 +3551,10 @@ refresh button in automated binning panel
         State("categoric_split_panel_new_bin_name_input", "value"),
         State("categoric_split_panel_dropdown", "value"),
         State("numeric_rename_panel_new_bin_name_input", "value"),
+        State("numeric_merge_panel_new_bin_name_input", "value"),
     ],
 )
-def update_temp_bins_settings(var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clicks4, n_clicks5, n_clicks6, n_clicks7, bins_settings_data, auto_bin_algo, equal_width_method, width, ew_num_bins, equal_freq_method, freq, ef_num_bins, temp_col_bins_settings_data, categoric_create_new_bin_name_input, categoric_create_new_bin_dropdown, categoric_rename_panel_new_bin_name_input, click_data, categoric_add_elements_panel_name_input, categoric_add_elements_panel_dropdown, categoric_merge_panel_new_bin_name_input, selected_data, categoric_split_panel_new_bin_name_input, categoric_split_panel_dropdown, numeric_rename_panel_new_bin_name_input):
+def update_temp_bins_settings(var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clicks4, n_clicks5, n_clicks6, n_clicks7, n_clicks8, bins_settings_data, auto_bin_algo, equal_width_method, width, ew_num_bins, equal_freq_method, freq, ef_num_bins, temp_col_bins_settings_data, categoric_create_new_bin_name_input, categoric_create_new_bin_dropdown, categoric_rename_panel_new_bin_name_input, click_data, categoric_add_elements_panel_name_input, categoric_add_elements_panel_dropdown, categoric_merge_panel_new_bin_name_input, selected_data, categoric_split_panel_new_bin_name_input, categoric_split_panel_dropdown, numeric_rename_panel_new_bin_name_input, numeric_merge_panel_new_bin_name_input):
     triggered = dash.callback_context.triggered
     
     if triggered[0]['prop_id'] == "categoric_create_new_bin_submit_button.n_clicks":
@@ -3624,6 +3626,23 @@ def update_temp_bins_settings(var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clic
         temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
         
         new_settings, _, __ = InteractiveBinningMachine.numeric_rename_bin(selected_bin_name=click_data["points"][0]["x"], new_bin_name=numeric_rename_panel_new_bin_name_input, temp_col_bins_settings=temp_col_bins_settings)
+    
+        def_li, binned_series = BinningMachine.perform_binning_on_col(
+        df.loc[:, [new_settings["column"]]], new_settings)
+        temp_df = df.copy()
+        temp_df['binned_col'] = binned_series.values
+        
+        return [json.dumps(new_settings), json.dumps(temp_df.to_dict())]
+    
+    if triggered[0]['prop_id'] == "numeric_merge_panel_submit_button.n_clicks":
+        temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
+        
+        selected_bin_name_set = set()
+        for point in selected_data["points"]:
+            selected_bin_name_set.add(point["x"])
+        selected_bin_name_li = list(selected_bin_name_set)
+
+        new_settings, _, __ = InteractiveBinningMachine.numeric_merge_bins(selected_bin_name_li=selected_bin_name_li, new_bin_name=numeric_merge_panel_new_bin_name_input, temp_col_bins_settings=temp_col_bins_settings)
     
         def_li, binned_series = BinningMachine.perform_binning_on_col(
         df.loc[:, [new_settings["column"]]], new_settings)
@@ -3788,16 +3807,17 @@ def update_mixed_chart_on_var_to_bin_change(temp_chart_info_data, click_data, se
         Input("categoric_merge_panel_submit_button", "n_clicks"),
         Input("auto_bin_refresh_button", "n_clicks"),
         Input("numeric_rename_panel_submit_button", "n_clicks"),
+        Input("numeric_merge_panel_submit_button", "n_clicks"),
     ],
 )
-def erase_click_data(click_data, selected_data, var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clicks4, n_clicks5, n_clicks6):
+def erase_click_data(click_data, selected_data, var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clicks4, n_clicks5, n_clicks6, n_clicks7):
     triggered = dash.callback_context.triggered
     
     if triggered[0]['prop_id'] == 'categoric_add_elements_panel_submit_button.n_clicks' or triggered[0]['prop_id'] == 'categoric_split_panel_submit_button.n_clicks' or triggered[0]['prop_id'] == 'categoric_rename_panel_submit_button.n_clicks' or triggered[0]['prop_id'] == 'numeric_rename_panel_submit_button.n_clicks':
         clicked_data = None
         return [clicked_data, selected_data]
     
-    if triggered[0]['prop_id'] == 'categoric_merge_panel_submit_button.n_clicks':
+    if triggered[0]['prop_id'] == 'categoric_merge_panel_submit_button.n_clicks' or triggered[0]['prop_id'] == 'numeric_merge_panel_submit_button.n_clicks':
         selected_data = None
         return [click_data, selected_data]
     
@@ -4494,10 +4514,11 @@ when user clicks on the 'Rename bin' button
     [
         Input("numeric_rename_panel_rename_button", "n_clicks"),
         Input("numeric_rename_panel_hide_details_button", "n_clicks"),
+        Input("numeric_rename_panel_submit_button", "n_clicks"),
     ],
     prevent_initial_call=True,
 )
-def show_categoric_split_preview_changes_div(n_clicks, n_clicks2):
+def show_categoric_split_preview_changes_div(n_clicks, n_clicks2, n_clicks3):
     triggered = dash.callback_context.triggered
 
     if triggered[0]['prop_id'] == "numeric_rename_panel_rename_button.n_clicks":
@@ -4516,10 +4537,11 @@ when user clicks on the 'Merge' button
     [
         Input("numeric_merge_panel_merge_button", "n_clicks"),
         Input("numeric_merge_panel_hide_details_button", "n_clicks"),
+        Input("numeric_merge_panel_submit_button", "n_clicks"),
     ],
     prevent_initial_call=True,
 )
-def show_categoric_split_preview_changes_div(n_clicks, n_clicks2):
+def show_categoric_split_preview_changes_div(n_clicks, n_clicks2, n_clicks3):
     triggered = dash.callback_context.triggered
 
     if triggered[0]['prop_id'] == "numeric_merge_panel_merge_button.n_clicks":
@@ -4791,6 +4813,17 @@ Remove numeric rename bin panel input when submit button is clicked
     Input("numeric_rename_panel_submit_button", "n_clicks"),
 )
 def clear_numeric_rename_bin_panel_input(n_clicks):
+    return ""
+
+"""
+Interactive Binning Page:
+Remove numeric merge bin panel input when submit button is clicked
+"""
+@app.callback(
+    Output("numeric_merge_panel_new_bin_name_input", "value"),
+    Input("numeric_merge_panel_submit_button", "n_clicks"),
+)
+def clear_numeric_merge_bin_panel_input(n_clicks):
     return ""
 
 ###########################################################################
