@@ -2651,7 +2651,32 @@ preview_download_page_layout = html.Div(
     [
         NavBar(),
         Heading("Preview & Download Bins Settings"),
-
+        SectionHeading("I. Preview Output Dataset"),
+        html.P("Note: It may take some time to perform binning on all columns, please wait patiently."),
+        html.Div(id="preview_datatable_div"),
+        SectionHeading("II. Preview Bins' Performance"),
+        html.Div([
+            html.P("Select variable to preview: ", style={}),
+            dcc.Dropdown(
+                clearable=False,
+                searchable=False,
+                style={"width": 150, "paddingLeft": 15},
+                id="preview_page_select_var_dropdown",
+            ),
+        ], style={"display": "flex", "alignItems": "center"}),
+        html.Div(style={"height": 10}),
+        html.P("Summary Statistics Table", style={"textDecoration": "underline"}),
+        html.Div(id="preview_summary_stat_table_div"),
+        html.P("Mixed Chart", style={"textDecoration": "underline"}),
+        
+        SectionHeading("III. Download Bins Settings"),
+        SaveButton(
+            title="Download Bins Settings",
+            marginLeft=15,
+            id="download_bin_settings_button",
+        ),
+        dcc.Download(id="download_json"),
+        html.P("After download the bins_settings.json file, you could replace it with the one in the Dataiku flow, re-run the flow, and bin the dataset there. You could see the same statistical table and mixed chart in the dashboard too."),
         html.Div(style={"height": 100}),
     ]
 )
@@ -4845,7 +4870,10 @@ def save_temp_to_saved_settings(n_clicks, data):
     temp_col_bins_settings = json.loads(data)
     return json.dumps(temp_col_bins_settings)
 
-
+"""
+Update bins_settings either triggered in 'confirm'
+input page, or 'interactive binning page'
+"""
 @app.callback(
     Output("bins_settings", "data"),
     [
@@ -4871,6 +4899,57 @@ def save_bins_settings(temp_bins_data, saved_settings_data, bins_settings_data):
         
         return json.dumps(bins_settings)
 
+    
+
+"""
+Preview & Download Settings Page:
+Update preview data table with binned_df
+"""
+@app.callback(
+    Output("preview_datatable_div", "children"),
+    Input("bins_settings", "data"),
+)
+def update_preview_data_table(bins_settings_data):
+    bins_settings = json.loads(bins_settings_data)
+    binned_df = BinningMachine.perform_binning_on_whole_df(df, bins_settings["variable"])
+    return [DataTable(binned_df)]
+    
+"""
+Preview & Download Settings Page:
+Update select variable dropdown based on bins settings
+"""
+@app.callback(
+    [
+        Output("preview_page_select_var_dropdown", "options"),
+        Output("preview_page_select_var_dropdown", "value"),
+    ],
+    Input("bins_settings", "data"),
+)
+def update_select_var_dropdown_in_preview_page(bins_settings_data):
+    bins_settings = json.loads(bins_settings_data)
+    li = list()
+    
+    for bin_def in bins_settings["variable"]:
+        li.append(bin_def["column"])
+    
+    return [convert_column_list_to_dropdown_options(li), li[0]]
+    
+
+"""
+Preview & Download Settings:
+export bins settings as json file
+"""
+
+
+@app.callback(
+    Output("download_json", "data"),
+    Input("download_bin_settings_button", "n_clicks"),
+    State("bins_settings", "data"),
+    prevent_initial_call=True,
+)
+def export_bin_settings(n_clicks, bins_settings_data):
+    return dict(content=bins_settings_data, filename="bins_settings.json")
+    
 ###########################################################################
 ############################ Debugging Purpose ############################
 ###########################################################################
