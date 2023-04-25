@@ -11,9 +11,6 @@ bins_settings_data = ib_settings_df.iloc[0, 0]
 
 bins_settings = json.loads(bins_settings_data)
 
-print("Bins settings: " + str(bins_settings))
-print("Bins settings: " + str(type(bins_settings)))
-
 for bin_def_idx in range(len(bins_settings)):
     if bins_settings[bin_def_idx]["type"] == "numerical":
         for bin_idx in range(len(bins_settings[bin_def_idx]["bins"])):
@@ -29,9 +26,12 @@ for bin_def_idx in range(len(bins_settings)):
                 else:
                     bins_settings[bin_def_idx]["bins"]["value"] = int(bins_settings[bin_def_idx]["bins"]["value"])
 
-print("TYPE: " + str(type(bins_settings[0]["bins"][0]["ranges"][0][0])))
-print("TYPE: " + str(bins_settings[0]["bins"][0]["ranges"][0][0]))
-
+# Remove loan_status from bins_settings if have
+for bin_def_idx in range(len(bins_settings)):
+    if bins_settings[bin_def_idx]["column"] == "loan_status":
+        del bins_settings[bin_def_idx]
+        break
+                    
 credit_risk_dataset_generated = dataiku.Dataset("credit_risk_dataset_generated")
 df = credit_risk_dataset_generated.get_dataframe()
 
@@ -50,6 +50,7 @@ def get_str_from_ranges(ranges):
             ranges_str = f"{ranges_str}, [{ranges[idx][0]}, {ranges[idx][1]})"
         ranges_str += "]"
         return ranges_str  
+
 
 # A class for merging overlapping good bad definition ranges/elements for the same type (bad or indeterminate)
 class GoodBadDefDecoder:
@@ -147,25 +148,22 @@ class GoodBadDefDecoder:
                 single_def_dict["elements"] = elements
                 categoric_list.append(single_def_dict)
         return categoric_list
-    
+  
+
 # A class for performing binning based on bins settings
 class BinningMachine:
     # Perform equal width binning based on a specified width (for numerical column only)
     @staticmethod
     def perform_eq_width_binning_by_width(col_df, width):
         if len(col_df) == 0:
-            print("TAG1: " + str(col_df))
             return (-1, -1)
         if col_df.isna().all().all():
-            print("TAG2: " + str(col_df))
             return (-1, pd.Series([None for _ in range(len(col_df))]))
         # Cannot be categorical type
         if not pd.api.types.is_numeric_dtype(col_df.iloc[:, 0]):
-            print("TAG3: " + str(col_df))
             return (-1, -1)
         # width cannot be non-numeric
         if not (isinstance(width, int) or isinstance(width, float)) or width <= 0:
-            print("TAG4: " + str(col_df))
             return (-1, -1)
 
         min = col_df.min()
@@ -184,7 +182,7 @@ class BinningMachine:
         for _, row in col_df.iterrows():
             val = row.iloc[0]
             if np.isnan(val):
-                binned_result.append(None)
+                binned_result.append("Missing")
 
             for bin_range in bin_ranges:
                 if val >= bin_range[0] and val < bin_range[1]:
@@ -201,17 +199,13 @@ class BinningMachine:
     @staticmethod
     def perform_eq_width_binning_by_num_bins(col_df, num_bins):
         if len(col_df) == 0:
-            print("TAG5: " + str(col_df))
             return (-1, -1)
         if col_df.isna().all().all():
-            print("TAG6: " + str(col_df))
             return (-1, pd.Series([None for _ in range(len(col_df))]))
         # Cannot be categorical type
         if not pd.api.types.is_numeric_dtype(col_df.iloc[:, 0]):
-            print("TAG7: " + str(col_df))
             return (-1, -1)
         if not isinstance(num_bins, int) or num_bins <= 0:
-            print("TAG8: " + str(col_df))
             return (-1, -1)
 
         min = col_df.min()
@@ -233,7 +227,7 @@ class BinningMachine:
         for _, row in col_df.iterrows():
             val = row.iloc[0]
             if np.isnan(val):
-                binned_result.append(None)
+                binned_result.append("Missing")
             for bin_range in bin_ranges:
                 if val >= bin_range[0] and val < bin_range[1]:
                     binned_result.append(f"[[{bin_range[0]}, {bin_range[1]})]")
@@ -249,17 +243,13 @@ class BinningMachine:
     @staticmethod
     def perform_eq_freq_binning_by_freq(col_df, freq):
         if len(col_df) == 0:
-            print("TAG9: " + str(col_df))
             return (-1, -1)
         if col_df.isna().all().all():
-            print("TAG10: " + str(col_df))
             return (-1, pd.Series([None for _ in range(len(col_df))]))
         # Cannot be categorical type
         if not pd.api.types.is_numeric_dtype(col_df.iloc[:, 0]):
-            print("TAG11: " + str(col_df))
             return (-1, -1)
         if not isinstance(freq, int) or freq <= 0 or freq > len(col_df):
-            print("TAG12: " + str(col_df))
             return (-1, -1)
 
         num_bins = int(np.ceil(len(col_df)/freq))
@@ -277,18 +267,26 @@ class BinningMachine:
                 col_df.iloc[0:1, 0])+1) for _ in interval_li]
 
         # convert to the format we want
+        max_val = float(col_df.max())
         binned_result = list()
         for idx in range(len(interval_li)):
             if not isinstance(interval_li[idx], pd._libs.interval.Interval):
-                binned_result.append(None)
+                binned_result.append("Missing")
             else:
-                binned_result.append(
-                    f"[[{interval_li[idx].left}, {interval_li[idx].right})]")
+                if interval_li[idx].right == max_val:
+                    binned_result.append(
+                        f"[[{interval_li[idx].left}, {interval_li[idx].right+0.0001})]")
+                else:
+                    binned_result.append(
+                        f"[[{interval_li[idx].left}, {interval_li[idx].right})]")
 
         def_set = set()
         for idx in range(len(interval_li)):
             if isinstance(interval_li[idx], pd._libs.interval.Interval):
-                def_set.add((interval_li[idx].left, interval_li[idx].right))
+                if interval_li[idx].right == max_val:
+                    def_set.add((interval_li[idx].left, interval_li[idx].right+0.0001))
+                else:
+                    def_set.add((interval_li[idx].left, interval_li[idx].right))
         bin_ranges = list(def_set)
         
         def_li = list()
@@ -301,19 +299,13 @@ class BinningMachine:
     @staticmethod
     def perform_eq_freq_binning_by_num_bins(col_df, num_bins):
         if len(col_df) == 0:
-            print("TAG13: " + str(col_df))
             return (-1, -1)
         if col_df.isna().all().all():
-            print("TAG14: " + str(col_df))
             return (-1, pd.Series([None for _ in range(len(col_df))]))
         # Cannot be categorical type
         if not pd.api.types.is_numeric_dtype(col_df.iloc[:, 0]):
-            print("TAG15: " + str(col_df))
             return (-1, -1)
         if not isinstance(num_bins, int) or num_bins <= 0:
-            print("TAG16 - type: " + str(type(num_bins)))
-            print("TAG16 - val: " + str(num_bins))
-            print("TAG16: " + str(col_df))
             return (-1, -1)
 
         interval_li = pd.qcut(
@@ -323,20 +315,35 @@ class BinningMachine:
             interval_li = [pd.Interval(float(col_df.iloc[0:1, 0]), float(
                 col_df.iloc[0:1, 0])+1) for _ in interval_li]
 
+        print(f"column_df: {col_df}")
+        print(f"interval_li: {interval_li}, len: {len(interval_li)}")
+            
         # convert to the format we want
+        max_val = float(col_df.max())
         binned_result = list()
         for idx in range(len(interval_li)):
             if not isinstance(interval_li[idx], pd._libs.interval.Interval):
-                binned_result.append(None)
+                binned_result.append("Missing")
             else:
-                binned_result.append(
-                    f"[[{interval_li[idx].left}, {interval_li[idx].right})]")
+                print(f"interval_li[idx].right: {interval_li[idx].right}, max_val: {max_val}")
+                print(f"interval_li[idx].right: {type(interval_li[idx].right)}, max_val: {type(max_val)}")
+                if interval_li[idx].right == max_val:
+                    binned_result.append(
+                        f"[[{interval_li[idx].left}, {interval_li[idx].right+0.0001})]")
+                else:
+                    binned_result.append(
+                        f"[[{interval_li[idx].left}, {interval_li[idx].right})]")
 
         def_set = set()
         for idx in range(len(interval_li)):
             if isinstance(interval_li[idx], pd._libs.interval.Interval):
-                def_set.add((interval_li[idx].left, interval_li[idx].right))
+                if interval_li[idx].right == max_val:
+                    def_set.add((interval_li[idx].left, interval_li[idx].right+0.0001))
+                else:
+                    def_set.add((interval_li[idx].left, interval_li[idx].right))
         bin_ranges = list(def_set)
+        
+        print(f"bin_ranges: {bin_ranges}, len: {len(bin_ranges)}")
         
         def_li = list()
         for r in bin_ranges:
@@ -348,7 +355,6 @@ class BinningMachine:
     @staticmethod
     def perform_categorical_custom_binning(col_df, bins_settings):
         if len(col_df) == 0:
-            print("TAG7: " + str(col_df))
             return (-1, -1)
 
         binned_result = list()
@@ -356,13 +362,13 @@ class BinningMachine:
         for _, row in col_df.iterrows():
             val = row.iloc[0]
             has_assigned_bin = False
-            for bin in bins_settings:
-                if val in bin["elements"]:
-                    binned_result.append(bin["name"])
+            for a_bin in bins_settings:
+                if val in a_bin["elements"]:
+                    binned_result.append(a_bin["name"])
                     has_assigned_bin = True
                     break
             if has_assigned_bin == False:  # does not belongs to any bin
-                binned_result.append(None)
+                binned_result.append("Missing")
 
         return (bins_settings, pd.Series(binned_result))
 
@@ -370,7 +376,6 @@ class BinningMachine:
     @staticmethod
     def perform_numerical_custom_binning(col_df, bins_settings):
         if len(col_df) == 0:
-            print("TAG8: " + str(col_df))
             return (-1, -1)
 
         binned_result = list()
@@ -378,15 +383,15 @@ class BinningMachine:
         for _, row in col_df.iterrows():
             val = row.iloc[0]
             has_assigned_bin = False
-            for bin in bins_settings:
-                for r in bin["ranges"]:
+            for a_bin in bins_settings:
+                for r in a_bin["ranges"]:
                     if val >= r[0] and val < r[1]:
-                        binned_result.append(bin["name"])
+                        binned_result.append(a_bin["name"])
                         has_assigned_bin = True
                         break
 
             if has_assigned_bin == False:  # does not belongs to any bin
-                binned_result.append(None)
+                binned_result.append("Missing")
 
         return (bins_settings, pd.Series(binned_result))
 
@@ -413,7 +418,6 @@ class BinningMachine:
         """
         if col_bins_settings["bins"] == "none":
             if len(col_df) == 0:
-                print("TAG19: " + str(col_df))
                 return (-1, -1)
             unique_bin = col_df.iloc[:, 0].unique().tolist()
             if col_bins_settings["type"] == "numerical":
@@ -478,13 +482,13 @@ class BinningMachine:
             _, binned_series = BinningMachine.perform_binning_on_col(
                 col_df, col_bins_settings)
             if not isinstance(binned_series, pd.Series):  # error occurs
-                print("TAG20: " + str(col_df))
                 return -1
 
             binned_col_name = col + "_binned"
             dframe[binned_col_name] = binned_series
 
         return dframe
+
 
 # Compute recipe outputs
 binned_credit_risk_dataset_df = BinningMachine.perform_binning_on_whole_df(df, bins_settings)

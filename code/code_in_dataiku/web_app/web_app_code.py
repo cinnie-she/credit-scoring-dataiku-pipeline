@@ -468,8 +468,11 @@ class GoodBadCounter:
     def get_statistics(dframe, good_bad_def):
         new_dframe, sample_bad_count = GoodBadCounter.count_sample_bad(
             dframe, good_bad_def["bad"])
-        sample_indeterminate_count = GoodBadCounter.count_sample_indeterminate(
-            new_dframe, good_bad_def["indeterminate"])
+        if "indeterminate" in good_bad_def:
+            sample_indeterminate_count = GoodBadCounter.count_sample_indeterminate(
+                new_dframe, good_bad_def["indeterminate"])
+        else:
+            sample_indeterminate_count = 0
         sample_good_count = GoodBadCounter.count_sample_good(
             dframe, sample_bad_count, sample_indeterminate_count)
         good_weight = good_bad_def["good"]["weight"]
@@ -484,22 +487,24 @@ class GoodBadCounter:
     @staticmethod
     def count_sample_bad(dframe, bad_defs):
         bad_count = 0
-        for bad_numeric_def in bad_defs["numerical"]:
-            # count number of rows if dframe row is in bad_numeric_def range, and add to bad_count
-            for a_range in bad_numeric_def["ranges"]:
-                bad_count += len(dframe[(dframe[bad_numeric_def["column"]] >= a_range[0]) & (
-                    dframe[bad_numeric_def["column"]] < a_range[1])])
-                # delete rows if dframe row is in bad_numeric_def range
-                dframe = dframe.drop(dframe[(dframe[bad_numeric_def["column"]] >= a_range[0]) & (
-                    dframe[bad_numeric_def["column"]] < a_range[1])].index)
+        if "numerical" in bad_defs:
+            for bad_numeric_def in bad_defs["numerical"]:
+                # count number of rows if dframe row is in bad_numeric_def range, and add to bad_count
+                for a_range in bad_numeric_def["ranges"]:
+                    bad_count += len(dframe[(dframe[bad_numeric_def["column"]] >= a_range[0]) & (
+                        dframe[bad_numeric_def["column"]] < a_range[1])])
+                    # delete rows if dframe row is in bad_numeric_def range
+                    dframe = dframe.drop(dframe[(dframe[bad_numeric_def["column"]] >= a_range[0]) & (
+                        dframe[bad_numeric_def["column"]] < a_range[1])].index)
 
-        for bad_categoric_def in bad_defs["categorical"]:
-            # count number of rows if dframe row is having any one of the bad_categoric_def elements value
-            for element in bad_categoric_def["elements"]:
-                bad_count += len(dframe[(dframe[bad_categoric_def["column"]] == element)])
-                # delete rows if dframe row has value 'element'
-                dframe = dframe.drop(
-                    dframe[(dframe[bad_categoric_def["column"]] == element)].index)
+        if "categorical" in bad_defs:
+            for bad_categoric_def in bad_defs["categorical"]:
+                # count number of rows if dframe row is having any one of the bad_categoric_def elements value
+                for element in bad_categoric_def["elements"]:
+                    bad_count += len(dframe[(dframe[bad_categoric_def["column"]] == element)])
+                    # delete rows if dframe row has value 'element'
+                    dframe = dframe.drop(
+                        dframe[(dframe[bad_categoric_def["column"]] == element)].index)
 
         return (dframe, bad_count)
 
@@ -507,23 +512,25 @@ class GoodBadCounter:
     @staticmethod
     def count_sample_indeterminate(dframe, indeterminate_defs):
         indeterminate_count = 0
-        for indeterminate_numeric_def in indeterminate_defs["numerical"]:
-            # count number of rows if dframe row is in indeterminate_numeric_def range, and add to indeterminate_count
-            for a_range in indeterminate_numeric_def["ranges"]:
-                indeterminate_count += len(dframe[(dframe[indeterminate_numeric_def["column"]] >= a_range[0]) & (
-                    dframe[indeterminate_numeric_def["column"]] < a_range[1])])
-                # delete rows if dframe row is in indeterminate_numeric_def range
-                dframe = dframe.drop(dframe[(dframe[indeterminate_numeric_def["column"]] >= a_range[0]) & (
-                    dframe[indeterminate_numeric_def["column"]] < a_range[1])].index)
+        if "numerical" in indeterminate_defs:
+            for indeterminate_numeric_def in indeterminate_defs["numerical"]:
+                # count number of rows if dframe row is in indeterminate_numeric_def range, and add to indeterminate_count
+                for a_range in indeterminate_numeric_def["ranges"]:
+                    indeterminate_count += len(dframe[(dframe[indeterminate_numeric_def["column"]] >= a_range[0]) & (
+                        dframe[indeterminate_numeric_def["column"]] < a_range[1])])
+                    # delete rows if dframe row is in indeterminate_numeric_def range
+                    dframe = dframe.drop(dframe[(dframe[indeterminate_numeric_def["column"]] >= a_range[0]) & (
+                        dframe[indeterminate_numeric_def["column"]] < a_range[1])].index)
 
-        for indeterminate_categoric_def in indeterminate_defs["categorical"]:
-            # count number of rows if dframe row is having any one of the indeterminate_categoric_def elements value
-            for element in indeterminate_categoric_def["elements"]:
-                indeterminate_count += len(
-                    dframe[(dframe[indeterminate_categoric_def["column"]] == element)])
-                # delete rows if dframe row has value 'element'
-                dframe = dframe.drop(
-                    dframe[(dframe[indeterminate_categoric_def["column"]] == element)].index)
+        if "categorical" in indeterminate_defs:
+            for indeterminate_categoric_def in indeterminate_defs["categorical"]:
+                # count number of rows if dframe row is having any one of the indeterminate_categoric_def elements value
+                for element in indeterminate_categoric_def["elements"]:
+                    indeterminate_count += len(
+                        dframe[(dframe[indeterminate_categoric_def["column"]] == element)])
+                    # delete rows if dframe row has value 'element'
+                    dframe = dframe.drop(
+                        dframe[(dframe[indeterminate_categoric_def["column"]] == element)].index)
 
         return indeterminate_count
 
@@ -591,7 +598,10 @@ class StatCalculator:
         # For each bin_name in the list (i.e. loop nbin times)
         for bin_name in bin_name_list:
             # Get a DataFrame which filtered out rows that does not belong to the bin
-            bin_df = self.df.loc[self.df.iloc[:, 0] == bin_name]
+            if bin_name == None:
+                bin_df = self.df.loc[self.df.iloc[:, 0].isna()]
+            else:
+                bin_df = self.df.loc[self.df.iloc[:, 0] == bin_name]
             # Call compute_bin_stats(var_df : pd.DataFrame, total_num_records : Integer, bin_name : String) and save as bin_stats_list
             bin_stats_list = self.__compute_bin_stats__(
                 bin_df, bin_name, total_good_count, total_bad_count)
@@ -651,8 +661,7 @@ class StatCalculator:
         mc = self.compute_mc(good_pct, bad_pct, woe)
 
         # Append all statistics to the bin_stats_list in order
-        bin_stats_row = [bin_name, good, bad, odds, total, good_pct *
-                         100, bad_pct*100, total_pct*100, info_odds, woe, mc]
+        bin_stats_row = [bin_name, good, bad, odds, total, good_pct *100 if good_pct != None else None, bad_pct*100 if bad_pct != None else None, total_pct*100 if total_pct != None else None, info_odds, woe, mc]
         bin_stats_list.extend(bin_stats_row)
 
         # Return list
@@ -684,7 +693,7 @@ class StatCalculator:
 
         # Append all statistics to the empty list in order
         var_stats_list = ["Total", good, bad, odds, total, good_pct *
-                          100, bad_pct*100, total_pct*100, info_odds, woe, mc]
+                          100 if good_pct != None else None, bad_pct*100 if bad_pct != None else None, total_pct*100 if total_pct != None else None, info_odds, woe, mc]
         # Return list
         return var_stats_list
 
@@ -704,7 +713,7 @@ class StatCalculator:
 
     @staticmethod
     def compute_info_odds(good_pct, bad_pct):
-        if bad_pct == 0:
+        if bad_pct == 0 or good_pct == None or bad_pct == None:
             return None
         else:
             return (good_pct/bad_pct)
@@ -894,7 +903,7 @@ class BinningMachine:
         for _, row in col_df.iterrows():
             val = row.iloc[0]
             if np.isnan(val):
-                binned_result.append(None)
+                binned_result.append("Missing")
 
             for bin_range in bin_ranges:
                 if val >= bin_range[0] and val < bin_range[1]:
@@ -939,7 +948,7 @@ class BinningMachine:
         for _, row in col_df.iterrows():
             val = row.iloc[0]
             if np.isnan(val):
-                binned_result.append(None)
+                binned_result.append("Missing")
             for bin_range in bin_ranges:
                 if val >= bin_range[0] and val < bin_range[1]:
                     binned_result.append(f"[[{bin_range[0]}, {bin_range[1]})]")
@@ -979,18 +988,26 @@ class BinningMachine:
                 col_df.iloc[0:1, 0])+1) for _ in interval_li]
 
         # convert to the format we want
+        max_val = float(col_df.max())
         binned_result = list()
         for idx in range(len(interval_li)):
             if not isinstance(interval_li[idx], pd._libs.interval.Interval):
-                binned_result.append(None)
+                binned_result.append("Missing")
             else:
-                binned_result.append(
-                    f"[[{interval_li[idx].left}, {interval_li[idx].right})]")
+                if interval_li[idx].right == max_val:
+                    binned_result.append(
+                        f"[[{interval_li[idx].left}, {interval_li[idx].right+0.0001})]")
+                else:
+                    binned_result.append(
+                        f"[[{interval_li[idx].left}, {interval_li[idx].right})]")
 
         def_set = set()
         for idx in range(len(interval_li)):
             if isinstance(interval_li[idx], pd._libs.interval.Interval):
-                def_set.add((interval_li[idx].left, interval_li[idx].right))
+                if interval_li[idx].right == max_val:
+                    def_set.add((interval_li[idx].left, interval_li[idx].right+0.0001))
+                else:
+                    def_set.add((interval_li[idx].left, interval_li[idx].right))
         bin_ranges = list(def_set)
         
         def_li = list()
@@ -1019,26 +1036,41 @@ class BinningMachine:
             interval_li = [pd.Interval(float(col_df.iloc[0:1, 0]), float(
                 col_df.iloc[0:1, 0])+1) for _ in interval_li]
 
+        print(f"column_df: {col_df}")
+        print(f"interval_li: {interval_li}, len: {len(interval_li)}")
+            
         # convert to the format we want
+        max_val = float(col_df.max())
         binned_result = list()
         for idx in range(len(interval_li)):
             if not isinstance(interval_li[idx], pd._libs.interval.Interval):
-                binned_result.append(None)
+                binned_result.append("Missing")
             else:
-                binned_result.append(
-                    f"[[{interval_li[idx].left}, {interval_li[idx].right})]")
+                print(f"interval_li[idx].right: {interval_li[idx].right}, max_val: {max_val}")
+                print(f"interval_li[idx].right: {type(interval_li[idx].right)}, max_val: {type(max_val)}")
+                if interval_li[idx].right == max_val:
+                    binned_result.append(
+                        f"[[{interval_li[idx].left}, {interval_li[idx].right+0.0001})]")
+                else:
+                    binned_result.append(
+                        f"[[{interval_li[idx].left}, {interval_li[idx].right})]")
 
         def_set = set()
         for idx in range(len(interval_li)):
             if isinstance(interval_li[idx], pd._libs.interval.Interval):
-                def_set.add((interval_li[idx].left, interval_li[idx].right))
+                if interval_li[idx].right == max_val:
+                    def_set.add((interval_li[idx].left, interval_li[idx].right+0.0001))
+                else:
+                    def_set.add((interval_li[idx].left, interval_li[idx].right))
         bin_ranges = list(def_set)
+        
+        print(f"bin_ranges: {bin_ranges}, len: {len(bin_ranges)}")
         
         def_li = list()
         for r in bin_ranges:
             def_li.append({"name": get_str_from_ranges([[r[0], r[1]]]), "ranges": [[r[0], r[1]]]})
         
-        return (def_li, pd.Series(binned_result))
+        return (def_li, binned_result_series)
 
     # A method to perform custom binning for a categorical column
     @staticmethod
@@ -1051,13 +1083,13 @@ class BinningMachine:
         for _, row in col_df.iterrows():
             val = row.iloc[0]
             has_assigned_bin = False
-            for bin in bins_settings:
-                if val in bin["elements"]:
-                    binned_result.append(bin["name"])
+            for a_bin in bins_settings:
+                if val in a_bin["elements"]:
+                    binned_result.append(a_bin["name"])
                     has_assigned_bin = True
                     break
             if has_assigned_bin == False:  # does not belongs to any bin
-                binned_result.append(None)
+                binned_result.append("Missing")
 
         return (bins_settings, pd.Series(binned_result))
 
@@ -1072,15 +1104,15 @@ class BinningMachine:
         for _, row in col_df.iterrows():
             val = row.iloc[0]
             has_assigned_bin = False
-            for bin in bins_settings:
-                for r in bin["ranges"]:
+            for a_bin in bins_settings:
+                for r in a_bin["ranges"]:
                     if val >= r[0] and val < r[1]:
-                        binned_result.append(bin["name"])
+                        binned_result.append(a_bin["name"])
                         has_assigned_bin = True
                         break
 
             if has_assigned_bin == False:  # does not belongs to any bin
-                binned_result.append(None)
+                binned_result.append("Missing")
 
         return (bins_settings, pd.Series(binned_result))
 
@@ -3455,7 +3487,7 @@ def update_auto_bin_panel_on_bin_var_change(var_to_bin, bins_settings_data):
                 "value": "equal frequency",
             },
         ]
-        return [val, options, "width", 1, 10, "frequency", 1000, 10]
+        return [val, options, "width", 1, 10, "number of bins", 1000, 10]
 
 
 """
@@ -3717,7 +3749,7 @@ def update_temp_bins_settings(var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clic
                     "value": ew_num_bins,
                 }
         elif auto_bin_algo == "equal frequency":
-            if equal_freq_method == "freq":
+            if equal_freq_method == "frequency":
                 col_bins_settings["bins"] = {
                     "algo": "equal frequency",
                     "method": "freq",
@@ -4969,7 +5001,7 @@ def export_bin_settings(n_clicks, bins_settings_data, good_bad_def_data):
     settings = dict()
     settings["bins_settings"] = bins_settings
     settings["good_bad_def"] = [good_bad_def]
-    return dict(content=json.dumps(settings), filename="settings.json")
+    return dict(content=json.dumps(settings), filename="ib_settings.json")
     
 ###########################################################################
 ############################ Debugging Purpose ############################

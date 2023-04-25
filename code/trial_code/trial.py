@@ -2,88 +2,6 @@
 import pandas as pd
 import numpy as np
 
-
-# A class for counting the number of good and bad samples/population in the column
-class GoodBadCounter:
-    # A method to get the number of sample bad, sample indeterminate, sample good, population good, and population bad
-    @staticmethod
-    def get_statistics(dframe, good_bad_def):
-        new_dframe, sample_bad_count = GoodBadCounter.count_sample_bad(
-            dframe, good_bad_def["bad"])
-        sample_indeterminate_count = GoodBadCounter.count_sample_indeterminate(
-            new_dframe, good_bad_def["indeterminate"])
-        sample_good_count = GoodBadCounter.count_sample_good(
-            dframe, sample_bad_count, sample_indeterminate_count)
-        good_weight = good_bad_def["good"]["weight"]
-        bad_weight = good_bad_def["bad"]["weight"]
-        population_good_count = GoodBadCounter.get_population_good(
-            sample_good_count, good_weight)
-        population_bad_count = GoodBadCounter.get_population_bad(
-            sample_bad_count, bad_weight)
-        return (sample_bad_count, sample_indeterminate_count, sample_good_count, good_weight, bad_weight, population_good_count, population_bad_count)
-
-    # A method to count the number of sample bad
-    @staticmethod
-    def count_sample_bad(dframe, bad_defs):
-        bad_count = 0
-        for bad_numeric_def in bad_defs["numerical"]:
-            # count number of rows if dframe row is in bad_numeric_def range, and add to bad_count
-            for a_range in bad_numeric_def["ranges"]:
-                bad_count += len(dframe[(dframe[bad_numeric_def["column"]] >= a_range[0]) & (
-                    dframe[bad_numeric_def["column"]] < a_range[1])])
-                # delete rows if dframe row is in bad_numeric_def range
-                dframe = dframe.drop(dframe[(dframe[bad_numeric_def["column"]] >= a_range[0]) & (
-                    dframe[bad_numeric_def["column"]] < a_range[1])].index)
-
-        for bad_categoric_def in bad_defs["categorical"]:
-            # count number of rows if dframe row is having any one of the bad_categoric_def elements value
-            for element in bad_categoric_def["elements"]:
-                bad_count += len(dframe[(dframe[bad_categoric_def["column"]] == element)])
-                # delete rows if dframe row has value 'element'
-                dframe = dframe.drop(
-                    dframe[(dframe[bad_categoric_def["column"]] == element)].index)
-
-        return (dframe, bad_count)
-
-    # A method to count the number of sample indeterminate
-    @staticmethod
-    def count_sample_indeterminate(dframe, indeterminate_defs):
-        indeterminate_count = 0
-        for indeterminate_numeric_def in indeterminate_defs["numerical"]:
-            # count number of rows if dframe row is in indeterminate_numeric_def range, and add to indeterminate_count
-            for a_range in indeterminate_numeric_def["ranges"]:
-                indeterminate_count += len(dframe[(dframe[indeterminate_numeric_def["column"]] >= a_range[0]) & (
-                    dframe[indeterminate_numeric_def["column"]] < a_range[1])])
-                # delete rows if dframe row is in indeterminate_numeric_def range
-                dframe = dframe.drop(dframe[(dframe[indeterminate_numeric_def["column"]] >= a_range[0]) & (
-                    dframe[indeterminate_numeric_def["column"]] < a_range[1])].index)
-
-        for indeterminate_categoric_def in indeterminate_defs["categorical"]:
-            # count number of rows if dframe row is having any one of the indeterminate_categoric_def elements value
-            for element in indeterminate_categoric_def["elements"]:
-                indeterminate_count += len(
-                    dframe[(dframe[indeterminate_categoric_def["column"]] == element)])
-                # delete rows if dframe row has value 'element'
-                dframe = dframe.drop(
-                    dframe[(dframe[indeterminate_categoric_def["column"]] == element)].index)
-
-        return indeterminate_count
-
-    # A method to count the number of sample good
-    @staticmethod
-    def count_sample_good(dframe, sample_bad_count, sample_indeterminate_count):
-        return (len(dframe) - sample_bad_count - sample_indeterminate_count)
-
-    # A method to count the number of population good
-    @staticmethod
-    def get_population_good(sample_good_count, good_weight):
-        return sample_good_count * good_weight
-
-    # A method to count the number of population bad
-    @staticmethod
-    def get_population_bad(sample_bad_count, bad_weight):
-        return sample_bad_count * bad_weight
-
 # A class for performing binning based on bins settings
 class BinningMachine:
     # Perform equal width binning based on a specified width (for numerical column only)
@@ -187,6 +105,7 @@ class BinningMachine:
             return (-1, -1)
 
         num_bins = int(np.ceil(len(col_df)/freq))
+        # print(f"len(col_df): {len(col_df)}, freq: {freq}, num_bins: {num_bins}")
         # print(num_bins)
         # if num_bins == 1:
         #     print(type(col_df.iloc[:, 0]))
@@ -201,18 +120,26 @@ class BinningMachine:
                 col_df.iloc[0:1, 0])+1) for _ in interval_li]
 
         # convert to the format we want
+        max_val = float(col_df.max())
         binned_result = list()
         for idx in range(len(interval_li)):
             if not isinstance(interval_li[idx], pd._libs.interval.Interval):
                 binned_result.append(None)
             else:
-                binned_result.append(
-                    f"[[{interval_li[idx].left}, {interval_li[idx].right})]")
+                if interval_li[idx].right == max_val:
+                    binned_result.append(
+                        f"[[{interval_li[idx].left}, {interval_li[idx].right+0.0001})]")
+                else:
+                    binned_result.append(
+                        f"[[{interval_li[idx].left}, {interval_li[idx].right})]")
 
         def_set = set()
         for idx in range(len(interval_li)):
             if isinstance(interval_li[idx], pd._libs.interval.Interval):
-                def_set.add((interval_li[idx].left, interval_li[idx].right))
+                if interval_li[idx].right == max_val:
+                    def_set.add((interval_li[idx].left, interval_li[idx].right+0.0001))
+                else:
+                    def_set.add((interval_li[idx].left, interval_li[idx].right))
         bin_ranges = list(def_set)
         
         def_li = list()
@@ -241,20 +168,35 @@ class BinningMachine:
             interval_li = [pd.Interval(float(col_df.iloc[0:1, 0]), float(
                 col_df.iloc[0:1, 0])+1) for _ in interval_li]
 
+        # print(f"column_df: {col_df}")
+        # print(f"interval_li: {interval_li}, len: {len(interval_li)}")
+            
         # convert to the format we want
+        max_val = float(col_df.max())
         binned_result = list()
         for idx in range(len(interval_li)):
             if not isinstance(interval_li[idx], pd._libs.interval.Interval):
                 binned_result.append(None)
             else:
-                binned_result.append(
-                    f"[[{interval_li[idx].left}, {interval_li[idx].right})]")
+                # print(f"interval_li[idx].right: {interval_li[idx].right}, max_val: {max_val}")
+                # print(f"interval_li[idx].right: {type(interval_li[idx].right)}, max_val: {type(max_val)}")
+                if interval_li[idx].right == max_val:
+                    binned_result.append(
+                        f"[[{interval_li[idx].left}, {interval_li[idx].right+0.0001})]")
+                else:
+                    binned_result.append(
+                        f"[[{interval_li[idx].left}, {interval_li[idx].right})]")
 
         def_set = set()
         for idx in range(len(interval_li)):
             if isinstance(interval_li[idx], pd._libs.interval.Interval):
-                def_set.add((interval_li[idx].left, interval_li[idx].right))
+                if interval_li[idx].right == max_val:
+                    def_set.add((interval_li[idx].left, interval_li[idx].right+0.0001))
+                else:
+                    def_set.add((interval_li[idx].left, interval_li[idx].right))
         bin_ranges = list(def_set)
+        
+        # print(f"bin_ranges: {bin_ranges}, len: {len(bin_ranges)}")
         
         def_li = list()
         for r in bin_ranges:
@@ -400,7 +342,102 @@ class BinningMachine:
 
         return dframe
 
+# A class for merging overlapping good bad definition ranges/elements for the same type (bad or indeterminate)
+class GoodBadDefDecoder:
+    # A method to translate numerical definition ranges defined by user (with/without overlapping) info to a list of numerical definition (no overlapping)
+    @staticmethod
+    def get_numeric_def_list_from_section(numeric_info_list):
+        numeric_list = list()  # initialization
 
+        for numeric_info in numeric_info_list:
+            single_def_dict = dict()
+            column = numeric_info[0]
+            a_range = [numeric_info[1], numeric_info[2]]
+            # The 2 bounds are valid, now check if any overlapping with previously saved data
+            has_column_overlap = False
+            for def_idx, saved_def in enumerate(numeric_list):
+                if saved_def["column"] == column:
+                    has_column_overlap = True
+                    has_range_overlap = False
+                    overlapped_def_range_idxes = list()
+                    # Merge range to element list
+                    for def_range_idx, def_range in enumerate(saved_def["ranges"]):
+                        if len(overlapped_def_range_idxes) != 0:
+                            a_range = numeric_list[def_idx]["ranges"][overlapped_def_range_idxes[0]]
+
+                        if a_range[0] <= def_range[0] and a_range[1] >= def_range[1]:
+                            has_range_overlap = True
+                            numeric_list[def_idx]["ranges"][def_range_idx] = [
+                                a_range[0], a_range[1]]
+                            overlapped_def_range_idxes.insert(0, def_range_idx)
+                        elif def_range[0] <= a_range[0] and def_range[1] >= a_range[1]:
+                            has_range_overlap = True
+                        elif a_range[0] <= def_range[0] and a_range[1] >= def_range[0] and a_range[1] <= def_range[1]:
+                            has_range_overlap = True
+                            numeric_list[def_idx]["ranges"][def_range_idx] = [
+                                a_range[0], def_range[1]]
+                            overlapped_def_range_idxes.insert(0, def_range_idx)
+                        elif a_range[0] >= def_range[0] and a_range[0] <= def_range[1] and a_range[1] >= def_range[1]:
+                            has_range_overlap = True
+                            numeric_list[def_idx]["ranges"][def_range_idx] = [
+                                def_range[0], a_range[1]]
+                            overlapped_def_range_idxes.insert(0, def_range_idx)
+                    if len(overlapped_def_range_idxes) != 0:
+                        del overlapped_def_range_idxes[0]
+                        for i in sorted(overlapped_def_range_idxes, reverse=True):
+                            del numeric_list[def_idx]["ranges"][i]
+                    if has_range_overlap == False:
+                        numeric_list[def_idx]["ranges"].append(a_range)
+                    break
+            if has_column_overlap == False:
+                single_def_dict["column"] = column
+                single_def_dict["ranges"] = [a_range]
+                numeric_list.append(single_def_dict)
+
+        for idx in range(len(numeric_list)):
+            numeric_list[idx]["ranges"] = GoodBadDefDecoder.sort_numerical_def_ranges(
+                numeric_list[idx]["ranges"])
+
+        return numeric_list
+
+    # A method to sort a list of numerical def e.g., from [[15, 20], [1, 10], [13, 14]] to [[1, 10], [13, 14], [15, 20]].
+    @staticmethod
+    def sort_numerical_def_ranges(numeric_def_r):
+        sorted_def_ranges = list()
+        for r in numeric_def_r:
+            has_appended = False
+            for idx in range(len(sorted_def_ranges)):
+                if r[0] < sorted_def_ranges[idx][0]:
+                    sorted_def_ranges.insert(idx, r)
+                    has_appended = True
+                    break
+            if has_appended == False:
+                sorted_def_ranges.append(r)
+        return sorted_def_ranges
+
+    # A method to translate categorical definition elements defined by user (with/without overlapping) info to a list of categorical definition (no overlapping)
+    @staticmethod
+    def get_categorical_def_list_from_section(categoric_info_list):
+        categoric_list = list()  # initialization
+        for categoric_info in categoric_info_list:
+            single_def_dict = dict()
+            column = categoric_info[0]
+            elements = categoric_info[1]
+            # Check if any overlapping with previously saved data
+            has_overlap = False
+            for saved_def in categoric_list:
+                if saved_def["column"] == column:
+                    has_overlap = True
+                    # Append element to elements list if it is not existed yet
+                    for element in elements:
+                        if element not in saved_def["elements"]:
+                            saved_def["elements"].append(element)
+                    break
+            if has_overlap == False:
+                single_def_dict["column"] = column
+                single_def_dict["elements"] = elements
+                categoric_list.append(single_def_dict)
+        return categoric_list
 
 # A class to calculate statistical values for displaying the mixed chart & statistical tables
 
@@ -446,8 +483,11 @@ class StatCalculator:
 
         # For each bin_name in the list (i.e. loop nbin times)
         for bin_name in bin_name_list:
-            # Get a DataFrame which filtered out rows that does not belong to the bin
-            bin_df = self.df.loc[self.df.iloc[:, 0] == bin_name]
+            if bin_name == None:
+                bin_df = self.df.loc[self.df.iloc[:, 0].isna()]
+            else:
+                # Get a DataFrame which filtered out rows that does not belong to the bin
+                bin_df = self.df.loc[self.df.iloc[:, 0] == bin_name]
             # Call compute_bin_stats(var_df : pd.DataFrame, total_num_records : Integer, bin_name : String) and save as bin_stats_list
             bin_stats_list = self.__compute_bin_stats__(
                 bin_df, bin_name, total_good_count, total_bad_count)
@@ -507,8 +547,7 @@ class StatCalculator:
         mc = self.compute_mc(good_pct, bad_pct, woe)
 
         # Append all statistics to the bin_stats_list in order
-        bin_stats_row = [bin_name, good, bad, odds, total, good_pct *
-                         100, bad_pct*100, total_pct*100, info_odds, woe, mc]
+        bin_stats_row = [bin_name, good, bad, odds, total, good_pct *100 if good_pct != None else None, bad_pct*100 if bad_pct != None else None, total_pct*100 if total_pct != None else None, info_odds, woe, mc]
         bin_stats_list.extend(bin_stats_row)
 
         # Return list
@@ -540,7 +579,7 @@ class StatCalculator:
 
         # Append all statistics to the empty list in order
         var_stats_list = ["Total", good, bad, odds, total, good_pct *
-                          100, bad_pct*100, total_pct*100, info_odds, woe, mc]
+                          100 if good_pct != None else None, bad_pct*100 if bad_pct != None else None, total_pct*100 if total_pct != None else None, info_odds, woe, mc]
         # Return list
         return var_stats_list
 
@@ -560,7 +599,7 @@ class StatCalculator:
 
     @staticmethod
     def compute_info_odds(good_pct, bad_pct):
-        if bad_pct == 0:
+        if bad_pct == 0 or good_pct == None or bad_pct == None:
             return None
         else:
             return (good_pct/bad_pct)
@@ -579,20 +618,121 @@ class StatCalculator:
         else:
             return (good_pct - bad_pct)*woe
 
+def get_str_from_ranges(ranges):
+        if not isinstance(ranges, list):
+            return -1
+        if len(ranges) == 0:
+            return '[]'
+        
+        ranges = GoodBadDefDecoder.sort_numerical_def_ranges(ranges)
+        
+        ranges_str = "["
+        ranges_str = f"{ranges_str}[{ranges[0][0]}, {ranges[0][1]})"
+        for idx in range(1, len(ranges)):
+            ranges_str = f"{ranges_str}, [{ranges[idx][0]}, {ranges[idx][1]})"
+        ranges_str += "]"
+        return ranges_str  
 
+# A class for counting the number of good and bad samples/population in the column
+class GoodBadCounter:
+    # A method to get the number of sample bad, sample indeterminate, sample good, population good, and population bad
+    @staticmethod
+    def get_statistics(dframe, good_bad_def):
+        new_dframe, sample_bad_count = GoodBadCounter.count_sample_bad(
+            dframe, good_bad_def["bad"])
+        if "indeterminate" in good_bad_def:
+            sample_indeterminate_count = GoodBadCounter.count_sample_indeterminate(
+                new_dframe, good_bad_def["indeterminate"])
+        else:
+            sample_indeterminate_count = 0
+        sample_good_count = GoodBadCounter.count_sample_good(
+            dframe, sample_bad_count, sample_indeterminate_count)
+        good_weight = good_bad_def["good"]["weight"]
+        bad_weight = good_bad_def["bad"]["weight"]
+        population_good_count = GoodBadCounter.get_population_good(
+            sample_good_count, good_weight)
+        population_bad_count = GoodBadCounter.get_population_bad(
+            sample_bad_count, bad_weight)
+        return (sample_bad_count, sample_indeterminate_count, sample_good_count, good_weight, bad_weight, population_good_count, population_bad_count)
 
+    # A method to count the number of sample bad
+    @staticmethod
+    def count_sample_bad(dframe, bad_defs):
+        bad_count = 0
+        if "numerical" in bad_defs:
+            for bad_numeric_def in bad_defs["numerical"]:
+                # count number of rows if dframe row is in bad_numeric_def range, and add to bad_count
+                for a_range in bad_numeric_def["ranges"]:
+                    bad_count += len(dframe[(dframe[bad_numeric_def["column"]] >= a_range[0]) & (
+                        dframe[bad_numeric_def["column"]] < a_range[1])])
+                    # delete rows if dframe row is in bad_numeric_def range
+                    dframe = dframe.drop(dframe[(dframe[bad_numeric_def["column"]] >= a_range[0]) & (
+                        dframe[bad_numeric_def["column"]] < a_range[1])].index)
+
+        if "categorical" in bad_defs:
+            for bad_categoric_def in bad_defs["categorical"]:
+                # count number of rows if dframe row is having any one of the bad_categoric_def elements value
+                for element in bad_categoric_def["elements"]:
+                    bad_count += len(dframe[(dframe[bad_categoric_def["column"]] == element)])
+                    # delete rows if dframe row has value 'element'
+                    dframe = dframe.drop(
+                        dframe[(dframe[bad_categoric_def["column"]] == element)].index)
+
+        return (dframe, bad_count)
+
+    # A method to count the number of sample indeterminate
+    @staticmethod
+    def count_sample_indeterminate(dframe, indeterminate_defs):
+        indeterminate_count = 0
+        if "numerical" in indeterminate_defs:
+            for indeterminate_numeric_def in indeterminate_defs["numerical"]:
+                # count number of rows if dframe row is in indeterminate_numeric_def range, and add to indeterminate_count
+                for a_range in indeterminate_numeric_def["ranges"]:
+                    indeterminate_count += len(dframe[(dframe[indeterminate_numeric_def["column"]] >= a_range[0]) & (
+                        dframe[indeterminate_numeric_def["column"]] < a_range[1])])
+                    # delete rows if dframe row is in indeterminate_numeric_def range
+                    dframe = dframe.drop(dframe[(dframe[indeterminate_numeric_def["column"]] >= a_range[0]) & (
+                        dframe[indeterminate_numeric_def["column"]] < a_range[1])].index)
+
+        if "categorical" in indeterminate_defs:
+            for indeterminate_categoric_def in indeterminate_defs["categorical"]:
+                # count number of rows if dframe row is having any one of the indeterminate_categoric_def elements value
+                for element in indeterminate_categoric_def["elements"]:
+                    indeterminate_count += len(
+                        dframe[(dframe[indeterminate_categoric_def["column"]] == element)])
+                    # delete rows if dframe row has value 'element'
+                    dframe = dframe.drop(
+                        dframe[(dframe[indeterminate_categoric_def["column"]] == element)].index)
+
+        return indeterminate_count
+
+    # A method to count the number of sample good
+    @staticmethod
+    def count_sample_good(dframe, sample_bad_count, sample_indeterminate_count):
+        return (len(dframe) - sample_bad_count - sample_indeterminate_count)
+
+    # A method to count the number of population good
+    @staticmethod
+    def get_population_good(sample_good_count, good_weight):
+        return sample_good_count * good_weight
+
+    # A method to count the number of population bad
+    @staticmethod
+    def get_population_bad(sample_bad_count, bad_weight):
+        return sample_bad_count * bad_weight
 
 df = pd.read_excel("tests\\test_input_datasets\\credit_risk_dataset_generated.xlsx")
-var_to_show = 'person_age'
-def update_summary_statistics_table(var_to_show):
-    bins_settings = {'variable': [{'column': 'person_age', 'type': 'numerical', 'bins': 'none'}, {'column': 'loan_status', 'type': 'categorical', 'bins': 'none'}]}
-    good_bad_def = {'bad': {'numerical': [], 'categorical': [{'column': 'loan_status', 'elements': [1]}], 'weight': 1}, 'indeterminate': {'numerical': [], 'categorical': []}, 'good': {'weight': 1}}
-    stat_df = None
-    for bin_def in bins_settings["variable"]:
-        if bin_def["column"] == var_to_show:
-            stat_calculator = StatCalculator(df=df.copy(), col_bins_settings=bin_def, good_bad_def=good_bad_def)
-            stat_df = stat_calculator.compute_summary_stat_table()
-            break
-    return stat_df
 
-print(update_summary_statistics_table(var_to_show))
+col_df = df.loc[:, ["person_emp_length"]]
+col_bins_settings = {"column": "person_emp_length", "type": "numerical", "bins": {
+                    "algo": "equal frequency",
+                    "method": "num_bins",
+                    "value": 10,
+                }}
+good_bad_def = {'bad': {'numerical': [], 'categorical': [{'column': 'loan_status', 'elements': [1]}], 'weight': 1}, 'indeterminate': {'numerical': [], 'categorical': []}, 'good': {'weight': 1}}
+
+# result = BinningMachine.perform_binning_on_col(col_df, col_bins_settings)
+stat_cal = StatCalculator(df.copy(), col_bins_settings, good_bad_def)
+stat_df = stat_cal.compute_summary_stat_table()
+
+print(stat_df)
