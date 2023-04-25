@@ -1,38 +1,12 @@
-# -------------------------------------------------------------------------------- NOTEBOOK-CELL: MARKDOWN
-# # Create Automated Binning Summary Tables
-
-# -------------------------------------------------------------------------------- NOTEBOOK-CELL: CODE
-"""
-    Current Approach:
-    1. when good/bad/bad_pct/total_bad/total_good == 0 return None for good%, bad%, woe
-    2. when woe == None, mc = 0
-    3. round to 4 d.p. for absolute values, to 2 d.p. for % values
-    4. odds = good/bad
-    5. add info_odd
-    6. rearranged columns order
-"""
-
-# -------------------------------------------------------------------------------- NOTEBOOK-CELL: MARKDOWN
-# ## 0. Import Libraries
-
-# -------------------------------------------------------------------------------- NOTEBOOK-CELL: CODE
 # -*- coding: utf-8 -*-
 import dataiku
 import pandas as pd, numpy as np
 from dataiku import pandasutils as pdu
 
-# -------------------------------------------------------------------------------- NOTEBOOK-CELL: MARKDOWN
-# ## 1. Read recipe inputs
-
-# -------------------------------------------------------------------------------- NOTEBOOK-CELL: CODE
 # Read recipe inputs
-credit_risk_dataset_prepared = dataiku.Dataset("credit_risk_dataset_generated")
-df = credit_risk_dataset_prepared.get_dataframe()
+binned_combined_dataset = dataiku.Dataset("binned_combined_dataset")
+df = binned_combined_dataset.get_dataframe()
 
-# -------------------------------------------------------------------------------- NOTEBOOK-CELL: MARKDOWN
-# ## 2. Utils - Functions
-
-# -------------------------------------------------------------------------------- NOTEBOOK-CELL: CODE
 def compute_summary_tables(var_df, total_num_records):
     """
     Input: 
@@ -265,54 +239,20 @@ def compute_mc(good_pct, bad_pct, woe):
         return 0
     else:
         return (good_pct - bad_pct)*woe
+    
 
-# -------------------------------------------------------------------------------- NOTEBOOK-CELL: CODE
-# def round_to_4_dp(li):
-#     """
-#     Input:
-#      - A list ["Bin", "Good", "Bad", "Odds", "Total", "Good%", "Bad%", "Total%", "Info_Odds", "WOE", "MC"]
-#     Output: A list rounded all numerical values to 4 decimal places
-#     """
-#     # initialize a list for storing rounded values
-#     new_li = list()
-#     # loop through all elements in the list
-#     for idx in range(len(li)):
-#         if idx in [0,1,2,4]:
-#             new_li.append(li[idx])
-#             print(new_li)
-#         elif idx in [3,8,9,10]:
-#             if li[idx] != None:
-#                 if float(li[idx]) < 0.0001:
-#                     new_li.append('{:.4f}'.format(0))
-#                     print(new_li)
-#                 else:
-#                     new_li.append('{:.4f}'.format(round(li[idx], 2)))
-#                     print(new_li)
-#             else:
-#                 new_li.append(li[idx])
-#                 print(new_li)
-#         else:
-#             if li[idx] != None:
-#                 new_li.append('{:.2f}'.format(round(li[idx], 2)))
-#                 print(new_li)
-#             else:
-#                 new_li.append(li[idx])
-#                 print(new_li)
-        
-# #    print(new_li)
-#     # return the rounded list
-#     return new_li
-
-# -------------------------------------------------------------------------------- NOTEBOOK-CELL: MARKDOWN
-# ## 3. Compute summary tables and generate outputs
-
-# -------------------------------------------------------------------------------- NOTEBOOK-CELL: CODE
-"""---------------------------main()--------------------------"""
 
 # Get all predictor column names in the input dataset & Store in a list
 var_name_list = list(df.columns)
-var_name_list.remove('loan_status')
-var_name_list.remove('paid_past_due')
+
+# Only get binned_column names
+idx_to_remove = list()
+for idx in range(len(var_name_list)):
+    if "_binned" not in var_name_list[idx]:
+        idx_to_remove.append(idx)
+        
+for idx in sorted(idx_to_remove, reverse=True):
+    del var_name_list[idx]
 
 # Compute number of rows in the whole dataset and save the value in a variable
 total_num_records = df.shape[0]
@@ -321,16 +261,13 @@ total_num_records = df.shape[0]
 for var_name in var_name_list:
 
     # Create a DataFrame with 2 columns (predictor variable & loan_status)
-    var_df = df[[var_name, 'loan_status']]
+    var_df = df[[var_name, 'accept_reject_status']]
 
     # Call compute_summary_table(var_df : pd.DataFrame, total_num_records : Integer) and save it to a variable
     var_summary_df = compute_summary_tables(var_df, total_num_records)
 
     # Create a dataiku dataset using the name (predictor variable column name) + "_ab_stats"
-    dataiku_ds = dataiku.Dataset(var_name + "_ab_stats")
-    
-    # Format
-#     dataiku_ds.format("%.4f", MC)
+    dataiku_ds = dataiku.Dataset("binned_combined_" + var_name + "_ar_stat")
 
     # Write recipe output by using the saved pd.DataFrame as argument in the .write_with_schema method
     dataiku_ds.write_with_schema(var_summary_df)
