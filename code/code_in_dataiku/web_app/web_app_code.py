@@ -2716,7 +2716,6 @@ interactive_binning_page_layout = html.Div([
                                        style={"lineHeight": "99%", "fontSize": 14}),
                             ], id="numeric_adjust_cutpoints_panel_submit_div"),
                         ], id="numeric_adjust_cutpoints_panel_preview_changes_div", style={"display": "none"}),
-                        html.P(id="test_ranges"),
                     ],
                     style={
                         "marginTop": 13,
@@ -4046,11 +4045,22 @@ def save_temp_chart_info(temp_binned_col_data, good_bad_def_data):
     woe_list = get_list_of_woe(
         temp_df, 'binned_col', unique_bins, good_bad_def)
 
+    combined_info = tuple(zip(unique_bins, total_count_list, bad_count_list, woe_list))
+
+    sorted_combined_info = sorted(combined_info, key=lambda x: x[3], reverse=True)
+
+    sorted_unique_bins, sorted_total_count_list, sorted_bad_count_list, sorted_woe_list = zip(*sorted_combined_info)
+
+    sorted_unique_bins = list(sorted_unique_bins)
+    sorted_total_count_list = list(sorted_total_count_list)
+    sorted_bad_count_list = list(sorted_bad_count_list)
+    sorted_woe_list = list(sorted_woe_list)
+    
     temp_chart_info_dict = {
-        "unique_bins": unique_bins,
-        "total_count_list": total_count_list,
-        "bad_count_list": bad_count_list,
-        "woe_list": woe_list,
+        "unique_bins": sorted_unique_bins,
+        "total_count_list": sorted_total_count_list,
+        "bad_count_list": sorted_bad_count_list,
+        "woe_list": sorted_woe_list,
     }
 
     return json.dumps(temp_chart_info_dict)
@@ -4485,7 +4495,6 @@ when user clicks on the 'Adjust Cutpoints' button
     [
         Output("numeric_adjust_cutpoints_panel_changes_div", "children"),
         Output("numeric_adjust_cutpoints_panel_submit_div", "style"),
-        Output("test_ranges", "children"),
     ],
     Input("numeric_adjust_cutpoints_panel_adjust_cutpoints_button", "n_clicks"),
     [
@@ -4506,7 +4515,7 @@ def update_numeric_create_new_bin_preview_changes_info(n_clicks, new_name, temp_
     
     if isValid == False:
         style = {"display": "none"}
-        return [generate_bin_changes_div_children(old_bin_list=-5, new_bin_list=-5, dtype="numerical"), style, "Oh"]
+        return [generate_bin_changes_div_children(old_bin_list=-5, new_bin_list=-5, dtype="numerical"), style]
     
     ranges = decode_ib_ranges(ranges)
     _, old_bin_list, new_bin_list = InteractiveBinningMachine.get_numeric_adjust_cutpoints(selected_bin_name=click_data["points"][0]["x"], new_bin_name=new_name, new_bin_ranges=ranges, temp_col_bins_settings=col_bin_settings)
@@ -4515,7 +4524,7 @@ def update_numeric_create_new_bin_preview_changes_info(n_clicks, new_name, temp_
     if not isinstance(old_bin_list, list) or (not isinstance(new_bin_list, list) and not isinstance(new_bin_list, tuple)):
         style = {"display": "none"}
     
-    return [generate_bin_changes_div_children(old_bin_list=old_bin_list, new_bin_list=new_bin_list, dtype="numerical"), style, str(_)]
+    return [generate_bin_changes_div_children(old_bin_list=old_bin_list, new_bin_list=new_bin_list, dtype="numerical"), style]
 
 
 """

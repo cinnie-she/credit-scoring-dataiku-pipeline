@@ -1,20 +1,20 @@
-if triggered[0]['prop_id'] == "numeric_adjust_cutpoints_panel_submit_button.n_clicks":
-        temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
-        
-        ranges = tuple(zip(numeric_adjust_cutpoints_lower, numeric_adjust_cutpoints_upper))
+unique_bins = ['Bin1', 'Bin2', 'Bin3', 'Bin4']
+total_count_list = [200, 300, 400, 500]
+bad_count_list = [50, 100, 150, 200]
+woe_list = [0.5, 1, 1.5, 2]
 
-        isValid = validate_numerical_bounds(ranges)
-        
-        if isValid == False:
-            raise PreventUpdate
-        else:
-            ranges = decode_ib_ranges(ranges)
-            new_settings, _, __ = InteractiveBinningMachine.get_numeric_adjust_cutpoints(selected_bin_name=click_data["points"][0]["x"], new_bin_name=numeric_adjust_cutpoints_panel_new_bin_name_input, new_bin_ranges=ranges, temp_col_bins_settings=temp_col_bins_settings)
+combined_info = tuple(zip(unique_bins, total_count_list, bad_count_list, woe_list))
 
-        def_li, binned_series = BinningMachine.perform_binning_on_col(
-        df.loc[:, [new_settings["column"]]], new_settings)
-        temp_df = df.copy()
-        temp_df['binned_col'] = binned_series.values
-        
-        return [json.dumps(new_settings), json.dumps(temp_df.to_dict())]
-    
+sorted_combined_info = sorted(combined_info, key=lambda x: x[3], reverse=True)
+
+sorted_unique_bins, sorted_total_count_list, sorted_bad_count_list, sorted_woe_list = zip(*sorted_combined_info)
+
+sorted_unique_bins = list(sorted_unique_bins)
+sorted_total_count_list = list(sorted_total_count_list)
+sorted_bad_count_list = list(sorted_bad_count_list)
+sorted_woe_list = list(sorted_woe_list)
+
+print(sorted_unique_bins)
+print(sorted_total_count_list)
+print(sorted_bad_count_list)
+print(sorted_woe_list)
