@@ -2887,15 +2887,19 @@ preview_download_page_layout = html.Div(
         html.Div(style={"height": 10}),
         html.P("Summary Statistics Table", style={"textDecoration": "underline"}),
         html.Div([DataTable(df=pd.DataFrame({"Loading...": ["","","","","",""], "   ":["","","","","",""], "  ":["","","","","",""], " ":["","","","","",""], "":["","","","","",""]}), width=100)], id="preview_summary_stat_table_div"),
+        html.Div([], style={"height": 20}),
         html.P("Mixed Chart", style={"textDecoration": "underline"}),
-        
+        dcc.Graph(
+            figure=generate_mixed_chart_fig(),
+            id="preview_mixed_chart",
+        ),
         SectionHeading("III. Download Bins Settings"),
         SaveButton(
             title="Download Bins Settings",
-            marginLeft=15,
             id="download_bin_settings_button",
         ),
         dcc.Download(id="download_json"),
+        html.Div([], style={"height": 20}),
         html.P("After download the bins_settings.json file, you could replace it with the one in the Dataiku flow, re-run the flow, and bin the dataset there. You could see the same statistical table and mixed chart in the dashboard too."),
         html.Div(style={"height": 100}),
     ]
@@ -5310,7 +5314,10 @@ update summary statistics table when user changes the
 variable to preview from dropdown
 """
 @app.callback(
-    Output("preview_summary_stat_table_div", "children"),
+    [
+        Output("preview_summary_stat_table_div", "children"),
+        Output("preview_mixed_chart", "figure"),
+    ],
     Input("preview_page_select_var_dropdown", "value"),
     [
         State("bins_settings", "data"),
@@ -5329,7 +5336,17 @@ def update_preview_stat_table(var_to_preview, bins_settings_data, good_bad_def_d
     
     stat_df = StatCalculator.compute_summary_stat_table(df.copy(), col_bins_settings, good_bad_def)
     
-    return [DataTable(stat_df, width=70)]
+    # Prepare mixed chart
+    sorted_df = stat_df[stat_df['Bin']!='Total'].sort_values('WOE', ascending=False).loc[:, ['Bin', 'Total', 'Bad', 'WOE']]
+    result = list(sorted_df.to_records(index=False))
+    bins, total, bad, woe = zip(*result)
+    
+    unique_bins = list(bins)
+    total_count_list = list(total)
+    bad_count_list = list(bad)
+    woe_list = list(woe)
+    
+    return [[DataTable(stat_df, width=70)], generate_mixed_chart_fig(unique_bins=unique_bins, total_count_list=total_count_list, bad_count_list=bad_count_list, woe_list=woe_list)]
     
 ###########################################################################
 ############################ Debugging Purpose ############################
