@@ -835,10 +835,11 @@ def generate_mixed_chart_fig(
 
     fig.update_layout(
         legend=dict(
-            yanchor="top",
-            y=0.99,
-            xanchor="left",
-            x=0.01,
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
         ),
         margin=go.layout.Margin(l=0, r=0, b=0, t=0),
     )
@@ -2873,15 +2874,15 @@ preview_download_page_layout = html.Div(
         NavBar(),
         Heading("Preview & Download Bins Settings"),
         SectionHeading("I. Preview Output Dataset"),
-        html.P("Note: It may take some time to perform binning on all columns, please wait patiently."),
-        html.Div(id="preview_datatable_div"),
+        html.P("Note: It may take some time to perform binning on all columns, please wait patiently.", style={"color": "blue"}),
+        html.Div([DataTable(df=pd.DataFrame({"Loading...": ["","","","","",""], "   ":["","","","","",""], "  ":["","","","","",""], " ":["","","","","",""], "":["","","","","",""]}), width=100)], id="preview_datatable_div"),
         SectionHeading("II. Preview Bins' Performance"),
         html.Div([
             html.P("Select variable to preview: ", style={}),
             dcc.Dropdown(
                 clearable=False,
                 searchable=False,
-                style={"width": 150, "paddingLeft": 15},
+                style={"width": 200, "paddingLeft": 15},
                 id="preview_page_select_var_dropdown",
             ),
         ], style={"display": "flex", "alignItems": "center"}),
