@@ -1287,7 +1287,12 @@ def generate_bin_changes_div_children(old_bin_list=[], new_bin_list=[], dtype=No
         children.append(html.P("Old Bin(s):", style={"fontWeight": "bold", "fontSize": 14}))
         children.append(html.Div(old_element_list))
     
-    if len(new_bin_list) != 0:
+    if isinstance(new_bin_list, tuple):
+        new_bin_list = new_bin_list[1]
+        children.append(html.P("New Bin:", style={"fontWeight": "bold", "fontSize": 14}))
+        new_element_list = generate_categoric_new_div_children(new_bin_list, dtype=dtype)
+        children.append(html.Div(new_element_list))
+    elif len(new_bin_list) != 0:
         children.append(html.P("Will be changed to:", style={"fontWeight": "bold", "fontSize": 14}))
         new_element_list = generate_categoric_new_div_children(new_bin_list, dtype=dtype)
         children.append(html.Div(new_element_list))
@@ -1533,23 +1538,90 @@ class InteractiveBinningMachine:
         return (temp_col_bins_settings, [], new_bin_list)
         
     @staticmethod
-    def numeric_create_new_bin(new_bin_name, new_bin_ranges, temp_col_bins_settings):
+    def get_numeric_create_new_bin(new_bin_name, new_bin_ranges, temp_col_bins_settings):
         if len(new_bin_ranges) == 0:
             return (temp_col_bins_settings, -6, -6) 
-        
+
         if InteractiveBinningMachine.validate_new_name(new_bin_name, temp_col_bins_settings) == False:
             return (temp_col_bins_settings, -1, -1)
-        
+
         old_bin_list = list()
         new_bin_list = list()
-        
+
         bin_to_remove_idx_li = list()
-        
         # for all bins, remove overlapped ranges with new_bin_ranges
-        for idx in range(len(temp_col_bins_settings["bins"])):
-            pass
+        for bin_def_idx in range(len(temp_col_bins_settings["bins"])):
+            with_changes = False
+            for new_r in new_bin_ranges:
+                r_to_remove_idx_li = list()
+                r_to_append_li = list()
+                for r_idx in range(len(temp_col_bins_settings["bins"][bin_def_idx]["ranges"])):
+                    r = temp_col_bins_settings["bins"][bin_def_idx]["ranges"][r_idx]
+                    if new_r[1] <= r[0]:
+                        continue
+                    elif new_r[0] <= r[0] and new_r[1] > r[0] and new_r[1] < r[1]:
+                        if with_changes == False:
+                            old_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
+                            with_changes = True
+                        # then new def = [new_r[1], r[1]]
+                        temp_col_bins_settings["bins"][bin_def_idx]["ranges"][r_idx] = [new_r[1], r[1]]
+                    elif new_r[0] <= r[0] and new_r[1] > r[0] and new_r[1] >= r[1]:
+                        if with_changes == False:
+                            old_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
+                            with_changes = True
+                        # remove the def r
+                        r_to_remove_idx_li.append(r_idx)
+                    elif new_r[0] > r[0] and new_r[1] < r[1]:
+                        if with_changes == False:
+                            old_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
+                            with_changes = True
+                        # split to two = [r[0], new_r[0]] & [new_r[1], r[1]]
+                        temp_col_bins_settings["bins"][bin_def_idx]["ranges"][r_idx] = [r[0], new_r[0]]
+                        r_to_append_li.append([new_r[1], r[1]])
+                    elif new_r[0] > r[0] and new_r[0] < r[1] and new_r[1] >= r[1]:
+                        if with_changes == False:
+                            old_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
+                            with_changes = True
+                        # new def = [r[0], new_r[0]]
+                        temp_col_bins_settings["bins"][bin_def_idx]["ranges"][r_idx] = [r[0], new_r[0]]
+                    elif new_r[0] >= r[1]:
+                        continue
+
+                for idx in sorted(r_to_remove_idx_li, reverse=True):
+                    del temp_col_bins_settings["bins"][bin_def_idx]["ranges"][idx]
+
+                for r_to_append in r_to_append_li:
+                    temp_col_bins_settings["bins"][bin_def_idx]["ranges"].append(r_to_append)
+
+            if len(temp_col_bins_settings["bins"][bin_def_idx]["ranges"]) == 0:
+                bin_to_remove_idx_li.append(bin_def_idx)
+            elif with_changes == True:
+                new_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
+
+        # Remove bin_def if it has empty def range list
+        for idx in sorted(bin_to_remove_idx_li, reverse=True):
+            del temp_col_bins_settings["bins"][idx]
+
+        if new_bin_name == "" or new_bin_name == None:
+            new_bin_name = get_str_from_ranges(new_bin_ranges)
+
+        if InteractiveBinningMachine.validate_new_name(new_bin_name, temp_col_bins_settings) == False:
+            return (temp_col_bins_settings, -1, -1)
+
+        # Add new bin to def
+        new_bin = {
+            "name": new_bin_name,
+            "ranges": new_bin_ranges,
+        }
+
+        temp_col_bins_settings["bins"].append(new_bin)
+
+        new_bin_list.append([new_bin_name, get_str_from_ranges(new_bin_ranges)])
+
+        if len(old_bin_list) == 0:
+            return (temp_col_bins_settings, old_bin_list, ("", new_bin_list))
         
-        pass
+        return (temp_col_bins_settings, old_bin_list, new_bin_list)
      
     @staticmethod
     def numeric_rename_bin(selected_bin_name, new_bin_name, temp_col_bins_settings):
@@ -2451,7 +2523,6 @@ interactive_binning_page_layout = html.Div([
                         html.Div(style={"height": 13}),
                         html.Div([
                             html.Div([], id="numeric_create_new_bin_panel_changes_div"),
-                            html.P(id="test_ranges"),
                             html.Div([
                                 SaveButton("Submit", inline=True, id="numeric_create_new_bin_panel_submit_button"),
                                 SaveButton("Hide Details", inline=True,
@@ -2527,6 +2598,7 @@ interactive_binning_page_layout = html.Div([
                             html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
                                    style={"lineHeight": "99%", "fontSize": 14}),
                         ], id="numeric_adjust_cutpoints_panel_preview_changes_div", style={"display": "none"}),
+                        html.P(id="test_ranges"),
                     ],
                     style={
                         "marginTop": 13,
@@ -3603,7 +3675,8 @@ refresh button in automated binning panel
         Input("categoric_merge_panel_submit_button", "n_clicks"),
         Input("categoric_split_panel_submit_button", "n_clicks"),
         Input("numeric_rename_panel_submit_button", "n_clicks"),
-        Input("numeric_merge_panel_submit_button", "n_clicks")
+        Input("numeric_merge_panel_submit_button", "n_clicks"),
+        Input("numeric_create_new_bin_panel_submit_button", "n_clicks"),
     ],
     [
         State("bins_settings", "data"),
@@ -3627,9 +3700,12 @@ refresh button in automated binning panel
         State("categoric_split_panel_dropdown", "value"),
         State("numeric_rename_panel_new_bin_name_input", "value"),
         State("numeric_merge_panel_new_bin_name_input", "value"),
+        State("numeric_create_new_bin_panel_new_bin_name_input", "value"),
+        State({"index": ALL, "type": "numeric_create_new_bin_lower"}, "value"),
+        State({"index": ALL, "type": "numeric_create_new_bin_upper"}, "value"),
     ],
 )
-def update_temp_bins_settings(var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clicks4, n_clicks5, n_clicks6, n_clicks7, n_clicks8, bins_settings_data, auto_bin_algo, equal_width_method, width, ew_num_bins, equal_freq_method, freq, ef_num_bins, temp_col_bins_settings_data, categoric_create_new_bin_name_input, categoric_create_new_bin_dropdown, categoric_rename_panel_new_bin_name_input, click_data, categoric_add_elements_panel_name_input, categoric_add_elements_panel_dropdown, categoric_merge_panel_new_bin_name_input, selected_data, categoric_split_panel_new_bin_name_input, categoric_split_panel_dropdown, numeric_rename_panel_new_bin_name_input, numeric_merge_panel_new_bin_name_input):
+def update_temp_bins_settings(var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clicks4, n_clicks5, n_clicks6, n_clicks7, n_clicks8, n_clicks9, bins_settings_data, auto_bin_algo, equal_width_method, width, ew_num_bins, equal_freq_method, freq, ef_num_bins, temp_col_bins_settings_data, categoric_create_new_bin_name_input, categoric_create_new_bin_dropdown, categoric_rename_panel_new_bin_name_input, click_data, categoric_add_elements_panel_name_input, categoric_add_elements_panel_dropdown, categoric_merge_panel_new_bin_name_input, selected_data, categoric_split_panel_new_bin_name_input, categoric_split_panel_dropdown, numeric_rename_panel_new_bin_name_input, numeric_merge_panel_new_bin_name_input, numeric_create_new_bin_panel_new_bin_name_input, numeric_create_new_bin_lower, numeric_create_new_bin_upper):
     triggered = dash.callback_context.triggered
     
     if triggered[0]['prop_id'] == "categoric_create_new_bin_submit_button.n_clicks":
@@ -3719,6 +3795,26 @@ def update_temp_bins_settings(var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clic
 
         new_settings, _, __ = InteractiveBinningMachine.numeric_merge_bins(selected_bin_name_li=selected_bin_name_li, new_bin_name=numeric_merge_panel_new_bin_name_input, temp_col_bins_settings=temp_col_bins_settings)
     
+        def_li, binned_series = BinningMachine.perform_binning_on_col(
+        df.loc[:, [new_settings["column"]]], new_settings)
+        temp_df = df.copy()
+        temp_df['binned_col'] = binned_series.values
+        
+        return [json.dumps(new_settings), json.dumps(temp_df.to_dict())]
+    
+    if triggered[0]['prop_id'] == "numeric_create_new_bin_panel_submit_button.n_clicks":
+        temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
+        
+        ranges = tuple(zip(numeric_create_new_bin_lower, numeric_create_new_bin_upper))
+
+        isValid = validate_numerical_bounds(ranges)
+        
+        if isValid == False:
+            raise PreventUpdate
+        else:
+            ranges = decode_ib_ranges(ranges)
+            new_settings, _, __ = InteractiveBinningMachine.get_numeric_create_new_bin(new_bin_name=numeric_create_new_bin_panel_new_bin_name_input, new_bin_ranges=ranges, temp_col_bins_settings=temp_col_bins_settings)
+
         def_li, binned_series = BinningMachine.perform_binning_on_col(
         df.loc[:, [new_settings["column"]]], new_settings)
         temp_df = df.copy()
@@ -4206,18 +4302,16 @@ when user clicks on the 'Create New Bin' button
     [
         Output("numeric_create_new_bin_panel_changes_div", "children"),
         Output("numeric_create_new_bin_panel_submit_div", "style"),
-        Output("test_ranges", "children"),
     ],
     Input("numeric_create_new_bin_panel_create_new_bin_button", "n_clicks"),
     [
         State("numeric_create_new_bin_panel_new_bin_name_input", "value"),
-        State("predictor_var_ib_dropdown", "value"),
         State("temp_col_bins_settings", "data"),
         State({"index": ALL, "type": "numeric_create_new_bin_lower"}, "value"),
         State({"index": ALL, "type": "numeric_create_new_bin_upper"}, "value"),
     ],
 )
-def update_numeric_create_new_bin_preview_changes_info(n_clicks, new_name, var_to_bin, temp_col_bins_settings_data, lower_list, upper_list):
+def update_numeric_create_new_bin_preview_changes_info(n_clicks, new_name, temp_col_bins_settings_data, lower_list, upper_list):
     col_bin_settings = json.loads(temp_col_bins_settings_data)
     
     ranges = tuple(zip(lower_list, upper_list))
@@ -4227,12 +4321,16 @@ def update_numeric_create_new_bin_preview_changes_info(n_clicks, new_name, var_t
     
     if isValid == False:
         style = {"display": "none"}
-        return [generate_bin_changes_div_children(old_bin_list=-5, new_bin_list=-5, dtype="numerical"), style, "not valid"]
+        return [generate_bin_changes_div_children(old_bin_list=-5, new_bin_list=-5, dtype="numerical"), style]
     
     ranges = decode_ib_ranges(ranges)
-    #old_bin_list, new_bin_list = InteractiveBinningMachine.get_categoric_create_new_bin_changes(new_name, bin_element_list, var_to_bin, col_bin_settings)
+    _, old_bin_list, new_bin_list = InteractiveBinningMachine.get_numeric_create_new_bin(new_bin_name=new_name, new_bin_ranges=ranges, temp_col_bins_settings=col_bin_settings)
     
-    return [generate_bin_changes_div_children(old_bin_list=[["0-20", "[[0, 20)]"], ["30-50", "[[30, 50)]"]], new_bin_list=[["0-50", "[[0, 50)]"]], dtype="numerical"), {}, str(ranges)]
+    style = {}
+    if not isinstance(old_bin_list, list) or (not isinstance(new_bin_list, list) and not isinstance(new_bin_list, tuple)):
+        style = {"display": "none"}
+    
+    return [generate_bin_changes_div_children(old_bin_list=old_bin_list, new_bin_list=new_bin_list, dtype="numerical"), style]
 
 
 """
@@ -4241,7 +4339,10 @@ Update numeric adjust cutpoints preview changes info
 when user clicks on the 'Adjust Cutpoints' button
 """
 @app.callback(
-    Output("numeric_adjust_cutpoints_panel_changes_div", "children"),
+    [
+        Output("numeric_adjust_cutpoints_panel_changes_div", "children"),
+        Output("test_ranges", "children"),
+    ],
     Input("numeric_adjust_cutpoints_panel_adjust_cutpoints_button", "n_clicks"),
     [
         State("numeric_adjust_cutpoints_panel_new_bin_name_input", "value"),
@@ -4259,7 +4360,7 @@ def update_numeric_create_new_bin_preview_changes_info(n_clicks, new_name, var_t
     
     #old_bin_list, new_bin_list = InteractiveBinningMachine.get_categoric_create_new_bin_changes(new_name, bin_element_list, var_to_bin, col_bin_settings)
     
-    return generate_bin_changes_div_children(old_bin_list=[["0-20", "[[0, 20)]"], ["30-50", "[[30, 50)]"]], new_bin_list=[["0-50", "[[0, 50)]"]], dtype="numerical")
+    return [generate_bin_changes_div_children(old_bin_list=[["0-20", "[[0, 20)]"], ["30-50", "[[30, 50)]"]], new_bin_list=[["0-50", "[[0, 50)]"]], dtype="numerical"), str("")]
 
 
 """
@@ -4545,10 +4646,11 @@ when user clicks on the 'Adjust Cutpoints' button
     [
         Input("numeric_create_new_bin_panel_create_new_bin_button", "n_clicks"),
         Input("numeric_create_new_bin_hide_details_button", "n_clicks"),
+        Input("numeric_create_new_bin_panel_submit_button", "n_clicks"),
     ],
     prevent_initial_call=True,
 )
-def show_categoric_split_preview_changes_div(n_clicks, n_clicks2):
+def show_categoric_split_preview_changes_div(n_clicks, n_clicks2, n_clicks3):
     triggered = dash.callback_context.triggered
 
     if triggered[0]['prop_id'] == "numeric_create_new_bin_panel_create_new_bin_button.n_clicks":
@@ -4748,6 +4850,7 @@ Add/Remove ranges from numerical create new bin control panel
     [
         Input("numeric_create_new_bin_panel_add_button", "n_clicks"),
         Input("numeric_create_new_bin_panel_remove_button", "n_clicks"),
+        Input("numeric_create_new_bin_panel_submit_button", "n_clicks"),
     ],
     [
         State({"index": ALL, "type": "numeric_create_new_bin_lower"}, "value"),
@@ -4755,8 +4858,12 @@ Add/Remove ranges from numerical create new bin control panel
         State({"index": ALL, "type": "numeric_create_new_bin_checkbox"}, "value"),
     ],
 )
-def edit_numeric_create_new_bin_panel_ranges(add_clicks, remove_clicks, lower_list, upper_list, checkbox_list):
+def edit_numeric_create_new_bin_panel_ranges(add_clicks, remove_clicks, submit_clicks, lower_list, upper_list, checkbox_list):
     triggered = [t["prop_id"] for t in dash.callback_context.triggered]
+    submitting = len([i for i in triggered if i ==
+                 "numeric_create_new_bin_panel_submit_button.n_clicks"])
+    if submitting != 0:
+        return []
     adding = len([i for i in triggered if i ==
                  "numeric_create_new_bin_panel_add_button.n_clicks"])
     removing = len([i for i in triggered if i ==
@@ -4900,6 +5007,18 @@ Remove numeric merge bin panel input when submit button is clicked
 )
 def clear_numeric_merge_bin_panel_input(n_clicks):
     return ""
+
+"""
+Interactive Binning Page:
+Remove numeric create new bin panel input when submit button is clicked
+"""
+@app.callback(
+    Output("numeric_create_new_bin_panel_new_bin_name_input", "value"),
+    Input("numeric_create_new_bin_panel_submit_button", "n_clicks"),
+)
+def clear_numeric_merge_bin_panel_input(n_clicks):
+    return ""
+
 
 """
 Interactive Binning Page:
