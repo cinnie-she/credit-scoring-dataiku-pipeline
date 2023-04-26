@@ -505,7 +505,7 @@ class GoodBadCounter:
                     # delete rows if dframe row has value 'element'
                     dframe = dframe.drop(
                         dframe[(dframe[bad_categoric_def["column"]] == element)].index)
-
+                    
         return (dframe, bad_count)
 
     # A method to count the number of sample indeterminate
@@ -531,7 +531,7 @@ class GoodBadCounter:
                     # delete rows if dframe row has value 'element'
                     dframe = dframe.drop(
                         dframe[(dframe[indeterminate_categoric_def["column"]] == element)].index)
-
+                    
         return indeterminate_count
 
     # A method to count the number of sample good
@@ -554,8 +554,6 @@ class GoodBadCounter:
 Interactive Binning Page
 """
 # A class to calculate statistical values for displaying the mixed chart & statistical tables
-
-
 class StatCalculator:
     def __init__(self, df, col_bins_settings, good_bad_def) -> None:
         # for binning & good bad calculation, need whole df (OR only columns to be binned & columns involved in good bad def)
@@ -633,7 +631,7 @@ class StatCalculator:
 
         for col in ['Good%', 'Bad%', 'Total%']:
             var_summary_df[col] = var_summary_df[col].apply(
-                lambda x: round(x, 4) if (x != None) else x)
+                lambda x: round(x, 2) if (x != None) else x)
 
         return var_summary_df
 
@@ -1069,6 +1067,8 @@ class BinningMachine:
         def_li = list()
         for r in bin_ranges:
             def_li.append({"name": get_str_from_ranges([[r[0], r[1]]]), "ranges": [[r[0], r[1]]]})
+        
+        _, binned_result_series = BinningMachine.perform_numerical_custom_binning(col_df, def_li)
         
         return (def_li, binned_result_series)
 
