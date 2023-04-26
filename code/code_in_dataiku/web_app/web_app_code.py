@@ -501,11 +501,12 @@ class GoodBadCounter:
             for bad_categoric_def in bad_defs["categorical"]:
                 # count number of rows if dframe row is having any one of the bad_categoric_def elements value
                 for element in bad_categoric_def["elements"]:
-                    bad_count += len(dframe[(dframe[bad_categoric_def["column"]] == element)])
+                    bad_count += len(
+                        dframe[(dframe[bad_categoric_def["column"]] == element)])
                     # delete rows if dframe row has value 'element'
                     dframe = dframe.drop(
                         dframe[(dframe[bad_categoric_def["column"]] == element)].index)
-                    
+
         return (dframe, bad_count)
 
     # A method to count the number of sample indeterminate
@@ -531,7 +532,7 @@ class GoodBadCounter:
                     # delete rows if dframe row has value 'element'
                     dframe = dframe.drop(
                         dframe[(dframe[indeterminate_categoric_def["column"]] == element)].index)
-                    
+
         return indeterminate_count
 
     # A method to count the number of sample good
@@ -554,6 +555,8 @@ class GoodBadCounter:
 Interactive Binning Page
 """
 # A class to calculate statistical values for displaying the mixed chart & statistical tables
+
+
 class StatCalculator:
     # Output - a dataframe representing the summary statistics table of the column
     @staticmethod
@@ -597,7 +600,7 @@ class StatCalculator:
                 bin_df = df.loc[df.iloc[:, 0] == bin_name]
             # Call compute_bin_stats(var_df : pd.DataFrame, total_num_records : Integer, bin_name : String) and save as bin_stats_list
             bin_stats_list = StatCalculator.__compute_bin_stats__(good_bad_def,
-                bin_df, bin_name, total_good_count, total_bad_count)
+                                                                  bin_df, bin_name, total_good_count, total_bad_count)
             # Add an element in the dictionary, with bin_name as the key, and bin_stats_list as the value
             summary_dict[bin_name] = bin_stats_list
 
@@ -655,7 +658,8 @@ class StatCalculator:
         mc = StatCalculator.compute_mc(good_pct, bad_pct, woe)
 
         # Append all statistics to the bin_stats_list in order
-        bin_stats_row = [bin_name, good, bad, odds, total, good_pct *100 if good_pct != None else None, bad_pct*100 if bad_pct != None else None, total_pct*100 if total_pct != None else None, info_odds, woe, mc]
+        bin_stats_row = [bin_name, good, bad, odds, total, good_pct * 100 if good_pct != None else None, bad_pct *
+                         100 if bad_pct != None else None, total_pct*100 if total_pct != None else None, info_odds, woe, mc]
         bin_stats_list.extend(bin_stats_row)
 
         # Return list
@@ -852,19 +856,19 @@ def generate_mixed_chart_fig(
 
 
 def get_str_from_ranges(ranges):
-        if not isinstance(ranges, list):
-            return -1
-        if len(ranges) == 0:
-            return '[]'
-        
-        ranges = GoodBadDefDecoder.sort_numerical_def_ranges(ranges)
-        
-        ranges_str = "["
-        ranges_str = f"{ranges_str}[{ranges[0][0]}, {ranges[0][1]})"
-        for idx in range(1, len(ranges)):
-            ranges_str = f"{ranges_str}, [{ranges[idx][0]}, {ranges[idx][1]})"
-        ranges_str += "]"
-        return ranges_str  
+    if not isinstance(ranges, list):
+        return -1
+    if len(ranges) == 0:
+        return '[]'
+
+    ranges = GoodBadDefDecoder.sort_numerical_def_ranges(ranges)
+
+    ranges_str = "["
+    ranges_str = f"{ranges_str}[{ranges[0][0]}, {ranges[0][1]})"
+    for idx in range(1, len(ranges)):
+        ranges_str = f"{ranges_str}, [{ranges[idx][0]}, {ranges[idx][1]})"
+    ranges_str += "]"
+    return ranges_str
 
 
 # A class for performing binning based on bins settings
@@ -905,11 +909,11 @@ class BinningMachine:
                 if val >= bin_range[0] and val < bin_range[1]:
                     binned_result.append(f"[[{bin_range[0]}, {bin_range[1]})]")
                     break
-        
+
         def_li = list()
         for r in bin_ranges:
             def_li.append({"name": get_str_from_ranges([r]), "ranges": [r]})
-        
+
         return (def_li, pd.Series(binned_result))
 
     # A method to perform equal width binning based on a specified number of bins
@@ -949,11 +953,11 @@ class BinningMachine:
                 if val >= bin_range[0] and val < bin_range[1]:
                     binned_result.append(f"[[{bin_range[0]}, {bin_range[1]})]")
                     break
-                
+
         def_li = list()
         for r in bin_ranges:
             def_li.append({"name": get_str_from_ranges([r]), "ranges": [r]})
-        
+
         return (def_li, pd.Series(binned_result))
 
     # A method to perform equal frequency binning based on a specified frequency
@@ -1001,15 +1005,18 @@ class BinningMachine:
         for idx in range(len(interval_li)):
             if isinstance(interval_li[idx], pd._libs.interval.Interval):
                 if interval_li[idx].right == max_val:
-                    def_set.add((interval_li[idx].left, interval_li[idx].right+0.0001))
+                    def_set.add(
+                        (interval_li[idx].left, interval_li[idx].right+0.0001))
                 else:
-                    def_set.add((interval_li[idx].left, interval_li[idx].right))
+                    def_set.add(
+                        (interval_li[idx].left, interval_li[idx].right))
         bin_ranges = list(def_set)
-        
+
         def_li = list()
         for r in bin_ranges:
-            def_li.append({"name": get_str_from_ranges([[r[0], r[1]]]), "ranges": [[r[0], r[1]]]})
-        
+            def_li.append({"name": get_str_from_ranges(
+                [[r[0], r[1]]]), "ranges": [[r[0], r[1]]]})
+
         return (def_li, pd.Series(binned_result))
 
     # A method to perform equal-frequency binning based on a specified number of bins
@@ -1034,7 +1041,7 @@ class BinningMachine:
 
         print(f"column_df: {col_df}")
         print(f"interval_li: {interval_li}, len: {len(interval_li)}")
-            
+
         # convert to the format we want
         max_val = float(col_df.max())
         binned_result = list()
@@ -1042,8 +1049,10 @@ class BinningMachine:
             if not isinstance(interval_li[idx], pd._libs.interval.Interval):
                 binned_result.append("Missing")
             else:
-                print(f"interval_li[idx].right: {interval_li[idx].right}, max_val: {max_val}")
-                print(f"interval_li[idx].right: {type(interval_li[idx].right)}, max_val: {type(max_val)}")
+                print(
+                    f"interval_li[idx].right: {interval_li[idx].right}, max_val: {max_val}")
+                print(
+                    f"interval_li[idx].right: {type(interval_li[idx].right)}, max_val: {type(max_val)}")
                 if interval_li[idx].right == max_val:
                     binned_result.append(
                         f"[[{interval_li[idx].left}, {interval_li[idx].right+0.0001})]")
@@ -1055,19 +1064,23 @@ class BinningMachine:
         for idx in range(len(interval_li)):
             if isinstance(interval_li[idx], pd._libs.interval.Interval):
                 if interval_li[idx].right == max_val:
-                    def_set.add((interval_li[idx].left, interval_li[idx].right+0.0001))
+                    def_set.add(
+                        (interval_li[idx].left, interval_li[idx].right+0.0001))
                 else:
-                    def_set.add((interval_li[idx].left, interval_li[idx].right))
+                    def_set.add(
+                        (interval_li[idx].left, interval_li[idx].right))
         bin_ranges = list(def_set)
-        
+
         print(f"bin_ranges: {bin_ranges}, len: {len(bin_ranges)}")
-        
+
         def_li = list()
         for r in bin_ranges:
-            def_li.append({"name": get_str_from_ranges([[r[0], r[1]]]), "ranges": [[r[0], r[1]]]})
-        
-        _, binned_result_series = BinningMachine.perform_numerical_custom_binning(col_df, def_li)
-        
+            def_li.append({"name": get_str_from_ranges(
+                [[r[0], r[1]]]), "ranges": [[r[0], r[1]]]})
+
+        _, binned_result_series = BinningMachine.perform_numerical_custom_binning(
+            col_df, def_li)
+
         return (def_li, binned_result_series)
 
     # A method to perform custom binning for a categorical column
@@ -1142,7 +1155,8 @@ class BinningMachine:
             if col_bins_settings["type"] == "numerical":
                 def_li = list()
                 for bin in unique_bin:
-                    def_li.append({"name": str(bin), "ranges": [[bin, bin+0.0000001]]})
+                    def_li.append(
+                        {"name": str(bin), "ranges": [[bin, bin+0.0000001]]})
                 return BinningMachine.perform_numerical_custom_binning(col_df, def_li)
             else:
                 def_li = list()
@@ -1208,53 +1222,58 @@ class BinningMachine:
 
         return dframe
 
+
 def generate_categoric_old_div_children(old_bin_list=[], dtype=None):
-    if dtype == None: 
+    if dtype == None:
         return []
     if len(old_bin_list) == 0:
         return []
-    
+
     if dtype == "categorical":
         s = "Element"
     else:
         s = "Range"
-    
+
     idx = 1
     old_element_list = list()
     for old_bin in old_bin_list:
         old_element_list.append(
             html.Div([
-                html.Div([html.P("(" + str(idx) + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
-                html.Div([html.P("Old Bin Name: " + old_bin[0]), html.P("Old Bin " + s + "(s): " + old_bin[1])], style={"float": "left", "width": "85%", "fontSize": 14}),
+                html.Div([html.P("(" + str(idx) + ") ")],
+                         style={"width": "10%", "float": "left", "fontSize": 14}),
+                html.Div([html.P("Old Bin Name: " + old_bin[0]), html.P("Old Bin " + s + "(s): " +
+                         old_bin[1])], style={"float": "left", "width": "85%", "fontSize": 14}),
             ])
         )
         idx += 1
-        
+
     return old_element_list
 
 
 def generate_categoric_new_div_children(new_bin_list=[], dtype=None):
-    if dtype == None: 
+    if dtype == None:
         return []
     if len(new_bin_list) == 0:
         return []
-    
+
     if dtype == "categorical":
         s = "Element"
     else:
         s = "Range"
-    
+
     idx = 1
     new_element_list = list()
     for new_bin in new_bin_list:
         new_element_list.append(
             html.Div([
-                html.Div([html.P("(" + str(idx) + ") ")], style={"width": "10%", "float": "left", "fontSize": 14}),
-                html.Div([html.P("New Bin Name: " + new_bin[0]), html.P("New Bin "+ s + "(s): " + new_bin[1])], style={"float": "left", "width": "85%", "fontSize": 14}),
+                html.Div([html.P("(" + str(idx) + ") ")],
+                         style={"width": "10%", "float": "left", "fontSize": 14}),
+                html.Div([html.P("New Bin Name: " + new_bin[0]), html.P("New Bin " + s + "(s): " +
+                         new_bin[1])], style={"float": "left", "width": "85%", "fontSize": 14}),
             ]),
         )
         idx += 1
-    
+
     return new_element_list
 
 
@@ -1273,26 +1292,31 @@ def generate_bin_changes_div_children(old_bin_list=[], new_bin_list=[], dtype=No
         return [html.P("Error: Some of the numerical range(s) for bad definition has lower bound >= upper bound which is invalid.", style={"color": "red", "fontSize": 14})]
     if old_bin_list == -6 or new_bin_list == -6:
         return [html.P("Error: Please indicate the ranges to be included in the new bin. You could add it by clicking the 'Add' button above.", style={"color": "red", "fontSize": 14})]
-    
-        
-    
+
     children = list()
-    
-    children.append(html.P("Preview Changes:", style={"fontWeight": "bold", "textDecoration": "underline"}))
-    
+
+    children.append(html.P("Preview Changes:", style={
+                    "fontWeight": "bold", "textDecoration": "underline"}))
+
     if len(old_bin_list) != 0:
-        old_element_list = generate_categoric_old_div_children(old_bin_list=old_bin_list, dtype=dtype)
-        children.append(html.P("Old Bin(s):", style={"fontWeight": "bold", "fontSize": 14}))
+        old_element_list = generate_categoric_old_div_children(
+            old_bin_list=old_bin_list, dtype=dtype)
+        children.append(html.P("Old Bin(s):", style={
+                        "fontWeight": "bold", "fontSize": 14}))
         children.append(html.Div(old_element_list))
-    
+
     if isinstance(new_bin_list, tuple):
         new_bin_list = new_bin_list[1]
-        children.append(html.P("New Bin:", style={"fontWeight": "bold", "fontSize": 14}))
-        new_element_list = generate_categoric_new_div_children(new_bin_list, dtype=dtype)
+        children.append(
+            html.P("New Bin:", style={"fontWeight": "bold", "fontSize": 14}))
+        new_element_list = generate_categoric_new_div_children(
+            new_bin_list, dtype=dtype)
         children.append(html.Div(new_element_list))
     elif len(new_bin_list) != 0:
-        children.append(html.P("Will be changed to:", style={"fontWeight": "bold", "fontSize": 14}))
-        new_element_list = generate_categoric_new_div_children(new_bin_list, dtype=dtype)
+        children.append(html.P("Will be changed to:", style={
+                        "fontWeight": "bold", "fontSize": 14}))
+        new_element_list = generate_categoric_new_div_children(
+            new_bin_list, dtype=dtype)
         children.append(html.Div(new_element_list))
     else:
         children.append(html.P("No changes."))
@@ -1306,14 +1330,14 @@ def generate_selected_bin_info_div_children(temp_chart_info, temp_col_bins_setti
         points = click_data["points"]
         bin_defs = temp_col_bins_settings["bins"]
         selected_bin_names = set()
-        
+
         for point in points:
             bin_name = point["x"]
             if bin_name in selected_bin_names:
                 continue
             else:
                 selected_bin_names.add(bin_name)
-            
+
             if dtype == "categorical":
                 bin_elements = None
                 for bin_def in bin_defs:
@@ -1324,24 +1348,32 @@ def generate_selected_bin_info_div_children(temp_chart_info, temp_col_bins_setti
                 for bin_def in bin_defs:
                     if bin_def["name"] == bin_name:
                         bin_ranges = bin_def["ranges"]
-                        
+
             bin_idx = point["pointIndex"]
             bin_bad_count = temp_chart_info["bad_count_list"][bin_idx]
-            bin_gd_count = temp_chart_info["total_count_list"][bin_idx] - bin_bad_count
+            bin_gd_count = temp_chart_info["total_count_list"][bin_idx] - \
+                bin_bad_count
             bin_woe = temp_chart_info["woe_list"][bin_idx]
-            children.append(html.P("Bin Name: " + str(bin_name), style={"fontSize": 14}))
-            
+            children.append(
+                html.P("Bin Name: " + str(bin_name), style={"fontSize": 14}))
+
             if dtype == "categorical":
-                children.append(html.P("Bin Element(s): " + str(bin_elements), style={"fontSize": 14}))
+                children.append(html.P("Bin Element(s): " +
+                                str(bin_elements), style={"fontSize": 14}))
             else:
-                children.append(html.P("Bin Range(s): " + get_str_from_ranges(bin_ranges), style={"fontSize": 14}))
-            
-            children.append(html.P("Population Good Count: " + str(bin_gd_count), style={"fontSize": 14}))
-            children.append(html.P("Population Bad Count: " + str(bin_bad_count), style={"fontSize": 14}))
-            children.append(html.P("Bin WOE: " + "{:.4f}".format(bin_woe), style={"fontSize": 14}))
+                children.append(html.P(
+                    "Bin Range(s): " + get_str_from_ranges(bin_ranges), style={"fontSize": 14}))
+
+            children.append(html.P("Population Good Count: " +
+                            str(bin_gd_count), style={"fontSize": 14}))
+            children.append(html.P("Population Bad Count: " +
+                            str(bin_bad_count), style={"fontSize": 14}))
+            children.append(
+                html.P("Bin WOE: " + "{:.4f}".format(bin_woe), style={"fontSize": 14}))
             if len(points) > 1:
-                children.append(html.Hr(style={"marginTop": 8, "marginBottom": 8, "marginLeft": 0, "marginRight": 0}))
-        
+                children.append(html.Hr(
+                    style={"marginTop": 8, "marginBottom": 8, "marginLeft": 0, "marginRight": 0}))
+
         return children
     else:
         return [
@@ -1352,158 +1384,173 @@ def generate_selected_bin_info_div_children(temp_chart_info, temp_col_bins_setti
             html.P("Bin WOE: ", style={"fontSize": 14}),
         ]
 
-    
+
 # A class for handling interactive binning logics
 class InteractiveBinningMachine:
     @staticmethod
     def categoric_create_new_bin(new_bin_name, new_bin_element_li, temp_col_bins_settings):
         if len(new_bin_element_li) == 0:
             return (temp_col_bins_settings, -3, -3)
-        
+
         if InteractiveBinningMachine.validate_new_name(new_bin_name, temp_col_bins_settings) == False:
             return (temp_col_bins_settings, -1, -1)
-        
+
         old_bin_list = list()
         new_bin_list = list()
-        
+
         bin_to_remove_idx_li = list()
         # for all bins, remove overlapped elements with new_bin_element_li
         for idx in range(len(temp_col_bins_settings["bins"])):
-            intersaction = set(temp_col_bins_settings["bins"][idx]["elements"]) & set(new_bin_element_li)
+            intersaction = set(temp_col_bins_settings["bins"][idx]["elements"]) & set(
+                new_bin_element_li)
             if bool(intersaction) == True:
-                old_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(temp_col_bins_settings["bins"][idx]["elements"])])
+                old_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(
+                    temp_col_bins_settings["bins"][idx]["elements"])])
                 intersaction_li = list(intersaction)
-                temp_col_bins_settings["bins"][idx]["elements"] = [x for x in temp_col_bins_settings["bins"][idx]["elements"] if x not in intersaction_li]
-            
+                temp_col_bins_settings["bins"][idx]["elements"] = [
+                    x for x in temp_col_bins_settings["bins"][idx]["elements"] if x not in intersaction_li]
+
                 if len(temp_col_bins_settings["bins"][idx]["elements"]) == 0:
                     bin_to_remove_idx_li.append(idx)
                 else:
-                    new_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(temp_col_bins_settings["bins"][idx]["elements"])])
-        
+                    new_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(
+                        temp_col_bins_settings["bins"][idx]["elements"])])
+
         for idx in sorted(bin_to_remove_idx_li, reverse=True):
             del temp_col_bins_settings["bins"][idx]
-        
+
         # add the new bin to bins settings
         if new_bin_name == "" or new_bin_name == None:
             new_bin_name = str(new_bin_element_li)
-            
+
         if InteractiveBinningMachine.validate_new_name(new_bin_name, temp_col_bins_settings) == False:
             return (temp_col_bins_settings, -1, -1)
-            
+
         new_bin = {
             "name": new_bin_name,
             "elements": new_bin_element_li
         }
-        
+
         new_bin_list.append([new_bin_name, str(new_bin_element_li)])
-        
+
         temp_col_bins_settings["bins"].append(new_bin)
-        
+
         return (temp_col_bins_settings, old_bin_list, new_bin_list)
-        
+
     @staticmethod
     def categoric_add_elements(selected_bin_name, new_bin_name, elements_to_add_li, temp_col_bins_settings):
         if len(elements_to_add_li) == 0:
             return (temp_col_bins_settings, -3, -3)
-        
+
         if InteractiveBinningMachine.validate_new_name(new_bin_name, temp_col_bins_settings, selected_bin_name=selected_bin_name) == False:
             return (temp_col_bins_settings, -1, -1)
-        
+
         old_bin_list = list()
         new_bin_list = list()
-        
+
         bin_to_remove_idx_li = list()
         # for all bins, remove overlapped elements with new_bin_element_li
         for idx in range(len(temp_col_bins_settings["bins"])):
-            intersaction = set(temp_col_bins_settings["bins"][idx]["elements"]) & set(elements_to_add_li)
+            intersaction = set(temp_col_bins_settings["bins"][idx]["elements"]) & set(
+                elements_to_add_li)
             if bool(intersaction) == True:
-                old_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(temp_col_bins_settings["bins"][idx]["elements"])])
+                old_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(
+                    temp_col_bins_settings["bins"][idx]["elements"])])
                 intersaction_li = list(intersaction)
-                temp_col_bins_settings["bins"][idx]["elements"] = [x for x in temp_col_bins_settings["bins"][idx]["elements"] if x not in intersaction_li]
-            
+                temp_col_bins_settings["bins"][idx]["elements"] = [
+                    x for x in temp_col_bins_settings["bins"][idx]["elements"] if x not in intersaction_li]
+
                 if len(temp_col_bins_settings["bins"][idx]["elements"]) == 0:
                     bin_to_remove_idx_li.append(idx)
                 else:
-                    new_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(temp_col_bins_settings["bins"][idx]["elements"])])
-            
+                    new_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(
+                        temp_col_bins_settings["bins"][idx]["elements"])])
+
             elif temp_col_bins_settings["bins"][idx]["name"] == selected_bin_name:
-                old_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(temp_col_bins_settings["bins"][idx]["elements"])])
+                old_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(
+                    temp_col_bins_settings["bins"][idx]["elements"])])
                 # Add elements to the selected bin
                 for element in elements_to_add_li:
-                    temp_col_bins_settings["bins"][idx]["elements"].append(element)
+                    temp_col_bins_settings["bins"][idx]["elements"].append(
+                        element)
                 if new_bin_name != "" and new_bin_name != None:
                     temp_col_bins_settings["bins"][idx]["name"] = new_bin_name
-                new_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(temp_col_bins_settings["bins"][idx]["elements"])])
-        
+                new_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(
+                    temp_col_bins_settings["bins"][idx]["elements"])])
+
         for idx in sorted(bin_to_remove_idx_li, reverse=True):
             del temp_col_bins_settings["bins"][idx]
-          
+
         return (temp_col_bins_settings, old_bin_list, new_bin_list)
-    
+
     @staticmethod
     def categoric_split_bin(selected_bin_name, new_bin_name, elements_to_split_out_li, temp_col_bins_settings):
         if len(elements_to_split_out_li) == 0:
             return (temp_col_bins_settings, -3, -3)
-        
+
         if InteractiveBinningMachine.validate_new_name(new_bin_name, temp_col_bins_settings, selected_bin_name=selected_bin_name) == False:
             return (temp_col_bins_settings, -1, -1)
-        
+
         old_bin_list = list()
         new_bin_list = list()
-        
+
         for idx in range(len(temp_col_bins_settings["bins"])):
             if temp_col_bins_settings["bins"][idx]["name"] == selected_bin_name:
                 if set(temp_col_bins_settings["bins"][idx]["elements"]) == set(elements_to_split_out_li):
                     return (temp_col_bins_settings, -4, -4)
-                old_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(temp_col_bins_settings["bins"][idx]["elements"])])
+                old_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(
+                    temp_col_bins_settings["bins"][idx]["elements"])])
                 # Remove user indicated elements from selected bin
-                temp_col_bins_settings["bins"][idx]["elements"] = [x for x in temp_col_bins_settings["bins"][idx]["elements"] if x not in elements_to_split_out_li]
-                new_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(temp_col_bins_settings["bins"][idx]["elements"])])
+                temp_col_bins_settings["bins"][idx]["elements"] = [
+                    x for x in temp_col_bins_settings["bins"][idx]["elements"] if x not in elements_to_split_out_li]
+                new_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(
+                    temp_col_bins_settings["bins"][idx]["elements"])])
                 break
-            
+
         if new_bin_name == "" or new_bin_name == None:
             new_bin_name = str(elements_to_split_out_li)
-            
+
         new_bin = {
             "name": new_bin_name,
             "elements": elements_to_split_out_li,
         }
-        
+
         temp_col_bins_settings["bins"].append(new_bin)
-        
+
         new_bin_list.append([new_bin_name, str(elements_to_split_out_li)])
-        
+
         return (temp_col_bins_settings, old_bin_list, new_bin_list)
-        
-                
-    
+
     @staticmethod
     def categoric_rename_bin(selected_bin_name, new_bin_name, temp_col_bins_settings):
         if selected_bin_name == new_bin_name:
             return (temp_col_bins_settings, -2, -2)
-        
+
         if InteractiveBinningMachine.validate_new_name(new_bin_name, temp_col_bins_settings) == False:
             return (temp_col_bins_settings, -1, -1)
-        
+
         old_bin_list = list()
         new_bin_list = list()
-        
+
         for idx in range(len(temp_col_bins_settings["bins"])):
             if temp_col_bins_settings["bins"][idx]["name"] == selected_bin_name:
-                old_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(temp_col_bins_settings["bins"][idx]["elements"])])
-                
+                old_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(
+                    temp_col_bins_settings["bins"][idx]["elements"])])
+
                 if new_bin_name == "" or new_bin_name == None:
-                    new_bin_name = str(temp_col_bins_settings["bins"][idx]["elements"])
-                
+                    new_bin_name = str(
+                        temp_col_bins_settings["bins"][idx]["elements"])
+
                 if InteractiveBinningMachine.validate_new_name(new_bin_name, temp_col_bins_settings) == False:
                     return (temp_col_bins_settings, -1, -1)
-                
+
                 temp_col_bins_settings["bins"][idx]["name"] = new_bin_name
-                new_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(temp_col_bins_settings["bins"][idx]["elements"])])
+                new_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], str(
+                    temp_col_bins_settings["bins"][idx]["elements"])])
                 break
-                
+
         return (temp_col_bins_settings, old_bin_list, new_bin_list)
-     
+
     @staticmethod
     def categoric_merge_bins(selected_bin_name_li, new_bin_name, temp_col_bins_settings):
         new_bin_element_list = list()
@@ -1514,31 +1561,31 @@ class InteractiveBinningMachine:
                 for element in temp_col_bins_settings["bins"][idx]["elements"]:
                     new_bin_element_list.append(element)
                 bin_to_remove_idx_li.append(idx)
-        
+
         for idx in sorted(bin_to_remove_idx_li, reverse=True):
             del temp_col_bins_settings["bins"][idx]
-           
+
         if new_bin_name == "" or new_bin_name == None:
             new_bin_name = str(new_bin_element_list)
-            
+
         if InteractiveBinningMachine.validate_new_name(new_bin_name, temp_col_bins_settings) == False:
             return (temp_col_bins_settings, -1, -1)
-        
+
         new_bin = {
             "name": new_bin_name,
             "elements": new_bin_element_list,
         }
-        
+
         temp_col_bins_settings["bins"].append(new_bin)
-        
+
         new_bin_list = [[new_bin_name, str(new_bin_element_list)]]
-        
+
         return (temp_col_bins_settings, [], new_bin_list)
-        
+
     @staticmethod
     def numeric_create_new_bin(new_bin_name, new_bin_ranges, temp_col_bins_settings):
         if len(new_bin_ranges) == 0:
-            return (temp_col_bins_settings, -6, -6) 
+            return (temp_col_bins_settings, -6, -6)
 
         if InteractiveBinningMachine.validate_new_name(new_bin_name, temp_col_bins_settings) == False:
             return (temp_col_bins_settings, -1, -1)
@@ -1559,29 +1606,36 @@ class InteractiveBinningMachine:
                         continue
                     elif new_r[0] <= r[0] and new_r[1] > r[0] and new_r[1] < r[1]:
                         if with_changes == False:
-                            old_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
+                            old_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(
+                                temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
                             with_changes = True
                         # then new def = [new_r[1], r[1]]
-                        temp_col_bins_settings["bins"][bin_def_idx]["ranges"][r_idx] = [new_r[1], r[1]]
+                        temp_col_bins_settings["bins"][bin_def_idx]["ranges"][r_idx] = [
+                            new_r[1], r[1]]
                     elif new_r[0] <= r[0] and new_r[1] > r[0] and new_r[1] >= r[1]:
                         if with_changes == False:
-                            old_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
+                            old_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(
+                                temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
                             with_changes = True
                         # remove the def r
                         r_to_remove_idx_li.append(r_idx)
                     elif new_r[0] > r[0] and new_r[1] < r[1]:
                         if with_changes == False:
-                            old_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
+                            old_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(
+                                temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
                             with_changes = True
                         # split to two = [r[0], new_r[0]] & [new_r[1], r[1]]
-                        temp_col_bins_settings["bins"][bin_def_idx]["ranges"][r_idx] = [r[0], new_r[0]]
+                        temp_col_bins_settings["bins"][bin_def_idx]["ranges"][r_idx] = [
+                            r[0], new_r[0]]
                         r_to_append_li.append([new_r[1], r[1]])
                     elif new_r[0] > r[0] and new_r[0] < r[1] and new_r[1] >= r[1]:
                         if with_changes == False:
-                            old_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
+                            old_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(
+                                temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
                             with_changes = True
                         # new def = [r[0], new_r[0]]
-                        temp_col_bins_settings["bins"][bin_def_idx]["ranges"][r_idx] = [r[0], new_r[0]]
+                        temp_col_bins_settings["bins"][bin_def_idx]["ranges"][r_idx] = [
+                            r[0], new_r[0]]
                     elif new_r[0] >= r[1]:
                         continue
 
@@ -1589,12 +1643,14 @@ class InteractiveBinningMachine:
                     del temp_col_bins_settings["bins"][bin_def_idx]["ranges"][idx]
 
                 for r_to_append in r_to_append_li:
-                    temp_col_bins_settings["bins"][bin_def_idx]["ranges"].append(r_to_append)
+                    temp_col_bins_settings["bins"][bin_def_idx]["ranges"].append(
+                        r_to_append)
 
             if len(temp_col_bins_settings["bins"][bin_def_idx]["ranges"]) == 0:
                 bin_to_remove_idx_li.append(bin_def_idx)
             elif with_changes == True:
-                new_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
+                new_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(
+                    temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
 
         # Remove bin_def if it has empty def range list
         for idx in sorted(bin_to_remove_idx_li, reverse=True):
@@ -1614,19 +1670,19 @@ class InteractiveBinningMachine:
 
         temp_col_bins_settings["bins"].append(new_bin)
 
-        new_bin_list.append([new_bin_name, get_str_from_ranges(new_bin_ranges)])
+        new_bin_list.append(
+            [new_bin_name, get_str_from_ranges(new_bin_ranges)])
 
         if len(old_bin_list) == 0:
             return (temp_col_bins_settings, old_bin_list, ("", new_bin_list))
-        
+
         return (temp_col_bins_settings, old_bin_list, new_bin_list)
-     
-        
+
     @staticmethod
     def get_numeric_adjust_cutpoints(selected_bin_name, new_bin_name, new_bin_ranges, temp_col_bins_settings):
-   
+
         if len(new_bin_ranges) == 0:
-            return (temp_col_bins_settings, -6, -6) 
+            return (temp_col_bins_settings, -6, -6)
 
         if InteractiveBinningMachine.validate_new_name(new_bin_name, temp_col_bins_settings) == False:
             return (temp_col_bins_settings, -1, -1)
@@ -1640,7 +1696,8 @@ class InteractiveBinningMachine:
             if temp_col_bins_settings["bins"][bin_def_idx]["name"] == selected_bin_name:
                 if temp_col_bins_settings["bins"][bin_def_idx]["ranges"] == new_bin_ranges:
                     return (temp_col_bins_settings, [], [])
-                old_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
+                old_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(
+                    temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
                 # Remove ranges from old def that overlapped with updated_bin_ranges
                 for new_r in new_bin_ranges:
                     r_to_remove_idx_li = list()
@@ -1649,19 +1706,22 @@ class InteractiveBinningMachine:
                         r = temp_col_bins_settings["bins"][bin_def_idx]["ranges"][r_idx]
                         if new_r[1] <= r[0]:
                             continue
-                        elif new_r[0] <= r[0] and new_r[1] > r[0] and new_r[1] < r[1]:             
+                        elif new_r[0] <= r[0] and new_r[1] > r[0] and new_r[1] < r[1]:
                             # then new def = [new_r[1], r[1]]
-                            temp_col_bins_settings["bins"][bin_def_idx]["ranges"][r_idx] = [new_r[1], r[1]]
-                        elif new_r[0] <= r[0] and new_r[1] > r[0] and new_r[1] >= r[1]:             
+                            temp_col_bins_settings["bins"][bin_def_idx]["ranges"][r_idx] = [
+                                new_r[1], r[1]]
+                        elif new_r[0] <= r[0] and new_r[1] > r[0] and new_r[1] >= r[1]:
                             # remove the def r
                             r_to_remove_idx_li.append(r_idx)
-                        elif new_r[0] > r[0] and new_r[1] < r[1]:             
+                        elif new_r[0] > r[0] and new_r[1] < r[1]:
                             # split to two = [r[0], new_r[0]] & [new_r[1], r[1]]
-                            temp_col_bins_settings["bins"][bin_def_idx]["ranges"][r_idx] = [r[0], new_r[0]]
+                            temp_col_bins_settings["bins"][bin_def_idx]["ranges"][r_idx] = [
+                                r[0], new_r[0]]
                             r_to_append_li.append([new_r[1], r[1]])
-                        elif new_r[0] > r[0] and new_r[0] < r[1] and new_r[1] >= r[1]:             
+                        elif new_r[0] > r[0] and new_r[0] < r[1] and new_r[1] >= r[1]:
                             # new def = [r[0], new_r[0]]
-                            temp_col_bins_settings["bins"][bin_def_idx]["ranges"][r_idx] = [r[0], new_r[0]]
+                            temp_col_bins_settings["bins"][bin_def_idx]["ranges"][r_idx] = [
+                                r[0], new_r[0]]
                         elif new_r[0] >= r[1]:
                             continue
 
@@ -1669,18 +1729,23 @@ class InteractiveBinningMachine:
                         del temp_col_bins_settings["bins"][bin_def_idx]["ranges"][idx]
 
                     for r_to_append in r_to_append_li:
-                        temp_col_bins_settings["bins"][bin_def_idx]["ranges"].append(r_to_append)
+                        temp_col_bins_settings["bins"][bin_def_idx]["ranges"].append(
+                            r_to_append)
 
-                if len(temp_col_bins_settings["bins"][bin_def_idx]["ranges"]) == 0: # no need split
+                # no need split
+                if len(temp_col_bins_settings["bins"][bin_def_idx]["ranges"]) == 0:
                     temp_col_bins_settings["bins"][bin_def_idx]["ranges"] = new_bin_ranges
                 else:
-                    new_bin_list.append([get_str_from_ranges(temp_col_bins_settings["bins"][bin_def_idx]["ranges"]), get_str_from_ranges(temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
-                    temp_col_bins_settings["bins"].append({"name": get_str_from_ranges(temp_col_bins_settings["bins"][bin_def_idx]["ranges"]), "ranges": temp_col_bins_settings["bins"][bin_def_idx]["ranges"]})
-                    
+                    new_bin_list.append([get_str_from_ranges(temp_col_bins_settings["bins"][bin_def_idx]["ranges"]), get_str_from_ranges(
+                        temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
+                    temp_col_bins_settings["bins"].append({"name": get_str_from_ranges(
+                        temp_col_bins_settings["bins"][bin_def_idx]["ranges"]), "ranges": temp_col_bins_settings["bins"][bin_def_idx]["ranges"]})
+
                     if new_bin_name != "" and new_bin_name != None:
                         temp_col_bins_settings["bins"][bin_def_idx]["name"] = new_bin_name
                     temp_col_bins_settings["bins"][bin_def_idx]["ranges"] = new_bin_ranges
-                    new_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
+                    new_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(
+                        temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
 
             else:
                 with_changes = False
@@ -1693,29 +1758,36 @@ class InteractiveBinningMachine:
                             continue
                         elif new_r[0] <= r[0] and new_r[1] > r[0] and new_r[1] < r[1]:
                             if with_changes == False:
-                                old_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
+                                old_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(
+                                    temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
                                 with_changes = True
                             # then new def = [new_r[1], r[1]]
-                            temp_col_bins_settings["bins"][bin_def_idx]["ranges"][r_idx] = [new_r[1], r[1]]
+                            temp_col_bins_settings["bins"][bin_def_idx]["ranges"][r_idx] = [
+                                new_r[1], r[1]]
                         elif new_r[0] <= r[0] and new_r[1] > r[0] and new_r[1] >= r[1]:
                             if with_changes == False:
-                                old_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
+                                old_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(
+                                    temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
                                 with_changes = True
                             # remove the def r
                             r_to_remove_idx_li.append(r_idx)
                         elif new_r[0] > r[0] and new_r[1] < r[1]:
                             if with_changes == False:
-                                old_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
+                                old_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(
+                                    temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
                                 with_changes = True
                             # split to two = [r[0], new_r[0]] & [new_r[1], r[1]]
-                            temp_col_bins_settings["bins"][bin_def_idx]["ranges"][r_idx] = [r[0], new_r[0]]
+                            temp_col_bins_settings["bins"][bin_def_idx]["ranges"][r_idx] = [
+                                r[0], new_r[0]]
                             r_to_append_li.append([new_r[1], r[1]])
                         elif new_r[0] > r[0] and new_r[0] < r[1] and new_r[1] >= r[1]:
                             if with_changes == False:
-                                old_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
+                                old_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(
+                                    temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
                                 with_changes = True
                             # new def = [r[0], new_r[0]]
-                            temp_col_bins_settings["bins"][bin_def_idx]["ranges"][r_idx] = [r[0], new_r[0]]
+                            temp_col_bins_settings["bins"][bin_def_idx]["ranges"][r_idx] = [
+                                r[0], new_r[0]]
                         elif new_r[0] >= r[1]:
                             continue
 
@@ -1723,47 +1795,51 @@ class InteractiveBinningMachine:
                         del temp_col_bins_settings["bins"][bin_def_idx]["ranges"][idx]
 
                     for r_to_append in r_to_append_li:
-                        temp_col_bins_settings["bins"][bin_def_idx]["ranges"].append(r_to_append)
+                        temp_col_bins_settings["bins"][bin_def_idx]["ranges"].append(
+                            r_to_append)
 
                 if len(temp_col_bins_settings["bins"][bin_def_idx]["ranges"]) == 0:
                     bin_to_remove_idx_li.append(bin_def_idx)
                 elif with_changes == True:
-                    new_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
+                    new_bin_list.append([temp_col_bins_settings["bins"][bin_def_idx]["name"], get_str_from_ranges(
+                        temp_col_bins_settings["bins"][bin_def_idx]["ranges"])])
 
         # Remove bin_def if it has empty def range list
         for idx in sorted(bin_to_remove_idx_li, reverse=True):
             del temp_col_bins_settings["bins"][idx]
 
         return (temp_col_bins_settings, old_bin_list, new_bin_list)
-        
-        
+
     @staticmethod
     def numeric_rename_bin(selected_bin_name, new_bin_name, temp_col_bins_settings):
         if selected_bin_name == new_bin_name:
             return (temp_col_bins_settings, -2, -2)
-        
+
         if InteractiveBinningMachine.validate_new_name(new_bin_name, temp_col_bins_settings) == False:
             return (temp_col_bins_settings, -1, -1)
-        
+
         old_bin_list = list()
         new_bin_list = list()
-        
+
         for idx in range(len(temp_col_bins_settings["bins"])):
             if temp_col_bins_settings["bins"][idx]["name"] == selected_bin_name:
-                old_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], get_str_from_ranges(temp_col_bins_settings["bins"][idx]["ranges"])])
-                
+                old_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], get_str_from_ranges(
+                    temp_col_bins_settings["bins"][idx]["ranges"])])
+
                 if new_bin_name == "" or new_bin_name == None:
-                    new_bin_name = get_str_from_ranges(temp_col_bins_settings["bins"][idx]["ranges"])
-                
+                    new_bin_name = get_str_from_ranges(
+                        temp_col_bins_settings["bins"][idx]["ranges"])
+
                 if InteractiveBinningMachine.validate_new_name(new_bin_name, temp_col_bins_settings) == False:
                     return (temp_col_bins_settings, -1, -1)
-                
+
                 temp_col_bins_settings["bins"][idx]["name"] = new_bin_name
-                new_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], get_str_from_ranges(temp_col_bins_settings["bins"][idx]["ranges"])])
+                new_bin_list.append([temp_col_bins_settings["bins"][idx]["name"], get_str_from_ranges(
+                    temp_col_bins_settings["bins"][idx]["ranges"])])
                 break
-                
+
         return (temp_col_bins_settings, old_bin_list, new_bin_list)
-    
+
     @staticmethod
     def numeric_merge_bins(selected_bin_name_li, new_bin_name, temp_col_bins_settings):
         new_bin_ranges_li = list()
@@ -1774,29 +1850,30 @@ class InteractiveBinningMachine:
                 for r in temp_col_bins_settings["bins"][idx]["ranges"]:
                     new_bin_ranges_li.append(r)
                 bin_to_remove_idx_li.append(idx)
-        
+
         for idx in sorted(bin_to_remove_idx_li, reverse=True):
             del temp_col_bins_settings["bins"][idx]
-        
+
         decoded_new_bin_ranges_li = decode_ib_ranges(new_bin_ranges_li)
-        
+
         if new_bin_name == "" or new_bin_name == None:
             new_bin_name = get_str_from_ranges(decoded_new_bin_ranges_li)
-            
+
         if InteractiveBinningMachine.validate_new_name(new_bin_name, temp_col_bins_settings) == False:
             return (temp_col_bins_settings, -1, -1)
-        
+
         new_bin = {
             "name": new_bin_name,
             "ranges": decoded_new_bin_ranges_li,
         }
-        
+
         temp_col_bins_settings["bins"].append(new_bin)
-        
-        new_bin_list = [[new_bin_name, get_str_from_ranges(decoded_new_bin_ranges_li)]]
-        
+
+        new_bin_list = [
+            [new_bin_name, get_str_from_ranges(decoded_new_bin_ranges_li)]]
+
         return (temp_col_bins_settings, [], new_bin_list)
-    
+
     @staticmethod
     def validate_new_name(new_name, temp_col_bins_settings, selected_bin_name=None):
         # Return false if name has already been use. otherwise, return True
@@ -1812,8 +1889,8 @@ class InteractiveBinningMachine:
                 if bin_def["name"] == new_name:
                     return False
             return True
-    
-    
+
+
 def decode_ib_ranges(ranges):
     if len(ranges) == 0:
         return []
@@ -1862,9 +1939,9 @@ def decode_ib_ranges(ranges):
         if has_column_overlap == False:
             single_def_list = [a_range]
             numeric_list.append(single_def_list)
-    
+
     return numeric_list[0]
-  
+
 
 def validate_numerical_bounds(numeric_info_list):
     for numeric_info in numeric_info_list:
@@ -1875,7 +1952,8 @@ def validate_numerical_bounds(numeric_info_list):
         except:
             return False
     return True
-    
+
+
 """
 All
 """
@@ -1952,10 +2030,10 @@ confirm_input_dataset_page_layout = html.Div(
         ),
         html.P("", id="confirm_input_dataset_error_msg",
                style={"color": "red", "marginTop": 10}),
+        html.Div([
+            html.P("Saved!", style={"color": "blue", "fontWeight": "bold"}),
+        ], id="confirm_input_dataset_saved_msg", style={"display": "none"}),
         html.Div([], style={"height": 100}),
-        html.P(id="text_bins_settings"),
-        html.P(id="text_numerical_columns"),
-        html.P(id="text_categorical_columns"),
     ]
 )
 
@@ -2085,13 +2163,14 @@ good_bad_def_page_layout = html.Div(
         SaveButton("Confirm", marginLeft=15, id="confirm_good_bad_def_button"),
         html.P("", id="good_bad_def_error_msg",
                style={"color": "red", "marginTop": 10}),
+        html.Div([
+            html.P("Saved!", style={"color": "blue", "fontWeight": "bold"}),
+        ], id="good_bad_def_saved_msg", style={"display": "none"}),
         html.Div([], style={"height": 50}),
         # Show Statistics
         html.Div([], id="good_bad_stat_section"),
         html.Div([], style={"height": 50, "clear": "left"}),
-        # Debug
         html.Div([], style={"height": 100}),
-        html.P("", id="test_good_bad_def"),
     ]
 )
 
@@ -2099,770 +2178,827 @@ good_bad_def_page_layout = html.Div(
 interactive_binning_page_layout = html.Div([
     NavBar(),
     Heading("Interactive Binning Interface"),
-    html.P(id="ib_show_bins_settings_text"),  # debug
-    html.P(id="ib_show_good_bad_def_text"),  # debug
-
-    html.Div(
-        [
-            html.P(
-                "Note: Binning & generating statistical tables may take some time, please wait patiently.", style={"color": "blue"}),
-            html.Div(
-                [
-                    SectionHeading(
-                        "I. Select a predictor variable to bin"),
-                    dcc.Dropdown(
-                        options=convert_column_list_to_dropdown_options(
-                            df.columns.to_list()
-                        ),
-                        value=df.columns.to_list()[0],
-                        style={"marginBottom": 30},
-                        clearable=False,
-                        searchable=False,
-                        id="predictor_var_ib_dropdown",
-                    ),
-                ],
-                style=purple_panel_style,
-            ),
-            html.Div(
-                [
-                    SectionHeading(
-                        "II. Select the automated binning algorithm for initial binning"
-                    ),
-                    dcc.Dropdown(
-                        options=[
-                            {"label": "No Binnings", "value": "none"},
-                            {"label": "Equal Width", "value": "equal width"},
-                            {
-                                "label": "Equal Frequency",
-                                "value": "equal frequency",
-                            },
-                        ],
-                        value="none",
-                        clearable=False,
-                        searchable=False,
-                        style={"marginBottom": 20, "width": 250},
-                        id="auto_bin_algo_dropdown",
-                    ),
-                    html.Div(
-                        children=[
-                            dcc.RadioItems(
-                                options=[
-                                    {"label": "Width", "value": "width"},
-                                    {
-                                        "label": "Number of Bins",
-                                        "value": "number of bins",
-                                    },
-                                ],
-                                value="width",
-                                inline=True,
-                                id="equal_width_radio_button",
-                            ),
-                            html.Div([], style={"height": 25}),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [],
-                                        style={
-                                            "display": "inline",
-                                            "marginLeft": 5,
-                                        },
-                                    ),
-                                    html.P("Width:", style={
-                                        "display": "inline"}),
-                                    dcc.Input(
-                                        type="number",
-                                        value=1,
-                                        min=1,
-                                        style={"marginLeft": 10},
-                                        id="equal_width_width_input",
-                                    ),
-                                ],
-                                id="equal_width_width_input_section",
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [],
-                                        style={
-                                            "display": "inline",
-                                            "marginLeft": 5,
-                                        },
-                                    ),
-                                    html.P(
-                                        "Number of Bins:",
-                                        style={"display": "inline"},
-                                    ),
-                                    dcc.Input(
-                                        type="number",
-                                        value=10,
-                                        min=1,
-                                        style={"marginLeft": 10},
-                                        id="equal_width_num_bin_input",
-                                    ),
-                                ],
-                                id="equal_width_num_bin_input_section",
-                                style={"display": "none"},
-                            ),
-                        ],
-                        id="equal_width_input_section",
-                        style={"display": "none"},
-                    ),
-                    html.Div(
-                        children=[
-                            dcc.RadioItems(
-                                options=[
-                                    {"label": "Frequency",
-                                     "value": "frequency"},
-                                    {
-                                        "label": "Number of Bins",
-                                        "value": "number of bins",
-                                    },
-                                ],
-                                value="frequency",
-                                inline=True,
-                                id="equal_freq_radio_button",
-                            ),
-                            html.Div([], style={"height": 25}),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [],
-                                        style={
-                                            "display": "inline",
-                                            "marginLeft": 5,
-                                        },
-                                    ),
-                                    html.P(
-                                        "Frequency:", style={"display": "inline"}
-                                    ),
-                                    dcc.Input(
-                                        type="number",
-                                        value=1000,
-                                        min=1,
-                                        style={"marginLeft": 10},
-                                        id="equal_freq_freq_input",
-                                    ),
-                                ],
-                                id="equal_freq_freq_input_section",
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [],
-                                        style={
-                                            "display": "inline",
-                                            "marginLeft": 5,
-                                        },
-                                    ),
-                                    html.P(
-                                        "Number of Bins:",
-                                        style={"display": "inline"},
-                                    ),
-                                    dcc.Input(
-                                        type="number",
-                                        value=10,
-                                        min=1,
-                                        style={"marginLeft": 10},
-                                        id="equal_freq_num_bin_input",
-                                    ),
-                                ],
-                                id="equal_freq_num_bin_input_section",
-                                style={"display": "none"},
-                            ),
-                        ],
-                        id="equal_frequency_input_section",
-                        style={"display": "none"},
-                    ),
-                    html.Div([], style={"marginBottom": 25}),
-                    SaveButton("Refresh", id="auto_bin_refresh_button"),
-                    html.P(
-                        style={"marginTop": 20},
-                        id="auto_bin_algo_description",
-                    ),
-                ],
-                style=grey_panel_style,
-            ),
-        ]
-    ),
-    html.Div([], style={"width": "100%", "height": 25, "clear": "left"}),
-    html.Div(
-        [
-            html.Div(
-                [
-                    SectionHeading("III. Perform Interactive Binning"),
-                    dcc.Graph(
-                        figure=generate_mixed_chart_fig(),
-                        id="mixed_chart",
-                    ),
-                    html.P(
-                        "Tips 1: If you would like to de-select the bar(s), simply click on the WOE line.", style={"marginTop": 20}),
-                    html.P(
-                        "Tips 2: You could use the 'Box Select' or 'Lasso Select' tools on the top right corner to select multiple bars."),
-                ],
-                style=white_panel_style,
-            ),
-            # Categorical Create New Bin Control Panel
-            html.Div([
-                html.Div(
-                    [
-                        SectionHeading("Create a New Bin",
-                                       center=True, bold=True),
-                        html.P("Instructions", style={"fontWeight": "bold"}),
-                        html.Ul([
-                            html.Li("Enter the name of the new bin in the text input area", style={
-                                    "fontSize": 14}),
-                            html.Li("Select the elements from the dropdown menu that you would like to include in the bin", style={
-                                    "fontSize": 14}),
-                            html.Li("Click the ‘Create New Bin’ button to preview changes on the bins settings", style={
-                                    "fontSize": 14}),
-                            html.Li("The selected elements which overlaps with the old bins settings will be automatically removed from the other bins", style={
-                                    "fontSize": 14}),
-                            html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={
-                                    "fontSize": 14}),
-                        ], style={"listStyleType": "square", "lineHeight": "97%"}),
-                        html.P("Enter the new bin name: ",
-                               style={"fontWeight": "bold"}),
-                        dcc.Input(style={"marginBottom": 10},
-                                  id="categoric_create_new_bin_name_input"),
-                        html.P("Select elements to be included in the new bin:", style={
-                               "fontWeight": "bold"}),
-                        dcc.Dropdown(
-                            options=convert_column_list_to_dropdown_options(
-                                ["OWN", "RENT", "MORTGAGE", "OTHERS"]),  # dummy
-                            value=[],
-                            multi=True,
-                            style={"marginBottom": 13},
-                            id="categoric_create_new_bin_dropdown",
-                        ),
-                        SaveButton("Create New Bin",
-                                   id="categoric_create_new_bin_button"),
-                        html.Div(style={"height": 13}),
-                        html.Div([
-                            html.Div([], id="categoric_create_new_bin_changes_div"),
-                            html.Div([
-                                SaveButton(
-                                    "Submit", inline=True, id="categoric_create_new_bin_submit_button"),
-                                SaveButton("Hide Details", inline=True, backgroundColor="#8097E6",
-                                           marginLeft=5, id="categoric_create_new_bin_hide_details_button"),
-                                html.Div(style={"height": 13, "clear": "both"}),
-                                html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
-                                       style={"lineHeight": "99%", "fontSize": 14}),
-                            ], id="categoric_create_new_bin_submit_div"),
-                        ], id="categoric_create_new_bin_preview_changes_div", style={"display": "none"}),
-                    ],
-                    style={
-                        "float": "left",
-                        "width": "30%",
-                        "backgroundColor": "#BCBCDA",
-                        "padding": "2%",
-                        "borderRadius": dimens["panel-border-radius"],
-                    },
-                ),
-            ], id="categorical_create_new_bin_control_panel", style={"display": "none"}),
-            # Categorical Add Elements Control Panel
-            html.Div([
-                html.Div([
-                    SaveButton("Add Elements", inline=True, width="12%"),
-                    SaveButton("Split Bin", inline=True,
-                               width="9%", marginLeft="0.5%", id="categoric_add_elements_panel_to_split_button"),
-                    SaveButton("Rename Bin", inline=True,
-                               width="12%", marginLeft="0.5%", id="categoric_add_elements_panel_to_rename_button"),
-                ]),
-                html.Div(
-                    [
-                        SectionHeading("Add Elements to the Bin",
-                                       center=True, bold=True),
-                        html.P("Instructions", style={"fontWeight": "bold"}),
-                        html.Ul([
-                            html.Li("Enter the new bin name in the text input area, if it is empty, the bin name will remain the same", style={
-                                    "fontSize": 14}),
-                            html.Li("Select the elements to be added in the new bin from the dropdown menu", style={
-                                    "fontSize": 14}),
-                            html.Li("Click the ‘Add Elements’ button to preview changes on the bins settings", style={
-                                    "fontSize": 14}),
-                            html.Li("The selected elements which overlaps with the old bins settings will be automatically removed from the other bins", style={
-                                    "fontSize": 14}),
-                            html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={
-                                    "fontSize": 14}),
-                        ], style={"listStyleType": "square", "lineHeight": "97%"}),
-                        html.P("Selected Bin Info: ", style={
-                               "fontWeight": "bold"}),
-                        # TODO: extract this out
-                        html.Div(id="categoric_add_elements_panel_selected_bin_info"),
-
-                        html.P("Enter the new bin name: ",
-                               style={"fontWeight": "bold"}),
-                        dcc.Input(style={"marginBottom": 10}, id="categoric_add_elements_panel_name_input"),
-                        html.P("Select elements to be added into the bin:",
-                               style={"fontWeight": "bold"}),
-                        dcc.Dropdown(
-                            options=convert_column_list_to_dropdown_options(
-                                ["OWN", "OTHERS"]),  # dummy
-                            value=[],
-                            multi=True,
-                            style={"marginBottom": 13},
-                            id="categoric_add_elements_panel_dropdown",
-                        ),
-                        SaveButton("Add Elements", id="categoric_add_elements_panel_add_button"),
-                        html.Div(style={"height": 13}),
-                        html.Div([
-                            html.Div([], id="categoric_add_elements_panel_changes_div"),
-                            html.Div([
-                                SaveButton("Submit", inline=True, id="categoric_add_elements_panel_submit_button"),
-                                SaveButton("Hide Details", inline=True,
-                                           backgroundColor="#8097E6", marginLeft=5, id="categoric_add_elements_panel_hide_details_button"),
-                                html.Div(style={"height": 13, "clear": "both"}),
-                                html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
-                                       style={"lineHeight": "99%", "fontSize": 14}),
-                            ], id="categoric_add_elements_panel_submit_div"),
-                        ], id="categoric_add_elements_panel_preview_changes_div", style={"display": "none"}),
-                    ],
-                    style={
-                        "marginTop": 13,
-                        "float": "left",
-                        "width": "30%",
-                        "backgroundColor": "#BCBCDA",
-                        "padding": "2%",
-                        "borderRadius": dimens["panel-border-radius"],
-                    },
-                ),
-            ], id="categorical_add_elements_control_panel", style={"display": "none"}),
-            # Categorical Split Bin Control Panel
-            html.Div([
-                html.Div([
-                    SaveButton("Add Elements", inline=True, width="12%", id="categoric_split_panel_add_elements_nav_button"),
-                    SaveButton("Split Bin", inline=True,
-                               width="9%", marginLeft="0.5%"),
-                    SaveButton("Rename Bin", inline=True,
-                               width="12%", marginLeft="0.5%", id="categoric_split_panel_rename_nav_button"),
-                ]),
-                html.Div(
-                    [
-                        SectionHeading("Split an Existing Bin",
-                                       center=True, bold=True),
-                        html.P("Instructions", style={"fontWeight": "bold"}),
-                        html.Ul([
-                            html.Li("Enter the new bin name in the text input area, if it is empty, the elements included in the bin will be used as the bin name", style={
-                                    "fontSize": 14}),
-                            html.Li("Select the elements to be split out from the old bin", style={
-                                    "fontSize": 14}),
-                            html.Li("Click the ‘Split Bin’ button to preview changes on the bins settings", style={
-                                    "fontSize": 14}),
-                            html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={
-                                    "fontSize": 14}),
-                        ], style={"listStyleType": "square", "lineHeight": "97%"}),
-                        html.P("Selected Bin Info: ", style={
-                               "fontWeight": "bold"}),
-                        # TODO: extract this out
-                        html.Div(id="categoric_split_panel_selected_bin_info"),
-
-                        html.P("Enter the new bin name: ",
-                               style={"fontWeight": "bold"}),
-                        dcc.Input(style={"marginBottom": 10}, id="categoric_split_panel_new_bin_name_input"),
-                        html.P("Select elements to be split out from the bin:", style={
-                               "fontWeight": "bold"}),
-                        dcc.Dropdown(
-                            options=convert_column_list_to_dropdown_options(
-                                ["OWN", "OTHERS"]),  # dummy
-                            value=[],
-                            multi=True,
-                            style={"marginBottom": 13},
-                            id="categoric_split_panel_dropdown",
-                        ),
-                        SaveButton("Split Bin", id="categoric_split_panel_split_button"),
-                        html.Div(style={"height": 13}),
-                        html.Div([
-                            html.Div([], id="categoric_split_panel_changes_div"),
-                            html.Div([
-                                SaveButton("Submit", inline=True, id="categoric_split_panel_submit_button"),
-                                SaveButton("Hide Details", inline=True,
-                                           backgroundColor="#8097E6", marginLeft=5, id="categoric_split_panel_hide_details_button"),
-                                html.Div(style={"height": 13, "clear": "both"}),
-                                html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
-                                       style={"lineHeight": "99%", "fontSize": 14}),
-                            ], id="categoric_split_panel_submit_div"),
-                        ], id="categoric_split_panel_preview_changes_div", style={"display": "none"}),
-                    ],
-                    style={
-                        "marginTop": 13,
-                        "float": "left",
-                        "width": "30%",
-                        "backgroundColor": "#BCBCDA",
-                        "padding": "2%",
-                        "borderRadius": dimens["panel-border-radius"],
-
-                    },
-
-                ),
-            ], id="categorical_split_bin_control_panel", style={"display": "none"}),
-
-            # Categorical Rename Bin Control Panel
-            html.Div([
-                html.Div([
-                    SaveButton("Add Elements", inline=True, width="12%", id="categoric_rename_panel_add_elements_nav_button"),
-                    SaveButton("Split Bin", inline=True,
-                               width="9%", marginLeft="0.5%", id="categoric_rename_panel_split_nav_button"),
-                    SaveButton("Rename Bin", inline=True,
-                               width="12%", marginLeft="0.5%"),
-                ]),
-                html.Div(
-                    [
-                        SectionHeading("Rename Bin", center=True, bold=True),
-                        html.P("Instructions", style={"fontWeight": "bold"}),
-                        html.Ul([
-                            html.Li("Enter the new bin name in the text input area", style={
-                                    "fontSize": 14}),
-                            html.Li("Click the ‘Rename Bin’ button to preview changes on the bins settings", style={
-                                    "fontSize": 14}),
-                            html.Li("If nothing is entered in the input when the 'Rename Bin' button is clicked, the bin element(s) would be used as the new bin name", style={
-                                    "fontSize": 14}),
-                            html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={
-                                    "fontSize": 14}),
-                        ], style={"listStyleType": "square", "lineHeight": "97%"}),
-                        html.P("Selected Bin Info: ", style={
-                               "fontWeight": "bold"}),
-                        # TODO: extract this out
-                        html.Div(id="categoric_rename_panel_selected_bin_info"),
-
-                        html.P("Enter the new bin name: ",
-                               style={"fontWeight": "bold"}),
-                        dcc.Input(style={"marginBottom": 10}, id="categoric_rename_panel_new_bin_name_input"),
-                        SaveButton("Rename Bin", id="categoric_rename_panel_rename_button"),
-                        html.Div(style={"height": 13}),
-                        html.Div([
-                            html.Div([], id="categoric_rename_panel_changes_div"),
-                            html.Div([
-                                SaveButton("Submit", inline=True, id="categoric_rename_panel_submit_button"),
-                                SaveButton("Hide Details", inline=True,
-                                           backgroundColor="#8097E6", marginLeft=5, id="categoric_rename_panel_hide_details_button"),
-                                html.Div(style={"height": 13, "clear": "both"}),
-                                html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
-                                       style={"lineHeight": "99%", "fontSize": 14}),
-                            ], id="categoric_rename_panel_submit_div"),
-                        ], id="categoric_rename_panel_preview_changes_div", style={"display": "none"})
-                    ],
-                    style={
-                        "marginTop": 13,
-                        "float": "left",
-                        "width": "30%",
-                        "backgroundColor": "#BCBCDA",
-                        "padding": "2%",
-                        "borderRadius": dimens["panel-border-radius"],
-
-                    },
-
-                ),
-            ], id="categorical_rename_bin_control_panel", style={"display": "none"}),
-
-            # Categorical Merge Bins Control Panel
-            html.Div([
-                html.Div(
-                    [
-                        SectionHeading("Merge Bins", center=True, bold=True),
-                        html.P("Instructions", style={"fontWeight": "bold"}),
-                        html.Ul([
-                            html.Li("Enter the new bin name in the text input area", style={
-                                    "fontSize": 14}),
-                            html.Li("Click the ‘Merge Bins’ button to preview changes on the bins settings", style={
-                                    "fontSize": 14}),
-                            html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={
-                                    "fontSize": 14}),
-                        ], style={"listStyleType": "square", "lineHeight": "97%"}),
-                        # TODO: extract this out
-                        html.P("Selected Bin Info: ", style={"fontWeight": "bold"}),
-                        html.Div([], id="categoric_merge_panel_selected_bin_info_div"),
-
-                        html.P("Enter the new bin name: ",
-                               style={"fontWeight": "bold"}),
-                        dcc.Input(style={"marginBottom": 10}, id="categoric_merge_panel_new_bin_name_input"),
-                        SaveButton("Merge Bins", id="categoric_merge_panel_merge_button"),
-                        html.Div(style={"height": 13}),
-                        html.Div([
-                            html.Div([], id="categoric_merge_panel_changes_div"),
-                            html.P(id="test_preview"),
-                            html.Div([
-                                SaveButton("Submit", inline=True, id="categoric_merge_panel_submit_button"),
-                                SaveButton("Hide Details", inline=True,
-                                           backgroundColor="#8097E6", marginLeft=5, id="categoric_merge_panel_hide_details_button"),
-                                html.Div(style={"height": 13, "clear": "both"}),
-                                html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
-                                       style={"lineHeight": "99%", "fontSize": 14}),
-                            ], id="categoric_merge_panel_submit_div"),
-                        ], id="categoric_merge_bin_panel_preview_changes_div", style={"display": "none"}),
-                    ],
-                    style={
-                        "float": "left",
-                        "width": "30%",
-                        "backgroundColor": "#BCBCDA",
-                        "padding": "2%",
-                        "borderRadius": dimens["panel-border-radius"],
-
-                    },
-
-                ),
-            ], id="categorical_merge_bins_control_panel", style={"display": "none"}),
-
-            # Numerical Create New Bin Control Panel
-            html.Div([
-                html.Div(
-                    [
-                        SectionHeading("Create a New Bin",
-                                       center=True, bold=True),
-                        html.P("Instructions", style={"fontWeight": "bold"}),
-                        html.Ul([
-                            html.Li("Enter the name of the new bin in the text input area", style={
-                                    "fontSize": 14}),
-                            html.Li("Indicate the ranges that you would like to include in the bin", style={
-                                    "fontSize": 14}),
-                            html.Li("Click the ‘Create New Bin’ button to preview changes on the bins settings", style={
-                                    "fontSize": 14}),
-                            html.Li("The indicated ranges which overlaps with the old bins settings will be automatically removed from the other bins", style={
-                                    "fontSize": 14}),
-                            html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={
-                                    "fontSize": 14}),
-                        ], style={"listStyleType": "square", "lineHeight": "97%"}),
-                        html.P("Enter the new bin name: ",
-                               style={"fontWeight": "bold"}),
-                        dcc.Input(style={"marginBottom": 10}, id="numeric_create_new_bin_panel_new_bin_name_input"),
-                        html.P("Indicate the ranges to be included in the new bin:", style={
-                               "fontWeight": "bold"}),
-                        
-                        html.Ol([], style={"fontSize": 14}, id="numeric_create_new_bin_panel_range_list"),
-                        html.Div([], style={"height": 10, "clear": "both"}),
-                        
-                        SaveButton("Add", inline=True, id="numeric_create_new_bin_panel_add_button"),
-                        SaveButton("Remove", inline=True, marginLeft=8, id="numeric_create_new_bin_panel_remove_button"),
-                        html.Div([], style={"clear": "both", "height": 8}),
-                        SaveButton("Create New Bin", id="numeric_create_new_bin_panel_create_new_bin_button"),
-                        html.Div(style={"height": 13}),
-                        html.Div([
-                            html.Div([], id="numeric_create_new_bin_panel_changes_div"),
-                            html.Div([
-                                SaveButton("Submit", inline=True, id="numeric_create_new_bin_panel_submit_button"),
-                                SaveButton("Hide Details", inline=True,
-                                           backgroundColor="#8097E6", marginLeft=5, id="numeric_create_new_bin_hide_details_button"),
-                                html.Div(style={"height": 13, "clear": "both"}),
-                                html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
-                                       style={"lineHeight": "99%", "fontSize": 14}),
-                            ], id="numeric_create_new_bin_panel_submit_div"),
-                        ], id="numeric_create_new_bin_preview_changes_div", style={"display": "none"}),
-                        
-                    ],
-                    style={
-                        "float": "left",
-                        "width": "30%",
-                        "backgroundColor": "#BCBCDA",
-                        "padding": "2%",
-                        "borderRadius": dimens["panel-border-radius"],
-                    },
-
-                ),
-            ], id="numerical_create_new_bin_control_panel", style={"display": "none"}),
-
-            # Numerical Adjust Cutpoints Control Panel
-            html.Div([
-                html.Div([
-                    SaveButton("Adjust Cutpoints", inline=True, width="16.5%"),
-                    SaveButton("Rename Bin", inline=True,
-                               width="16.5%", marginLeft="1%", id="numeric_adjust_cutpoints_panel_rename_nav_button"),
-                ]),
+    html.Div([
+        html.Div(
+            [
+                html.P(
+                    "Note: Binning & Generating statistics tables may take some time, please wait patiently.", style={"color": "blue"}),
+                html.P(
+                    "By default, all numerical columns are binned by equal frequency algorithm with 10 bins, while no binning is performed on categorical columns."),
                 html.Div(
                     [
                         SectionHeading(
-                            "Adjust Cutpoints of the Bin", center=True, bold=True),
-                        html.P("Instructions", style={"fontWeight": "bold"}),
-                        html.Ul([
-                            html.Li("Enter the new bin name in the text input area, if it is empty, the bin name will remain the same", style={
-                                    "fontSize": 14}),
-                            html.Li("Indicate the ranges that you would like to remains in the selected bin", style={
-                                    "fontSize": 14}),
-                            html.Li("Any ranges in the selected bin not being indicated would be split out as a new bin", style={
-                                    "fontSize": 14}),
-                            html.Li("The indicated ranges which overlaps with the old bins settings will be automatically removed from the other bins", style={
-                                    "fontSize": 14}),
-                            html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={
-                                    "fontSize": 14}),
-                        ], style={"listStyleType": "square", "lineHeight": "97%"}),
-                        html.P("Selected Bin Info: ", style={
-                               "fontWeight": "bold"}),
-                        # TODO: extract this out
-                        html.Div([], id="numeric_adjust_cutpoints_panel_selected_bin_info_div"),
-
-                        html.P("Enter the new bin name: ",
-                               style={"fontWeight": "bold"}),
-                        dcc.Input(style={"marginBottom": 10}, id="numeric_adjust_cutpoints_panel_new_bin_name_input"),
-                        html.P("Indicate the range(s) to be added into the bin:", style={
-                               "fontWeight": "bold"}),
-                        
-                        html.Ol([], style={"fontSize": 14}, id="numeric_adjust_cutpoints_panel_range_list"),
-                        html.Div([], style={"height": 10, "clear": "both"}),
-                        
-                        # TODO!! --> Add dynamic range list
-                        SaveButton("Add", inline=True, id="numeric_adjust_cutpoints_panel_add_button"),
-                        SaveButton("Remove", inline=True, marginLeft=8, id="numeric_adjust_cutpoints_panel_remove_button"),
-                        html.Div([], style={"clear": "both", "height": 8}),
-                        SaveButton("Adjust Cutpoints", id="numeric_adjust_cutpoints_panel_adjust_cutpoints_button"),
-                        html.Div(style={"height": 13}),
-                        html.Div([
-                            html.Div([], id="numeric_adjust_cutpoints_panel_changes_div"),
-                            html.Div([
-                                SaveButton("Submit", inline=True, id="numeric_adjust_cutpoints_panel_submit_button"),
-                                SaveButton("Hide Details", inline=True,
-                                           backgroundColor="#8097E6", marginLeft=5, id="numeric_adjust_cutpoints_panel_hide_details_button"),
-                                html.Div(style={"height": 13, "clear": "both"}),
-                                html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
-                                       style={"lineHeight": "99%", "fontSize": 14}),
-                            ], id="numeric_adjust_cutpoints_panel_submit_div"),
-                        ], id="numeric_adjust_cutpoints_panel_preview_changes_div", style={"display": "none"}),
+                            "I. Select a predictor variable to bin"),
+                        dcc.Dropdown(
+                            options=convert_column_list_to_dropdown_options(
+                                df.columns.to_list()
+                            ),
+                            value=df.columns.to_list()[0],
+                            style={"marginBottom": 30},
+                            clearable=False,
+                            searchable=False,
+                            id="predictor_var_ib_dropdown",
+                        ),
                     ],
-                    style={
-                        "marginTop": 13,
-                        "float": "left",
-                        "width": "30%",
-                        "backgroundColor": "#BCBCDA",
-                        "padding": "2%",
-                        "borderRadius": dimens["panel-border-radius"],
-                    },
-
+                    style=purple_panel_style,
                 ),
-            ], id="numerical_adjust_cutpoints_control_panel", style={"display": "none"}),
-
-            # Numerical Rename Bin Control Panel
-            html.Div([
+                html.Div(
+                    [
+                        SectionHeading(
+                            "II. Select the automated binning algorithm for initial binning"
+                        ),
+                        dcc.Dropdown(
+                            options=[
+                                {"label": "No Binnings", "value": "none"},
+                                {"label": "Equal Width", "value": "equal width"},
+                                {
+                                    "label": "Equal Frequency",
+                                    "value": "equal frequency",
+                                },
+                            ],
+                            value="none",
+                            clearable=False,
+                            searchable=False,
+                            style={"marginBottom": 20, "width": 250},
+                            id="auto_bin_algo_dropdown",
+                        ),
+                        html.Div(
+                            children=[
+                                dcc.RadioItems(
+                                    options=[
+                                        {"label": "Width", "value": "width"},
+                                        {
+                                            "label": "Number of Bins",
+                                            "value": "number of bins",
+                                        },
+                                    ],
+                                    value="width",
+                                    inline=True,
+                                    id="equal_width_radio_button",
+                                ),
+                                html.Div([], style={"height": 25}),
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            [],
+                                            style={
+                                                "display": "inline",
+                                                "marginLeft": 5,
+                                            },
+                                        ),
+                                        html.P("Width:", style={
+                                            "display": "inline"}),
+                                        dcc.Input(
+                                            type="number",
+                                            value=1,
+                                            min=1,
+                                            style={"marginLeft": 10},
+                                            id="equal_width_width_input",
+                                        ),
+                                    ],
+                                    id="equal_width_width_input_section",
+                                ),
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            [],
+                                            style={
+                                                "display": "inline",
+                                                "marginLeft": 5,
+                                            },
+                                        ),
+                                        html.P(
+                                            "Number of Bins:",
+                                            style={"display": "inline"},
+                                        ),
+                                        dcc.Input(
+                                            type="number",
+                                            value=10,
+                                            min=1,
+                                            style={"marginLeft": 10},
+                                            id="equal_width_num_bin_input",
+                                        ),
+                                    ],
+                                    id="equal_width_num_bin_input_section",
+                                    style={"display": "none"},
+                                ),
+                            ],
+                            id="equal_width_input_section",
+                            style={"display": "none"},
+                        ),
+                        html.Div(
+                            children=[
+                                dcc.RadioItems(
+                                    options=[
+                                        {"label": "Frequency",
+                                         "value": "frequency"},
+                                        {
+                                            "label": "Number of Bins",
+                                            "value": "number of bins",
+                                        },
+                                    ],
+                                    value="frequency",
+                                    inline=True,
+                                    id="equal_freq_radio_button",
+                                ),
+                                html.Div([], style={"height": 25}),
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            [],
+                                            style={
+                                                "display": "inline",
+                                                "marginLeft": 5,
+                                            },
+                                        ),
+                                        html.P(
+                                            "Frequency:", style={"display": "inline"}
+                                        ),
+                                        dcc.Input(
+                                            type="number",
+                                            value=1000,
+                                            min=1,
+                                            style={"marginLeft": 10},
+                                            id="equal_freq_freq_input",
+                                        ),
+                                    ],
+                                    id="equal_freq_freq_input_section",
+                                ),
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            [],
+                                            style={
+                                                "display": "inline",
+                                                "marginLeft": 5,
+                                            },
+                                        ),
+                                        html.P(
+                                            "Number of Bins:",
+                                            style={"display": "inline"},
+                                        ),
+                                        dcc.Input(
+                                            type="number",
+                                            value=10,
+                                            min=1,
+                                            style={"marginLeft": 10},
+                                            id="equal_freq_num_bin_input",
+                                        ),
+                                    ],
+                                    id="equal_freq_num_bin_input_section",
+                                    style={"display": "none"},
+                                ),
+                            ],
+                            id="equal_frequency_input_section",
+                            style={"display": "none"},
+                        ),
+                        html.Div([], style={"marginBottom": 25}),
+                        SaveButton("Refresh", id="auto_bin_refresh_button"),
+                        html.P(
+                            style={"marginTop": 20},
+                            id="auto_bin_algo_description",
+                        ),
+                    ],
+                    style=grey_panel_style,
+                ),
+            ]
+        ),
+        html.Div([], style={"width": "100%", "height": 25, "clear": "left"}),
+        html.Div(
+            [
+                html.Div(
+                    [
+                        SectionHeading("III. Perform Interactive Binning"),
+                        dcc.Graph(
+                            figure=generate_mixed_chart_fig(),
+                            id="mixed_chart",
+                        ),
+                        html.P(
+                            "Tips 1: If you would like to de-select the bar(s), simply click on the WOE line.", style={"marginTop": 20}),
+                        html.P(
+                            "Tips 2: You could use the 'Box Select' or 'Lasso Select' tools on the top right corner to select multiple bars."),
+                    ],
+                    style=white_panel_style,
+                ),
+                # Categorical Create New Bin Control Panel
                 html.Div([
-                    SaveButton("Adjust Cutpoints", inline=True, width="16.5%", id="numeric_rename_panel_adjust_cutpoints_nav_button"),
-                    SaveButton("Rename Bin", inline=True,
-                               width="16.5%", marginLeft="1%"),
-                ]),
-                html.Div(
-                    [
-                        SectionHeading("Rename Bin", center=True, bold=True),
-                        html.P("Instructions", style={"fontWeight": "bold"}),
-                        html.Ul([
-                            html.Li("Enter the new bin name in the text input area", style={
-                                    "fontSize": 14}),
-                            html.Li("Click the ‘Rename Bin’ button to preview changes on the bins settings", style={
-                                    "fontSize": 14}),
-                            html.Li("If nothing is entered in the input when the 'Rename Bin' button is clicked, the bin range(s) would be used as the new bin name", style={
-                                    "fontSize": 14}),
-                            html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={
-                                    "fontSize": 14}),
-                        ], style={"listStyleType": "square", "lineHeight": "97%"}),
-                        html.P("Selected Bin Info: ", style={
-                               "fontWeight": "bold"}),
-                        # TODO: extract this out
-                        html.Div([], id="numeric_rename_panel_selected_bin_info_div"),
-
-                        html.P("Enter the new bin name: ",
-                               style={"fontWeight": "bold"}),
-                        dcc.Input(style={"marginBottom": 10}, id="numeric_rename_panel_new_bin_name_input"),
-                        SaveButton("Rename Bin", id="numeric_rename_panel_rename_button"),
-                        html.Div(style={"height": 13}),
-                        html.Div([
-                            html.Div([], id="numeric_rename_panel_changes_div"),
+                    html.Div(
+                        [
+                            SectionHeading("Create a New Bin",
+                                           center=True, bold=True),
+                            html.P("Instructions", style={"fontWeight": "bold"}),
+                            html.Ul([
+                                html.Li("Enter the name of the new bin in the text input area", style={
+                                        "fontSize": 14}),
+                                html.Li("Select the elements from the dropdown menu that you would like to include in the bin", style={
+                                        "fontSize": 14}),
+                                html.Li("Click the ‘Create New Bin’ button to preview changes on the bins settings", style={
+                                        "fontSize": 14}),
+                                html.Li("The selected elements which overlaps with the old bins settings will be automatically removed from the other bins", style={
+                                        "fontSize": 14}),
+                                html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={
+                                        "fontSize": 14}),
+                            ], style={"listStyleType": "square", "lineHeight": "97%"}),
+                            html.P("Enter the new bin name: ",
+                                   style={"fontWeight": "bold"}),
+                            dcc.Input(style={"marginBottom": 10},
+                                      id="categoric_create_new_bin_name_input"),
+                            html.P("Select elements to be included in the new bin:", style={
+                                   "fontWeight": "bold"}),
+                            dcc.Dropdown(
+                                options=convert_column_list_to_dropdown_options(
+                                    ["OWN", "RENT", "MORTGAGE", "OTHERS"]),  # dummy
+                                value=[],
+                                multi=True,
+                                style={"marginBottom": 13},
+                                id="categoric_create_new_bin_dropdown",
+                            ),
+                            SaveButton("Create New Bin",
+                                       id="categoric_create_new_bin_button"),
+                            html.Div(style={"height": 13}),
                             html.Div([
-                                SaveButton("Submit", inline=True, id="numeric_rename_panel_submit_button"),
-                                SaveButton("Hide Details", inline=True,
-                                           backgroundColor="#8097E6", marginLeft=5, id="numeric_rename_panel_hide_details_button"),
-                                html.Div(style={"height": 13, "clear": "both"}),
-                                html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
-                                       style={"lineHeight": "99%", "fontSize": 14}),
-                            ], id="numeric_rename_panel_submit_div"),
-                        ], id="numeric_rename_panel_preview_changes_div", style={"display": "none"}),
-                    ],
-                    style={
-                        "marginTop": 13,
-                        "float": "left",
-                        "width": "30%",
-                        "backgroundColor": "#BCBCDA",
-                        "padding": "2%",
-                        "borderRadius": dimens["panel-border-radius"],
+                                html.Div(
+                                    [], id="categoric_create_new_bin_changes_div"),
+                                html.Div([
+                                    SaveButton(
+                                        "Submit", inline=True, id="categoric_create_new_bin_submit_button"),
+                                    SaveButton("Hide Details", inline=True, backgroundColor="#8097E6",
+                                               marginLeft=5, id="categoric_create_new_bin_hide_details_button"),
+                                    html.Div(
+                                        style={"height": 13, "clear": "both"}),
+                                    html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
+                                           style={"lineHeight": "99%", "fontSize": 14}),
+                                ], id="categoric_create_new_bin_submit_div"),
+                            ], id="categoric_create_new_bin_preview_changes_div", style={"display": "none"}),
+                        ],
+                        style={
+                            "float": "left",
+                            "width": "30%",
+                            "backgroundColor": "#BCBCDA",
+                            "padding": "2%",
+                            "borderRadius": dimens["panel-border-radius"],
+                        },
+                    ),
+                ], id="categorical_create_new_bin_control_panel", style={"display": "none"}),
+                # Categorical Add Elements Control Panel
+                html.Div([
+                    html.Div([
+                        SaveButton("Add Elements", inline=True, width="12%"),
+                        SaveButton("Split Bin", inline=True,
+                                   width="9%", marginLeft="0.5%", id="categoric_add_elements_panel_to_split_button"),
+                        SaveButton("Rename Bin", inline=True,
+                                   width="12%", marginLeft="0.5%", id="categoric_add_elements_panel_to_rename_button"),
+                    ]),
+                    html.Div(
+                        [
+                            SectionHeading("Add Elements to the Bin",
+                                           center=True, bold=True),
+                            html.P("Instructions", style={"fontWeight": "bold"}),
+                            html.Ul([
+                                html.Li("Enter the new bin name in the text input area, if it is empty, the bin name will remain the same", style={
+                                        "fontSize": 14}),
+                                html.Li("Select the elements to be added in the new bin from the dropdown menu", style={
+                                        "fontSize": 14}),
+                                html.Li("Click the ‘Add Elements’ button to preview changes on the bins settings", style={
+                                        "fontSize": 14}),
+                                html.Li("The selected elements which overlaps with the old bins settings will be automatically removed from the other bins", style={
+                                        "fontSize": 14}),
+                                html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={
+                                        "fontSize": 14}),
+                            ], style={"listStyleType": "square", "lineHeight": "97%"}),
+                            html.P("Selected Bin Info: ", style={
+                                   "fontWeight": "bold"}),
+                            # TODO: extract this out
+                            html.Div(
+                                id="categoric_add_elements_panel_selected_bin_info"),
 
-                    },
-
-                ),
-            ], id="numerical_rename_bin_control_panel", style={"display": "none"}),
-
-            # Numerical Merge Bins Control Panel
-            html.Div([
-                html.Div(
-                    [
-                        SectionHeading("Merge Bins", center=True, bold=True),
-                        html.P("Instructions", style={"fontWeight": "bold"}),
-                        html.Ul([
-                            html.Li("Enter the new bin name in the text input area", style={
-                                    "fontSize": 14}),
-                            html.Li("Click the ‘Merge Bins’ button to preview changes on the bins settings", style={
-                                    "fontSize": 14}),
-                            html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={
-                                    "fontSize": 14}),
-                        ], style={"listStyleType": "square", "lineHeight": "97%"}),
-                        # TODO: extract this out
-                        html.P("Selected Bin Info: ", style={
-                               "fontWeight": "bold"}),
-                        html.Div([], id="numeric_merge_panel_selected_bin_info_div"),
-                        html.P("Enter the new bin name: ",
-                               style={"fontWeight": "bold"}),
-                        dcc.Input(style={"marginBottom": 10}, id="numeric_merge_panel_new_bin_name_input"),
-
-                        SaveButton("Merge Bins", id="numeric_merge_panel_merge_button"),
-                        html.Div(style={"height": 13}),
-                        html.Div([
-                            html.Div([], id="numeric_merge_panel_changes_div"),
+                            html.P("Enter the new bin name: ",
+                                   style={"fontWeight": "bold"}),
+                            dcc.Input(
+                                style={"marginBottom": 10}, id="categoric_add_elements_panel_name_input"),
+                            html.P("Select elements to be added into the bin:",
+                                   style={"fontWeight": "bold"}),
+                            dcc.Dropdown(
+                                options=convert_column_list_to_dropdown_options(
+                                    ["OWN", "OTHERS"]),  # dummy
+                                value=[],
+                                multi=True,
+                                style={"marginBottom": 13},
+                                id="categoric_add_elements_panel_dropdown",
+                            ),
+                            SaveButton(
+                                "Add Elements", id="categoric_add_elements_panel_add_button"),
+                            html.Div(style={"height": 13}),
                             html.Div([
-                                SaveButton("Submit", inline=True, id="numeric_merge_panel_submit_button"),
-                                SaveButton("Hide Details", inline=True,
-                                           backgroundColor="#8097E6", marginLeft=5, id="numeric_merge_panel_hide_details_button"),
-                                html.Div(style={"height": 13, "clear": "both"}),
-                                html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
-                                       style={"lineHeight": "99%", "fontSize": 14}),
-                            ], id="numeric_merge_panel_submit_div"),
-                        ], id="numeric_merge_panel_preview_changes_div", style={"display": "none"}),
-                    ],
-                    style={
-                        "float": "left",
-                        "width": "30%",
-                        "backgroundColor": "#BCBCDA",
-                        "padding": "2%",
-                        "borderRadius": dimens["panel-border-radius"],
-                    },
+                                html.Div(
+                                    [], id="categoric_add_elements_panel_changes_div"),
+                                html.Div([
+                                    SaveButton(
+                                        "Submit", inline=True, id="categoric_add_elements_panel_submit_button"),
+                                    SaveButton("Hide Details", inline=True,
+                                               backgroundColor="#8097E6", marginLeft=5, id="categoric_add_elements_panel_hide_details_button"),
+                                    html.Div(
+                                        style={"height": 13, "clear": "both"}),
+                                    html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
+                                           style={"lineHeight": "99%", "fontSize": 14}),
+                                ], id="categoric_add_elements_panel_submit_div"),
+                            ], id="categoric_add_elements_panel_preview_changes_div", style={"display": "none"}),
+                        ],
+                        style={
+                            "marginTop": 13,
+                            "float": "left",
+                            "width": "30%",
+                            "backgroundColor": "#BCBCDA",
+                            "padding": "2%",
+                            "borderRadius": dimens["panel-border-radius"],
+                        },
+                    ),
+                ], id="categorical_add_elements_control_panel", style={"display": "none"}),
+                # Categorical Split Bin Control Panel
+                html.Div([
+                    html.Div([
+                        SaveButton("Add Elements", inline=True, width="12%",
+                                   id="categoric_split_panel_add_elements_nav_button"),
+                        SaveButton("Split Bin", inline=True,
+                                   width="9%", marginLeft="0.5%"),
+                        SaveButton("Rename Bin", inline=True,
+                                   width="12%", marginLeft="0.5%", id="categoric_split_panel_rename_nav_button"),
+                    ]),
+                    html.Div(
+                        [
+                            SectionHeading("Split an Existing Bin",
+                                           center=True, bold=True),
+                            html.P("Instructions", style={"fontWeight": "bold"}),
+                            html.Ul([
+                                html.Li("Enter the new bin name in the text input area, if it is empty, the elements included in the bin will be used as the bin name", style={
+                                        "fontSize": 14}),
+                                html.Li("Select the elements to be split out from the old bin", style={
+                                        "fontSize": 14}),
+                                html.Li("Click the ‘Split Bin’ button to preview changes on the bins settings", style={
+                                        "fontSize": 14}),
+                                html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={
+                                        "fontSize": 14}),
+                            ], style={"listStyleType": "square", "lineHeight": "97%"}),
+                            html.P("Selected Bin Info: ", style={
+                                   "fontWeight": "bold"}),
+                            # TODO: extract this out
+                            html.Div(id="categoric_split_panel_selected_bin_info"),
 
-                ),
-            ], id="numerical_merge_bins_control_panel", style={"display": "none"}),
-        ]
-    ),
-    html.P(id="test_saved_settings"),
-    html.P(id="test_select"),
-    html.P(id="test_click"),
-    html.P(id="test_temp_col_bins_settings"),
-    html.P(id="test_temp_chart_info"),
-    html.Div([], id="test_temp_df"),
-    html.Div([], style={"width": "100%", "height": 25, "clear": "left"}),
-    html.Div(
-        [
-            SectionHeading("IV. Monitor Bins Performance (Before)"),
-            html.Div([], id="stat_table_before"),
-        ],
-        style=grey_full_width_panel_style,
-    ),
-    html.Div([], style={"width": "100%", "height": 25, "clear": "left"}),
-    html.Div(
-        [
-            SectionHeading("V. Monitor Bins Performance (After)"),
-            html.Div([], id="stat_table_after"),
-        ],
-        style=green_full_width_panel_style,
-    ),
-    SectionHeading(
-        "VI. Save & Confirm Your Bins Settings for the Chosen Predictor Variable:",
-        inline=True,
-    ),
-    SaveButton(
-        title="Save & Confirm Interactive Binning",
-        marginLeft=15,
-        marginTop=55,
-        id="confirm_ib_button",
-    ),
+                            html.P("Enter the new bin name: ",
+                                   style={"fontWeight": "bold"}),
+                            dcc.Input(
+                                style={"marginBottom": 10}, id="categoric_split_panel_new_bin_name_input"),
+                            html.P("Select elements to be split out from the bin:", style={
+                                   "fontWeight": "bold"}),
+                            dcc.Dropdown(
+                                options=convert_column_list_to_dropdown_options(
+                                    ["OWN", "OTHERS"]),  # dummy
+                                value=[],
+                                multi=True,
+                                style={"marginBottom": 13},
+                                id="categoric_split_panel_dropdown",
+                            ),
+                            SaveButton(
+                                "Split Bin", id="categoric_split_panel_split_button"),
+                            html.Div(style={"height": 13}),
+                            html.Div([
+                                html.Div(
+                                    [], id="categoric_split_panel_changes_div"),
+                                html.Div([
+                                    SaveButton(
+                                        "Submit", inline=True, id="categoric_split_panel_submit_button"),
+                                    SaveButton("Hide Details", inline=True,
+                                               backgroundColor="#8097E6", marginLeft=5, id="categoric_split_panel_hide_details_button"),
+                                    html.Div(
+                                        style={"height": 13, "clear": "both"}),
+                                    html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
+                                           style={"lineHeight": "99%", "fontSize": 14}),
+                                ], id="categoric_split_panel_submit_div"),
+                            ], id="categoric_split_panel_preview_changes_div", style={"display": "none"}),
+                        ],
+                        style={
+                            "marginTop": 13,
+                            "float": "left",
+                            "width": "30%",
+                            "backgroundColor": "#BCBCDA",
+                            "padding": "2%",
+                            "borderRadius": dimens["panel-border-radius"],
+
+                        },
+
+                    ),
+                ], id="categorical_split_bin_control_panel", style={"display": "none"}),
+
+                # Categorical Rename Bin Control Panel
+                html.Div([
+                    html.Div([
+                        SaveButton("Add Elements", inline=True, width="12%",
+                                   id="categoric_rename_panel_add_elements_nav_button"),
+                        SaveButton("Split Bin", inline=True,
+                                   width="9%", marginLeft="0.5%", id="categoric_rename_panel_split_nav_button"),
+                        SaveButton("Rename Bin", inline=True,
+                                   width="12%", marginLeft="0.5%"),
+                    ]),
+                    html.Div(
+                        [
+                            SectionHeading("Rename Bin", center=True, bold=True),
+                            html.P("Instructions", style={"fontWeight": "bold"}),
+                            html.Ul([
+                                html.Li("Enter the new bin name in the text input area", style={
+                                        "fontSize": 14}),
+                                html.Li("Click the ‘Rename Bin’ button to preview changes on the bins settings", style={
+                                        "fontSize": 14}),
+                                html.Li("If nothing is entered in the input when the 'Rename Bin' button is clicked, the bin element(s) would be used as the new bin name", style={
+                                        "fontSize": 14}),
+                                html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={
+                                        "fontSize": 14}),
+                            ], style={"listStyleType": "square", "lineHeight": "97%"}),
+                            html.P("Selected Bin Info: ", style={
+                                   "fontWeight": "bold"}),
+                            # TODO: extract this out
+                            html.Div(id="categoric_rename_panel_selected_bin_info"),
+
+                            html.P("Enter the new bin name: ",
+                                   style={"fontWeight": "bold"}),
+                            dcc.Input(
+                                style={"marginBottom": 10}, id="categoric_rename_panel_new_bin_name_input"),
+                            SaveButton(
+                                "Rename Bin", id="categoric_rename_panel_rename_button"),
+                            html.Div(style={"height": 13}),
+                            html.Div([
+                                html.Div(
+                                    [], id="categoric_rename_panel_changes_div"),
+                                html.Div([
+                                    SaveButton(
+                                        "Submit", inline=True, id="categoric_rename_panel_submit_button"),
+                                    SaveButton("Hide Details", inline=True,
+                                               backgroundColor="#8097E6", marginLeft=5, id="categoric_rename_panel_hide_details_button"),
+                                    html.Div(
+                                        style={"height": 13, "clear": "both"}),
+                                    html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
+                                           style={"lineHeight": "99%", "fontSize": 14}),
+                                ], id="categoric_rename_panel_submit_div"),
+                            ], id="categoric_rename_panel_preview_changes_div", style={"display": "none"})
+                        ],
+                        style={
+                            "marginTop": 13,
+                            "float": "left",
+                            "width": "30%",
+                            "backgroundColor": "#BCBCDA",
+                            "padding": "2%",
+                            "borderRadius": dimens["panel-border-radius"],
+
+                        },
+
+                    ),
+                ], id="categorical_rename_bin_control_panel", style={"display": "none"}),
+
+                # Categorical Merge Bins Control Panel
+                html.Div([
+                    html.Div(
+                        [
+                            SectionHeading("Merge Bins", center=True, bold=True),
+                            html.P("Instructions", style={"fontWeight": "bold"}),
+                            html.Ul([
+                                html.Li("Enter the new bin name in the text input area", style={
+                                        "fontSize": 14}),
+                                html.Li("Click the ‘Merge Bins’ button to preview changes on the bins settings", style={
+                                        "fontSize": 14}),
+                                html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={
+                                        "fontSize": 14}),
+                            ], style={"listStyleType": "square", "lineHeight": "97%"}),
+                            # TODO: extract this out
+                            html.P("Selected Bin Info: ", style={
+                                   "fontWeight": "bold"}),
+                            html.Div(
+                                [], id="categoric_merge_panel_selected_bin_info_div"),
+
+                            html.P("Enter the new bin name: ",
+                                   style={"fontWeight": "bold"}),
+                            dcc.Input(
+                                style={"marginBottom": 10}, id="categoric_merge_panel_new_bin_name_input"),
+                            SaveButton(
+                                "Merge Bins", id="categoric_merge_panel_merge_button"),
+                            html.Div(style={"height": 13}),
+                            html.Div([
+                                html.Div(
+                                    [], id="categoric_merge_panel_changes_div"),
+                                html.Div([
+                                    SaveButton(
+                                        "Submit", inline=True, id="categoric_merge_panel_submit_button"),
+                                    SaveButton("Hide Details", inline=True,
+                                               backgroundColor="#8097E6", marginLeft=5, id="categoric_merge_panel_hide_details_button"),
+                                    html.Div(
+                                        style={"height": 13, "clear": "both"}),
+                                    html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
+                                           style={"lineHeight": "99%", "fontSize": 14}),
+                                ], id="categoric_merge_panel_submit_div"),
+                            ], id="categoric_merge_bin_panel_preview_changes_div", style={"display": "none"}),
+                        ],
+                        style={
+                            "float": "left",
+                            "width": "30%",
+                            "backgroundColor": "#BCBCDA",
+                            "padding": "2%",
+                            "borderRadius": dimens["panel-border-radius"],
+
+                        },
+
+                    ),
+                ], id="categorical_merge_bins_control_panel", style={"display": "none"}),
+
+                # Numerical Create New Bin Control Panel
+                html.Div([
+                    html.Div(
+                        [
+                            SectionHeading("Create a New Bin",
+                                           center=True, bold=True),
+                            html.P("Instructions", style={"fontWeight": "bold"}),
+                            html.Ul([
+                                html.Li("Enter the name of the new bin in the text input area", style={
+                                        "fontSize": 14}),
+                                html.Li("Indicate the ranges that you would like to include in the bin", style={
+                                        "fontSize": 14}),
+                                html.Li("Click the ‘Create New Bin’ button to preview changes on the bins settings", style={
+                                        "fontSize": 14}),
+                                html.Li("The indicated ranges which overlaps with the old bins settings will be automatically removed from the other bins", style={
+                                        "fontSize": 14}),
+                                html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={
+                                        "fontSize": 14}),
+                            ], style={"listStyleType": "square", "lineHeight": "97%"}),
+                            html.P("Enter the new bin name: ",
+                                   style={"fontWeight": "bold"}),
+                            dcc.Input(
+                                style={"marginBottom": 10}, id="numeric_create_new_bin_panel_new_bin_name_input"),
+                            html.P("Indicate the ranges to be included in the new bin:", style={
+                                   "fontWeight": "bold"}),
+
+                            html.Ol(
+                                [], style={"fontSize": 14}, id="numeric_create_new_bin_panel_range_list"),
+                            html.Div([], style={"height": 10, "clear": "both"}),
+
+                            SaveButton("Add", inline=True,
+                                       id="numeric_create_new_bin_panel_add_button"),
+                            SaveButton("Remove", inline=True, marginLeft=8,
+                                       id="numeric_create_new_bin_panel_remove_button"),
+                            html.Div([], style={"clear": "both", "height": 8}),
+                            SaveButton(
+                                "Create New Bin", id="numeric_create_new_bin_panel_create_new_bin_button"),
+                            html.Div(style={"height": 13}),
+                            html.Div([
+                                html.Div(
+                                    [], id="numeric_create_new_bin_panel_changes_div"),
+                                html.Div([
+                                    SaveButton(
+                                        "Submit", inline=True, id="numeric_create_new_bin_panel_submit_button"),
+                                    SaveButton("Hide Details", inline=True,
+                                               backgroundColor="#8097E6", marginLeft=5, id="numeric_create_new_bin_hide_details_button"),
+                                    html.Div(
+                                        style={"height": 13, "clear": "both"}),
+                                    html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
+                                           style={"lineHeight": "99%", "fontSize": 14}),
+                                ], id="numeric_create_new_bin_panel_submit_div"),
+                            ], id="numeric_create_new_bin_preview_changes_div", style={"display": "none"}),
+
+                        ],
+                        style={
+                            "float": "left",
+                            "width": "30%",
+                            "backgroundColor": "#BCBCDA",
+                            "padding": "2%",
+                            "borderRadius": dimens["panel-border-radius"],
+                        },
+
+                    ),
+                ], id="numerical_create_new_bin_control_panel", style={"display": "none"}),
+
+                # Numerical Adjust Cutpoints Control Panel
+                html.Div([
+                    html.Div([
+                        SaveButton("Adjust Cutpoints", inline=True, width="16.5%"),
+                        SaveButton("Rename Bin", inline=True,
+                                   width="16.5%", marginLeft="1%", id="numeric_adjust_cutpoints_panel_rename_nav_button"),
+                    ]),
+                    html.Div(
+                        [
+                            SectionHeading(
+                                "Adjust Cutpoints of the Bin", center=True, bold=True),
+                            html.P("Instructions", style={"fontWeight": "bold"}),
+                            html.Ul([
+                                html.Li("Enter the new bin name in the text input area, if it is empty, the bin name will remain the same", style={
+                                        "fontSize": 14}),
+                                html.Li("Indicate the ranges that you would like to remains in the selected bin", style={
+                                        "fontSize": 14}),
+                                html.Li("Any ranges in the selected bin not being indicated would be split out as a new bin", style={
+                                        "fontSize": 14}),
+                                html.Li("The indicated ranges which overlaps with the old bins settings will be automatically removed from the other bins", style={
+                                        "fontSize": 14}),
+                                html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={
+                                        "fontSize": 14}),
+                            ], style={"listStyleType": "square", "lineHeight": "97%"}),
+                            html.P("Selected Bin Info: ", style={
+                                   "fontWeight": "bold"}),
+                            # TODO: extract this out
+                            html.Div(
+                                [], id="numeric_adjust_cutpoints_panel_selected_bin_info_div"),
+
+                            html.P("Enter the new bin name: ",
+                                   style={"fontWeight": "bold"}),
+                            dcc.Input(style={
+                                      "marginBottom": 10}, id="numeric_adjust_cutpoints_panel_new_bin_name_input"),
+                            html.P("Indicate the range(s) to be added into the bin:", style={
+                                   "fontWeight": "bold"}),
+
+                            html.Ol(
+                                [], style={"fontSize": 14}, id="numeric_adjust_cutpoints_panel_range_list"),
+                            html.Div([], style={"height": 10, "clear": "both"}),
+
+                            # TODO!! --> Add dynamic range list
+                            SaveButton(
+                                "Add", inline=True, id="numeric_adjust_cutpoints_panel_add_button"),
+                            SaveButton("Remove", inline=True, marginLeft=8,
+                                       id="numeric_adjust_cutpoints_panel_remove_button"),
+                            html.Div([], style={"clear": "both", "height": 8}),
+                            SaveButton(
+                                "Adjust Cutpoints", id="numeric_adjust_cutpoints_panel_adjust_cutpoints_button"),
+                            html.Div(style={"height": 13}),
+                            html.Div([
+                                html.Div(
+                                    [], id="numeric_adjust_cutpoints_panel_changes_div"),
+                                html.Div([
+                                    SaveButton(
+                                        "Submit", inline=True, id="numeric_adjust_cutpoints_panel_submit_button"),
+                                    SaveButton("Hide Details", inline=True,
+                                               backgroundColor="#8097E6", marginLeft=5, id="numeric_adjust_cutpoints_panel_hide_details_button"),
+                                    html.Div(
+                                        style={"height": 13, "clear": "both"}),
+                                    html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
+                                           style={"lineHeight": "99%", "fontSize": 14}),
+                                ], id="numeric_adjust_cutpoints_panel_submit_div"),
+                            ], id="numeric_adjust_cutpoints_panel_preview_changes_div", style={"display": "none"}),
+                        ],
+                        style={
+                            "marginTop": 13,
+                            "float": "left",
+                            "width": "30%",
+                            "backgroundColor": "#BCBCDA",
+                            "padding": "2%",
+                            "borderRadius": dimens["panel-border-radius"],
+                        },
+
+                    ),
+                ], id="numerical_adjust_cutpoints_control_panel", style={"display": "none"}),
+
+                # Numerical Rename Bin Control Panel
+                html.Div([
+                    html.Div([
+                        SaveButton("Adjust Cutpoints", inline=True, width="16.5%",
+                                   id="numeric_rename_panel_adjust_cutpoints_nav_button"),
+                        SaveButton("Rename Bin", inline=True,
+                                   width="16.5%", marginLeft="1%"),
+                    ]),
+                    html.Div(
+                        [
+                            SectionHeading("Rename Bin", center=True, bold=True),
+                            html.P("Instructions", style={"fontWeight": "bold"}),
+                            html.Ul([
+                                html.Li("Enter the new bin name in the text input area", style={
+                                        "fontSize": 14}),
+                                html.Li("Click the ‘Rename Bin’ button to preview changes on the bins settings", style={
+                                        "fontSize": 14}),
+                                html.Li("If nothing is entered in the input when the 'Rename Bin' button is clicked, the bin range(s) would be used as the new bin name", style={
+                                        "fontSize": 14}),
+                                html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={
+                                        "fontSize": 14}),
+                            ], style={"listStyleType": "square", "lineHeight": "97%"}),
+                            html.P("Selected Bin Info: ", style={
+                                   "fontWeight": "bold"}),
+                            # TODO: extract this out
+                            html.Div(
+                                [], id="numeric_rename_panel_selected_bin_info_div"),
+
+                            html.P("Enter the new bin name: ",
+                                   style={"fontWeight": "bold"}),
+                            dcc.Input(
+                                style={"marginBottom": 10}, id="numeric_rename_panel_new_bin_name_input"),
+                            SaveButton(
+                                "Rename Bin", id="numeric_rename_panel_rename_button"),
+                            html.Div(style={"height": 13}),
+                            html.Div([
+                                html.Div(
+                                    [], id="numeric_rename_panel_changes_div"),
+                                html.Div([
+                                    SaveButton(
+                                        "Submit", inline=True, id="numeric_rename_panel_submit_button"),
+                                    SaveButton("Hide Details", inline=True,
+                                               backgroundColor="#8097E6", marginLeft=5, id="numeric_rename_panel_hide_details_button"),
+                                    html.Div(
+                                        style={"height": 13, "clear": "both"}),
+                                    html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
+                                           style={"lineHeight": "99%", "fontSize": 14}),
+                                ], id="numeric_rename_panel_submit_div"),
+                            ], id="numeric_rename_panel_preview_changes_div", style={"display": "none"}),
+                        ],
+                        style={
+                            "marginTop": 13,
+                            "float": "left",
+                            "width": "30%",
+                            "backgroundColor": "#BCBCDA",
+                            "padding": "2%",
+                            "borderRadius": dimens["panel-border-radius"],
+
+                        },
+
+                    ),
+                ], id="numerical_rename_bin_control_panel", style={"display": "none"}),
+
+                # Numerical Merge Bins Control Panel
+                html.Div([
+                    html.Div(
+                        [
+                            SectionHeading("Merge Bins", center=True, bold=True),
+                            html.P("Instructions", style={"fontWeight": "bold"}),
+                            html.Ul([
+                                html.Li("Enter the new bin name in the text input area", style={
+                                        "fontSize": 14}),
+                                html.Li("Click the ‘Merge Bins’ button to preview changes on the bins settings", style={
+                                        "fontSize": 14}),
+                                html.Li("Once you consider the binning is fine, click the ‘Submit’ button to update the mixed chart & the statistical tables", style={
+                                        "fontSize": 14}),
+                            ], style={"listStyleType": "square", "lineHeight": "97%"}),
+                            # TODO: extract this out
+                            html.P("Selected Bin Info: ", style={
+                                   "fontWeight": "bold"}),
+                            html.Div(
+                                [], id="numeric_merge_panel_selected_bin_info_div"),
+                            html.P("Enter the new bin name: ",
+                                   style={"fontWeight": "bold"}),
+                            dcc.Input(style={"marginBottom": 10},
+                                      id="numeric_merge_panel_new_bin_name_input"),
+
+                            SaveButton(
+                                "Merge Bins", id="numeric_merge_panel_merge_button"),
+                            html.Div(style={"height": 13}),
+                            html.Div([
+                                html.Div([], id="numeric_merge_panel_changes_div"),
+                                html.Div([
+                                    SaveButton("Submit", inline=True,
+                                               id="numeric_merge_panel_submit_button"),
+                                    SaveButton("Hide Details", inline=True,
+                                               backgroundColor="#8097E6", marginLeft=5, id="numeric_merge_panel_hide_details_button"),
+                                    html.Div(
+                                        style={"height": 13, "clear": "both"}),
+                                    html.P("*Note: Submitting the changes only updates the mixed chart & the statistical tables, it DOES NOT save the bins settings until you click the ‘Confirm Binning’ button in Section V.",
+                                           style={"lineHeight": "99%", "fontSize": 14}),
+                                ], id="numeric_merge_panel_submit_div"),
+                            ], id="numeric_merge_panel_preview_changes_div", style={"display": "none"}),
+                        ],
+                        style={
+                            "float": "left",
+                            "width": "30%",
+                            "backgroundColor": "#BCBCDA",
+                            "padding": "2%",
+                            "borderRadius": dimens["panel-border-radius"],
+                        },
+
+                    ),
+                ], id="numerical_merge_bins_control_panel", style={"display": "none"}),
+            ]
+        ),
+        html.Div([], style={"width": "100%", "height": 25, "clear": "left"}),
+        html.Div(
+            [
+                SectionHeading("IV. Monitor Bins Performance (Before)"),
+                html.Div([], id="stat_table_before"),
+            ],
+            style=grey_full_width_panel_style,
+        ),
+        html.Div([], style={"width": "100%", "height": 25, "clear": "left"}),
+        html.Div(
+            [
+                SectionHeading("V. Monitor Bins Performance (After)"),
+                html.Div([], id="stat_table_after"),
+            ],
+            style=green_full_width_panel_style,
+        ),
+        SectionHeading(
+            "VI. Save & Confirm Your Bins Settings for the Chosen Predictor Variable:",
+            inline=True,
+        ),
+        SaveButton(
+            title="Save & Confirm Interactive Binning",
+            marginLeft=15,
+            marginTop=55,
+            id="confirm_ib_button",
+        ),
+        html.Div([
+            html.P("Saved!", style={"color": "blue", "fontWeight": "bold"}),
+        ], id="ib_saved_msg", style={"display": "none"}),
+    ], id="ib_content_div"),
+    html.Div([
+        html.P("Please confirm your input dataset, and define your good bad definitions first before performing interactive binning.", style={"color": "red"})
+    ], id="ib_error"),
+    
     html.Div(style={"height": 100}),
 ])
 
@@ -2872,8 +3008,10 @@ preview_download_page_layout = html.Div(
         NavBar(),
         Heading("Preview & Download Bins Settings"),
         SectionHeading("I. Preview Output Dataset"),
-        html.P("Note: It may take some time to perform binning on all columns & compute statistics table and chart, please wait patiently.", style={"color": "blue"}),
-        html.Div([DataTable(df=pd.DataFrame({"Loading...": ["","","","","",""], "   ":["","","","","",""], "  ":["","","","","",""], " ":["","","","","",""], "":["","","","","",""]}), width=100)], id="preview_datatable_div"),
+        html.P("Note: It may take some time to perform binning on all columns & compute statistics table and chart, please wait patiently.", style={
+               "color": "blue"}),
+        html.Div([DataTable(df=pd.DataFrame({"Loading...": ["", "", "", "", "", ""], "   ":["", "", "", "", "", ""], "  ":[
+                 "", "", "", "", "", ""], " ":["", "", "", "", "", ""], "":["", "", "", "", "", ""]}), width=100)], id="preview_datatable_div"),
         SectionHeading("II. Preview Bins' Performance"),
         html.Div([
             html.P("Select variable to preview: ", style={}),
@@ -2885,8 +3023,10 @@ preview_download_page_layout = html.Div(
             ),
         ], style={"display": "flex", "alignItems": "center"}),
         html.Div(style={"height": 10}),
-        html.P("Summary Statistics Table", style={"textDecoration": "underline"}),
-        html.Div([DataTable(df=pd.DataFrame({"Loading...": ["","","","","",""], "   ":["","","","","",""], "  ":["","","","","",""], " ":["","","","","",""], "":["","","","","",""]}), width=100)], id="preview_summary_stat_table_div"),
+        html.P("Summary Statistics Table", style={
+               "textDecoration": "underline"}),
+        html.Div([DataTable(df=pd.DataFrame({"Loading...": ["", "", "", "", "", ""], "   ":["", "", "", "", "", ""], "  ":[
+                 "", "", "", "", "", ""], " ":["", "", "", "", "", ""], "":["", "", "", "", "", ""]}), width=100)], id="preview_summary_stat_table_div"),
         html.Div([], style={"height": 20}),
         html.P("Mixed Chart", style={"textDecoration": "underline"}),
         dcc.Graph(
@@ -3016,7 +3156,10 @@ show error message
 
 
 @app.callback(
-    Output("confirm_input_dataset_error_msg", "children"),
+    [
+        Output("confirm_input_dataset_error_msg", "children"),
+        Output("confirm_input_dataset_saved_msg", "style"),
+    ],
     Input("confirm_predictor_var_button", "n_clicks"),
     [
         State("predictor_var_dropdown", "value"),
@@ -3030,8 +3173,8 @@ def show_confirm_input_datset_error_msg(n_clicks, predictor_var_dropdown_values,
         pred_var_type = predictor_type[i]["props"]["children"][1]["props"]["value"]
         # invalid user input, return original data
         if df[pred].dtype == "object" and pred_var_type == "numerical":
-            return "Error: some columns having categorical type is defined as numerical."
-    return ""
+            return ["Error: some columns having categorical type is defined as numerical.", {"display": "none"}]
+    return ["", {}]
 
 
 """
@@ -3485,7 +3628,10 @@ Show error message when:
 
 
 @app.callback(
-    Output("good_bad_def_error_msg", "children"),
+    [
+        Output("good_bad_def_error_msg", "children"),
+        Output("good_bad_def_saved_msg", "style"),
+    ],
     Input("confirm_good_bad_def_button", "n_clicks"),
     [
         State({"index": ALL, "type": "bad_numerical_column"}, "value"),
@@ -3548,7 +3694,11 @@ def show_good_bad_def_error_msg(n_clicks, bad_numerical_column_list, bad_numeric
     if len(bad_numeric_list) == 0 and len(indeterminate_numeric_list) == 0 and len(bad_categoric_list) == 0 and len(indeterminate_categoric_list) == 0:
         error_msg += "Error: Definitions should not be empty."
 
-    return error_msg
+    style = {}
+    if error_msg != "":
+        style = {"display": "none"}
+        
+    return [error_msg, style]
 
 
 """
@@ -3831,141 +3981,152 @@ refresh button in automated binning panel
 )
 def update_temp_bins_settings(var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clicks4, n_clicks5, n_clicks6, n_clicks7, n_clicks8, n_clicks9, n_clicks10, bins_settings_data, auto_bin_algo, equal_width_method, width, ew_num_bins, equal_freq_method, freq, ef_num_bins, temp_col_bins_settings_data, categoric_create_new_bin_name_input, categoric_create_new_bin_dropdown, categoric_rename_panel_new_bin_name_input, click_data, categoric_add_elements_panel_name_input, categoric_add_elements_panel_dropdown, categoric_merge_panel_new_bin_name_input, selected_data, categoric_split_panel_new_bin_name_input, categoric_split_panel_dropdown, numeric_rename_panel_new_bin_name_input, numeric_merge_panel_new_bin_name_input, numeric_create_new_bin_panel_new_bin_name_input, numeric_create_new_bin_lower, numeric_create_new_bin_upper, numeric_adjust_cutpoints_panel_new_bin_name_input, numeric_adjust_cutpoints_lower, numeric_adjust_cutpoints_upper):
     triggered = dash.callback_context.triggered
-    
+
     if triggered[0]['prop_id'] == "categoric_create_new_bin_submit_button.n_clicks":
         temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
-        
-        new_settings, _, __ = InteractiveBinningMachine.categoric_create_new_bin(new_bin_name=categoric_create_new_bin_name_input, new_bin_element_li=categoric_create_new_bin_dropdown, temp_col_bins_settings=temp_col_bins_settings)
+
+        new_settings, _, __ = InteractiveBinningMachine.categoric_create_new_bin(
+            new_bin_name=categoric_create_new_bin_name_input, new_bin_element_li=categoric_create_new_bin_dropdown, temp_col_bins_settings=temp_col_bins_settings)
 
         def_li, binned_series = BinningMachine.perform_binning_on_col(
-        df.loc[:, [new_settings["column"]]], new_settings)
+            df.loc[:, [new_settings["column"]]], new_settings)
         temp_df = df.copy()
         temp_df['binned_col'] = binned_series.values
-        
+
         return [json.dumps(new_settings), json.dumps(temp_df.to_dict())]
-        
+
     if triggered[0]['prop_id'] == "categoric_rename_panel_submit_button.n_clicks":
         temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
-        
-        new_settings, _, __ = InteractiveBinningMachine.categoric_rename_bin(selected_bin_name=click_data["points"][0]["x"], new_bin_name=categoric_rename_panel_new_bin_name_input, temp_col_bins_settings=temp_col_bins_settings)
-        
+
+        new_settings, _, __ = InteractiveBinningMachine.categoric_rename_bin(
+            selected_bin_name=click_data["points"][0]["x"], new_bin_name=categoric_rename_panel_new_bin_name_input, temp_col_bins_settings=temp_col_bins_settings)
+
         def_li, binned_series = BinningMachine.perform_binning_on_col(
-        df.loc[:, [new_settings["column"]]], new_settings)
+            df.loc[:, [new_settings["column"]]], new_settings)
         temp_df = df.copy()
         temp_df['binned_col'] = binned_series.values
-        
+
         return [json.dumps(new_settings), json.dumps(temp_df.to_dict())]
-    
+
     if triggered[0]['prop_id'] == "categoric_add_elements_panel_submit_button.n_clicks":
         temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
-        
-        new_settings, _, __ = InteractiveBinningMachine.categoric_add_elements(selected_bin_name=click_data["points"][0]["x"], new_bin_name=categoric_add_elements_panel_name_input, elements_to_add_li=categoric_add_elements_panel_dropdown, temp_col_bins_settings=temp_col_bins_settings)
-        
+
+        new_settings, _, __ = InteractiveBinningMachine.categoric_add_elements(
+            selected_bin_name=click_data["points"][0]["x"], new_bin_name=categoric_add_elements_panel_name_input, elements_to_add_li=categoric_add_elements_panel_dropdown, temp_col_bins_settings=temp_col_bins_settings)
+
         def_li, binned_series = BinningMachine.perform_binning_on_col(
-        df.loc[:, [new_settings["column"]]], new_settings)
+            df.loc[:, [new_settings["column"]]], new_settings)
         temp_df = df.copy()
         temp_df['binned_col'] = binned_series.values
-        
+
         return [json.dumps(new_settings), json.dumps(temp_df.to_dict())]
-    
+
     if triggered[0]['prop_id'] == "categoric_merge_panel_submit_button.n_clicks":
         temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
-    
+
         selected_bin_name_set = set()
         for point in selected_data["points"]:
             selected_bin_name_set.add(point["x"])
         selected_bin_name_li = list(selected_bin_name_set)
 
-        new_settings, _, __ = InteractiveBinningMachine.categoric_merge_bins(selected_bin_name_li=selected_bin_name_li, new_bin_name=categoric_merge_panel_new_bin_name_input, temp_col_bins_settings=temp_col_bins_settings)
-    
+        new_settings, _, __ = InteractiveBinningMachine.categoric_merge_bins(
+            selected_bin_name_li=selected_bin_name_li, new_bin_name=categoric_merge_panel_new_bin_name_input, temp_col_bins_settings=temp_col_bins_settings)
+
         def_li, binned_series = BinningMachine.perform_binning_on_col(
-        df.loc[:, [new_settings["column"]]], new_settings)
+            df.loc[:, [new_settings["column"]]], new_settings)
         temp_df = df.copy()
         temp_df['binned_col'] = binned_series.values
-        
+
         return [json.dumps(new_settings), json.dumps(temp_df.to_dict())]
-    
+
     if triggered[0]['prop_id'] == "categoric_split_panel_submit_button.n_clicks":
         temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
-    
-        new_settings, _, __ = InteractiveBinningMachine.categoric_split_bin(selected_bin_name=click_data["points"][0]["x"], new_bin_name=categoric_split_panel_new_bin_name_input, elements_to_split_out_li=categoric_split_panel_dropdown, temp_col_bins_settings=temp_col_bins_settings)
-    
+
+        new_settings, _, __ = InteractiveBinningMachine.categoric_split_bin(
+            selected_bin_name=click_data["points"][0]["x"], new_bin_name=categoric_split_panel_new_bin_name_input, elements_to_split_out_li=categoric_split_panel_dropdown, temp_col_bins_settings=temp_col_bins_settings)
+
         def_li, binned_series = BinningMachine.perform_binning_on_col(
-        df.loc[:, [new_settings["column"]]], new_settings)
+            df.loc[:, [new_settings["column"]]], new_settings)
         temp_df = df.copy()
         temp_df['binned_col'] = binned_series.values
-        
+
         return [json.dumps(new_settings), json.dumps(temp_df.to_dict())]
-    
+
     if triggered[0]['prop_id'] == "numeric_rename_panel_submit_button.n_clicks":
         temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
-        
-        new_settings, _, __ = InteractiveBinningMachine.numeric_rename_bin(selected_bin_name=click_data["points"][0]["x"], new_bin_name=numeric_rename_panel_new_bin_name_input, temp_col_bins_settings=temp_col_bins_settings)
-    
+
+        new_settings, _, __ = InteractiveBinningMachine.numeric_rename_bin(
+            selected_bin_name=click_data["points"][0]["x"], new_bin_name=numeric_rename_panel_new_bin_name_input, temp_col_bins_settings=temp_col_bins_settings)
+
         def_li, binned_series = BinningMachine.perform_binning_on_col(
-        df.loc[:, [new_settings["column"]]], new_settings)
+            df.loc[:, [new_settings["column"]]], new_settings)
         temp_df = df.copy()
         temp_df['binned_col'] = binned_series.values
-        
+
         return [json.dumps(new_settings), json.dumps(temp_df.to_dict())]
-    
+
     if triggered[0]['prop_id'] == "numeric_merge_panel_submit_button.n_clicks":
         temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
-        
+
         selected_bin_name_set = set()
         for point in selected_data["points"]:
             selected_bin_name_set.add(point["x"])
         selected_bin_name_li = list(selected_bin_name_set)
 
-        new_settings, _, __ = InteractiveBinningMachine.numeric_merge_bins(selected_bin_name_li=selected_bin_name_li, new_bin_name=numeric_merge_panel_new_bin_name_input, temp_col_bins_settings=temp_col_bins_settings)
-    
+        new_settings, _, __ = InteractiveBinningMachine.numeric_merge_bins(
+            selected_bin_name_li=selected_bin_name_li, new_bin_name=numeric_merge_panel_new_bin_name_input, temp_col_bins_settings=temp_col_bins_settings)
+
         def_li, binned_series = BinningMachine.perform_binning_on_col(
-        df.loc[:, [new_settings["column"]]], new_settings)
+            df.loc[:, [new_settings["column"]]], new_settings)
         temp_df = df.copy()
         temp_df['binned_col'] = binned_series.values
-        
+
         return [json.dumps(new_settings), json.dumps(temp_df.to_dict())]
-    
+
     if triggered[0]['prop_id'] == "numeric_create_new_bin_panel_submit_button.n_clicks":
         temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
-        
-        ranges = tuple(zip(numeric_create_new_bin_lower, numeric_create_new_bin_upper))
+
+        ranges = tuple(zip(numeric_create_new_bin_lower,
+                       numeric_create_new_bin_upper))
 
         isValid = validate_numerical_bounds(ranges)
-        
+
         if isValid == False:
             raise PreventUpdate
         else:
             ranges = decode_ib_ranges(ranges)
-            new_settings, _, __ = InteractiveBinningMachine.numeric_create_new_bin(new_bin_name=numeric_create_new_bin_panel_new_bin_name_input, new_bin_ranges=ranges, temp_col_bins_settings=temp_col_bins_settings)
+            new_settings, _, __ = InteractiveBinningMachine.numeric_create_new_bin(
+                new_bin_name=numeric_create_new_bin_panel_new_bin_name_input, new_bin_ranges=ranges, temp_col_bins_settings=temp_col_bins_settings)
 
         def_li, binned_series = BinningMachine.perform_binning_on_col(
-        df.loc[:, [new_settings["column"]]], new_settings)
+            df.loc[:, [new_settings["column"]]], new_settings)
         temp_df = df.copy()
         temp_df['binned_col'] = binned_series.values
-        
+
         return [json.dumps(new_settings), json.dumps(temp_df.to_dict())]
-    
+
     if triggered[0]['prop_id'] == "numeric_adjust_cutpoints_panel_submit_button.n_clicks":
         temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
-        
-        ranges = tuple(zip(numeric_adjust_cutpoints_lower, numeric_adjust_cutpoints_upper))
+
+        ranges = tuple(zip(numeric_adjust_cutpoints_lower,
+                       numeric_adjust_cutpoints_upper))
 
         isValid = validate_numerical_bounds(ranges)
-        
+
         if isValid == False:
             raise PreventUpdate
         else:
             ranges = decode_ib_ranges(ranges)
-            new_settings, _, __ = InteractiveBinningMachine.get_numeric_adjust_cutpoints(selected_bin_name=click_data["points"][0]["x"], new_bin_name=numeric_adjust_cutpoints_panel_new_bin_name_input, new_bin_ranges=ranges, temp_col_bins_settings=temp_col_bins_settings)
+            new_settings, _, __ = InteractiveBinningMachine.get_numeric_adjust_cutpoints(
+                selected_bin_name=click_data["points"][0]["x"], new_bin_name=numeric_adjust_cutpoints_panel_new_bin_name_input, new_bin_ranges=ranges, temp_col_bins_settings=temp_col_bins_settings)
 
         def_li, binned_series = BinningMachine.perform_binning_on_col(
-        df.loc[:, [new_settings["column"]]], new_settings)
+            df.loc[:, [new_settings["column"]]], new_settings)
         temp_df = df.copy()
         temp_df['binned_col'] = binned_series.values
-        
+
         return [json.dumps(new_settings), json.dumps(temp_df.to_dict())]
-    
+
     bins_settings_dict = json.loads(bins_settings_data)
     bins_settings_list = bins_settings_dict["variable"]
     col_bins_settings = None
@@ -4008,13 +4169,10 @@ def update_temp_bins_settings(var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clic
         df.loc[:, [col_bins_settings["column"]]], col_bins_settings)
     temp_df = df.copy()
     temp_df['binned_col'] = binned_series.values
-    
+
     col_bins_settings["bins"] = def_li
-        
+
     return [json.dumps(col_bins_settings), json.dumps(temp_df.to_dict())]
-
-
-
 
 
 """
@@ -4048,17 +4206,20 @@ def save_temp_chart_info(temp_binned_col_data, good_bad_def_data):
     woe_list = get_list_of_woe(
         temp_df, 'binned_col', unique_bins, good_bad_def)
 
-    combined_info = tuple(zip(unique_bins, total_count_list, bad_count_list, woe_list))
+    combined_info = tuple(
+        zip(unique_bins, total_count_list, bad_count_list, woe_list))
 
-    sorted_combined_info = sorted(combined_info, key=lambda x: x[3], reverse=True)
+    sorted_combined_info = sorted(
+        combined_info, key=lambda x: x[3], reverse=True)
 
-    sorted_unique_bins, sorted_total_count_list, sorted_bad_count_list, sorted_woe_list = zip(*sorted_combined_info)
+    sorted_unique_bins, sorted_total_count_list, sorted_bad_count_list, sorted_woe_list = zip(
+        *sorted_combined_info)
 
     sorted_unique_bins = list(sorted_unique_bins)
     sorted_total_count_list = list(sorted_total_count_list)
     sorted_bad_count_list = list(sorted_bad_count_list)
     sorted_woe_list = list(sorted_woe_list)
-    
+
     temp_chart_info_dict = {
         "unique_bins": sorted_unique_bins,
         "total_count_list": sorted_total_count_list,
@@ -4139,20 +4300,20 @@ def update_mixed_chart_on_var_to_bin_change(temp_chart_info_data, click_data, se
 )
 def erase_click_data(click_data, selected_data, var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clicks4, n_clicks5, n_clicks6, n_clicks7, n_clicks8):
     triggered = dash.callback_context.triggered
-    
+
     if triggered[0]['prop_id'] == 'categoric_add_elements_panel_submit_button.n_clicks' or triggered[0]['prop_id'] == 'categoric_split_panel_submit_button.n_clicks' or triggered[0]['prop_id'] == 'categoric_rename_panel_submit_button.n_clicks' or triggered[0]['prop_id'] == 'numeric_rename_panel_submit_button.n_clicks' or triggered[0]['prop_id'] == 'numeric_adjust_cutpoints_panel_submit_button.n_clicks':
         clicked_data = None
         return [clicked_data, selected_data]
-    
+
     if triggered[0]['prop_id'] == 'categoric_merge_panel_submit_button.n_clicks' or triggered[0]['prop_id'] == 'numeric_merge_panel_submit_button.n_clicks':
         selected_data = None
         return [click_data, selected_data]
-    
+
     if triggered[0]['prop_id'] == 'auto_bin_refresh_button.n_clicks':
         click_data = None
         selected_data = None
         return [click_data, selected_data]
-    
+
     if click_data is not None and click_data["points"][0]["curveNumber"] == 2:
         click_data = None
         selected_data = None
@@ -4191,7 +4352,8 @@ def update_stat_tables_on_var_to_bin_change(temp_col_bins_settings_data, good_ba
 
     good_bad_def = json.loads(good_bad_def_data)
 
-    stat_df = StatCalculator.compute_summary_stat_table(df.copy(), col_bins_settings, good_bad_def)
+    stat_df = StatCalculator.compute_summary_stat_table(
+        df.copy(), col_bins_settings, good_bad_def)
 
     return [stat_table_after, [DataTable(stat_df, width=70)]]
 
@@ -4249,7 +4411,7 @@ def update_control_panel_on_var_to_bin_change(click_data, selected_data, var_to_
         return [{"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {}, {"display": "none"}]
     if triggered[0]['prop_id'] == 'numeric_rename_panel_adjust_cutpoints_nav_button.n_clicks':
         return [{"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {"display": "none"}, {}, {"display": "none"}, {"display": "none"}]
-    
+
     bins_settings_dict = json.loads(bins_settings_data)
     bins_settings_list = bins_settings_dict["variable"]
     col_bins_settings = None
@@ -4326,12 +4488,14 @@ def show_categoric_create_new_bin_preview_changes_div(n_clicks, n_clicks2, n_cli
     else:
         return {"display": "none"}
 
-    
+
 """
 Interactive Binning Page:
 Update categoric create new bin preview changes info
 when user clicks on the 'Create New Bin' button
 """
+
+
 @app.callback(
     [
         Output("categoric_create_new_bin_changes_div", "children"),
@@ -4346,13 +4510,14 @@ when user clicks on the 'Create New Bin' button
 )
 def update_categoric_create_new_bin_preview_changes_info(n_clicks, new_name, bin_element_list, temp_col_bins_settings_data):
     col_bin_settings = json.loads(temp_col_bins_settings_data)
-    
-    _, old_bin_list, new_bin_list = InteractiveBinningMachine.categoric_create_new_bin(new_bin_name=new_name, new_bin_element_li=bin_element_list, temp_col_bins_settings=col_bin_settings)
-    
+
+    _, old_bin_list, new_bin_list = InteractiveBinningMachine.categoric_create_new_bin(
+        new_bin_name=new_name, new_bin_element_li=bin_element_list, temp_col_bins_settings=col_bin_settings)
+
     style = {}
     if not isinstance(old_bin_list, list) or not isinstance(new_bin_list, list):
         style = {"display": "none"}
-    
+
     return [generate_bin_changes_div_children(old_bin_list=old_bin_list, new_bin_list=new_bin_list, dtype="categorical"), style]
 
 
@@ -4361,6 +4526,8 @@ Interactive Binning Page:
 Update categoric add elements preview changes info
 when user clicks on the 'Add Elements' button
 """
+
+
 @app.callback(
     [
         Output("categoric_add_elements_panel_changes_div", "children"),
@@ -4376,20 +4543,24 @@ when user clicks on the 'Add Elements' button
 )
 def update_categoric_add_elements_panel_preview_changes_info(n_clicks, new_name, bin_element_list, temp_col_bins_settings_data, click_data):
     col_bin_settings = json.loads(temp_col_bins_settings_data)
-    
-    _, old_bin_list, new_bin_list = InteractiveBinningMachine.categoric_add_elements(selected_bin_name=click_data["points"][0]["x"], new_bin_name=new_name, elements_to_add_li=bin_element_list, temp_col_bins_settings=col_bin_settings)
-    
+
+    _, old_bin_list, new_bin_list = InteractiveBinningMachine.categoric_add_elements(
+        selected_bin_name=click_data["points"][0]["x"], new_bin_name=new_name, elements_to_add_li=bin_element_list, temp_col_bins_settings=col_bin_settings)
+
     style = {}
     if not isinstance(old_bin_list, list) or not isinstance(new_bin_list, list):
         style = {"display": "none"}
-    
+
     return [generate_bin_changes_div_children(old_bin_list=old_bin_list, new_bin_list=new_bin_list, dtype="categorical"), style]
+
 
 """
 Interactive Binning Page:
 Update categoric split preview changes info
 when user clicks on the 'Split Bin' button
 """
+
+
 @app.callback(
     [
         Output("categoric_split_panel_changes_div", "children"),
@@ -4405,20 +4576,24 @@ when user clicks on the 'Split Bin' button
 )
 def update_categoric_create_new_bin_preview_changes_info(n_clicks, new_name, bin_element_list, temp_col_bins_settings_data, click_data):
     col_bin_settings = json.loads(temp_col_bins_settings_data)
-    
-    _, old_bin_list, new_bin_list = InteractiveBinningMachine.categoric_split_bin(selected_bin_name=click_data["points"][0]["x"], new_bin_name=new_name, elements_to_split_out_li=bin_element_list, temp_col_bins_settings=col_bin_settings)
-    
+
+    _, old_bin_list, new_bin_list = InteractiveBinningMachine.categoric_split_bin(
+        selected_bin_name=click_data["points"][0]["x"], new_bin_name=new_name, elements_to_split_out_li=bin_element_list, temp_col_bins_settings=col_bin_settings)
+
     style = {}
     if not isinstance(old_bin_list, list) or not isinstance(new_bin_list, list):
         style = {"display": "none"}
-    
+
     return [generate_bin_changes_div_children(old_bin_list=old_bin_list, new_bin_list=new_bin_list, dtype="categorical"), style]
+
 
 """
 Interactive Binning Page:
 Update categoric merge preview changes info
 when user clicks on the 'Merge Bins' button
 """
+
+
 @app.callback(
     [
         Output("categoric_merge_panel_changes_div", "children"),
@@ -4433,18 +4608,19 @@ when user clicks on the 'Merge Bins' button
 )
 def update_categoric_create_new_bin_preview_changes_info(n_clicks, new_name, temp_col_bins_settings_data, selected_data):
     col_bin_settings = json.loads(temp_col_bins_settings_data)
-    
+
     selected_bin_name_set = set()
     for point in selected_data["points"]:
         selected_bin_name_set.add(point["x"])
     selected_bin_name_li = list(selected_bin_name_set)
-    
-    _, old_bin_list, new_bin_list = InteractiveBinningMachine.categoric_merge_bins(selected_bin_name_li=selected_bin_name_li, new_bin_name=new_name, temp_col_bins_settings=col_bin_settings)
-    
+
+    _, old_bin_list, new_bin_list = InteractiveBinningMachine.categoric_merge_bins(
+        selected_bin_name_li=selected_bin_name_li, new_bin_name=new_name, temp_col_bins_settings=col_bin_settings)
+
     style = {}
     if not isinstance(old_bin_list, list) or not isinstance(new_bin_list, list):
         style = {"display": "none"}
-    
+
     return [generate_bin_changes_div_children(old_bin_list=old_bin_list, new_bin_list=new_bin_list, dtype="categorical"), style]
 
 
@@ -4453,6 +4629,8 @@ Interactive Binning Page:
 Update numeric create new bin preview changes info
 when user clicks on the 'Create New Bin' button
 """
+
+
 @app.callback(
     [
         Output("numeric_create_new_bin_panel_changes_div", "children"),
@@ -4468,23 +4646,24 @@ when user clicks on the 'Create New Bin' button
 )
 def update_numeric_create_new_bin_preview_changes_info(n_clicks, new_name, temp_col_bins_settings_data, lower_list, upper_list):
     col_bin_settings = json.loads(temp_col_bins_settings_data)
-    
+
     ranges = tuple(zip(lower_list, upper_list))
-    
+
     # validate first
     isValid = validate_numerical_bounds(ranges)
-    
+
     if isValid == False:
         style = {"display": "none"}
         return [generate_bin_changes_div_children(old_bin_list=-5, new_bin_list=-5, dtype="numerical"), style]
-    
+
     ranges = decode_ib_ranges(ranges)
-    _, old_bin_list, new_bin_list = InteractiveBinningMachine.numeric_create_new_bin(new_bin_name=new_name, new_bin_ranges=ranges, temp_col_bins_settings=col_bin_settings)
-    
+    _, old_bin_list, new_bin_list = InteractiveBinningMachine.numeric_create_new_bin(
+        new_bin_name=new_name, new_bin_ranges=ranges, temp_col_bins_settings=col_bin_settings)
+
     style = {}
     if not isinstance(old_bin_list, list) or (not isinstance(new_bin_list, list) and not isinstance(new_bin_list, tuple)):
         style = {"display": "none"}
-    
+
     return [generate_bin_changes_div_children(old_bin_list=old_bin_list, new_bin_list=new_bin_list, dtype="numerical"), style]
 
 
@@ -4493,6 +4672,8 @@ Interactive Binning Page:
 Update numeric adjust cutpoints preview changes info
 when user clicks on the 'Adjust Cutpoints' button
 """
+
+
 @app.callback(
     [
         Output("numeric_adjust_cutpoints_panel_changes_div", "children"),
@@ -4509,23 +4690,24 @@ when user clicks on the 'Adjust Cutpoints' button
 )
 def update_numeric_create_new_bin_preview_changes_info(n_clicks, new_name, temp_col_bins_settings_data, click_data, lower_list, upper_list):
     col_bin_settings = json.loads(temp_col_bins_settings_data)
-    
+
     ranges = tuple(zip(lower_list, upper_list))
-    
+
     # validate first
     isValid = validate_numerical_bounds(ranges)
-    
+
     if isValid == False:
         style = {"display": "none"}
         return [generate_bin_changes_div_children(old_bin_list=-5, new_bin_list=-5, dtype="numerical"), style]
-    
+
     ranges = decode_ib_ranges(ranges)
-    _, old_bin_list, new_bin_list = InteractiveBinningMachine.get_numeric_adjust_cutpoints(selected_bin_name=click_data["points"][0]["x"], new_bin_name=new_name, new_bin_ranges=ranges, temp_col_bins_settings=col_bin_settings)
-    
+    _, old_bin_list, new_bin_list = InteractiveBinningMachine.get_numeric_adjust_cutpoints(
+        selected_bin_name=click_data["points"][0]["x"], new_bin_name=new_name, new_bin_ranges=ranges, temp_col_bins_settings=col_bin_settings)
+
     style = {}
     if not isinstance(old_bin_list, list) or (not isinstance(new_bin_list, list) and not isinstance(new_bin_list, tuple)):
         style = {"display": "none"}
-    
+
     return [generate_bin_changes_div_children(old_bin_list=old_bin_list, new_bin_list=new_bin_list, dtype="numerical"), style]
 
 
@@ -4534,6 +4716,8 @@ Interactive Binning Page:
 Update numeric rename preview changes info
 when user clicks on the 'Rename Bin' button
 """
+
+
 @app.callback(
     [
         Output("numeric_rename_panel_changes_div", "children"),
@@ -4548,20 +4732,24 @@ when user clicks on the 'Rename Bin' button
 )
 def update_numeric_create_new_bin_preview_changes_info(n_clicks, new_name, temp_col_bins_settings_data, click_data):
     col_bin_settings = json.loads(temp_col_bins_settings_data)
-    
-    _, old_bin_list, new_bin_list = InteractiveBinningMachine.numeric_rename_bin(selected_bin_name=click_data["points"][0]["x"], new_bin_name=new_name, temp_col_bins_settings=col_bin_settings)
-    
+
+    _, old_bin_list, new_bin_list = InteractiveBinningMachine.numeric_rename_bin(
+        selected_bin_name=click_data["points"][0]["x"], new_bin_name=new_name, temp_col_bins_settings=col_bin_settings)
+
     style = {}
     if not isinstance(old_bin_list, list) or not isinstance(new_bin_list, list):
         style = {"display": "none"}
-    
+
     return [generate_bin_changes_div_children(old_bin_list=old_bin_list, new_bin_list=new_bin_list, dtype="numerical"), style]
+
 
 """
 Interactive Binning Page:
 Update numeric merge preview changes info
 when user clicks on the 'Merge Bins' button
 """
+
+
 @app.callback(
     [
         Output("numeric_merge_panel_changes_div", "children"),
@@ -4576,18 +4764,19 @@ when user clicks on the 'Merge Bins' button
 )
 def update_numeric_create_new_bin_preview_changes_info(n_clicks, new_name, temp_col_bins_settings_data, selected_data):
     col_bin_settings = json.loads(temp_col_bins_settings_data)
-    
+
     selected_bin_name_set = set()
     for point in selected_data["points"]:
         selected_bin_name_set.add(point["x"])
     selected_bin_name_li = list(selected_bin_name_set)
-    
-    _, old_bin_list, new_bin_list = InteractiveBinningMachine.numeric_merge_bins(selected_bin_name_li=selected_bin_name_li, new_bin_name=new_name, temp_col_bins_settings=col_bin_settings)
-    
+
+    _, old_bin_list, new_bin_list = InteractiveBinningMachine.numeric_merge_bins(
+        selected_bin_name_li=selected_bin_name_li, new_bin_name=new_name, temp_col_bins_settings=col_bin_settings)
+
     style = {}
     if not isinstance(old_bin_list, list) or not isinstance(new_bin_list, list):
         style = {"display": "none"}
-    
+
     return [generate_bin_changes_div_children(old_bin_list=old_bin_list, new_bin_list=new_bin_list, dtype="numerical"), style]
 
 
@@ -4596,6 +4785,8 @@ Interactive Binning Page:
 Update categoric rename preview changes info
 when user clicks on the 'Rename Bin' button
 """
+
+
 @app.callback(
     [
         Output("categoric_rename_panel_changes_div", "children"),
@@ -4610,15 +4801,15 @@ when user clicks on the 'Rename Bin' button
 )
 def update_categoric_create_new_bin_preview_changes_info(n_clicks, new_name, temp_col_bins_settings_data, click_data):
     col_bin_settings = json.loads(temp_col_bins_settings_data)
-    
-    _, old_bin_list, new_bin_list = InteractiveBinningMachine.categoric_rename_bin(selected_bin_name=click_data["points"][0]["x"], new_bin_name=new_name, temp_col_bins_settings=col_bin_settings)
-    
+
+    _, old_bin_list, new_bin_list = InteractiveBinningMachine.categoric_rename_bin(
+        selected_bin_name=click_data["points"][0]["x"], new_bin_name=new_name, temp_col_bins_settings=col_bin_settings)
+
     style = {}
     if not isinstance(old_bin_list, list) or not isinstance(new_bin_list, list):
         style = {"display": "none"}
-    
-    return [generate_bin_changes_div_children(old_bin_list=old_bin_list, new_bin_list=new_bin_list, dtype="categorical"), style]
 
+    return [generate_bin_changes_div_children(old_bin_list=old_bin_list, new_bin_list=new_bin_list, dtype="categorical"), style]
 
 
 """
@@ -4644,12 +4835,15 @@ def show_categoric_create_new_bin_preview_changes_div(n_clicks, n_clicks2, n_cli
         return {}
     else:
         return {"display": "none"}
-    
+
+
 """
 Interactive Binning Page:
 Update selected bin info for categoric add elements panel
 based on user clicks
 """
+
+
 @app.callback(
     Output("categoric_add_elements_panel_selected_bin_info", "children"),
     Input("mixed_chart", "clickData"),
@@ -4662,12 +4856,15 @@ def update_categoric_add_elements_panel_selected_bin_info(click_data, temp_chart
     temp_chart_info = json.loads(temp_chart_info_data)
     temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
     return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=click_data, dtype="categorical")
- 
+
+
 """
 Interactive Binning Page:
 Update selected bin info for categoric merge panel
 based on user's selections
 """
+
+
 @app.callback(
     Output("categoric_merge_panel_selected_bin_info_div", "children"),
     Input("mixed_chart", "selectedData"),
@@ -4680,12 +4877,15 @@ def update_categoric_merge_panel_selected_bin_info(selected_data, temp_chart_inf
     temp_chart_info = json.loads(temp_chart_info_data)
     temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
     return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=selected_data, dtype="categorical")
-  
+
+
 """
 Interactive Binning Page:
 Update selected bin info for numeric merge panel
 based on user's selections
 """
+
+
 @app.callback(
     Output("numeric_merge_panel_selected_bin_info_div", "children"),
     Input("mixed_chart", "selectedData"),
@@ -4698,7 +4898,6 @@ def update_numeric_merge_panel_selected_bin_info(selected_data, temp_chart_info_
     temp_chart_info = json.loads(temp_chart_info_data)
     temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
     return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=selected_data, dtype="numerical")
-    
 
 
 """
@@ -4706,6 +4905,8 @@ Interactive Binning Page:
 Update categoric add elements panel dropdown options and value
 when user click on a bar
 """
+
+
 @app.callback(
     [
         Output("categoric_add_elements_panel_name_input", "value"),
@@ -4718,27 +4919,29 @@ when user click on a bar
 def update_categoric_add_elements_dropdown(click_data, temp_col_bins_settings_data):
     if click_data is None:
         return [convert_column_list_to_dropdown_options([]), []]
-    
+
     clicked_bin_name = click_data["points"][0]["x"]
     temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
-    
+
     bin_elements = None
     for bin_def in temp_col_bins_settings["bins"]:
         if bin_def["name"] == clicked_bin_name:
             bin_elements = bin_def["elements"]
-    
+
     unique_element = df[temp_col_bins_settings["column"]].unique().tolist()
-    
+
     options_li = [x for x in unique_element if x not in bin_elements]
-    
+
     return ["", convert_column_list_to_dropdown_options(options_li), []]
- 
-       
+
+
 """
 Interactive Binning Page:
 Show/Hide categorical split control panel preview changes 
 when user clicks on the 'Split Bin' button
 """
+
+
 @app.callback(
     Output("categoric_split_panel_preview_changes_div", "style"),
     [
@@ -4756,11 +4959,14 @@ def show_categoric_split_preview_changes_div(n_clicks, n_clicks2, n_clicks3):
     else:
         return {"display": "none"}
 
+
 """
 Interactive Binning Page:
 Show/Hide categorical rename control panel preview changes 
 when user clicks on the 'Rename Bin' button
 """
+
+
 @app.callback(
     Output("categoric_rename_panel_preview_changes_div", "style"),
     [
@@ -4778,11 +4984,14 @@ def show_categoric_split_preview_changes_div(n_clicks, n_clicks2, n_clicks3):
     else:
         return {"display": "none"}
 
+
 """
 Interactive Binning Page:
 Show/Hide categorical merge bin control panel preview changes 
 when user clicks on the 'Merge Bin' button
 """
+
+
 @app.callback(
     Output("categoric_merge_bin_panel_preview_changes_div", "style"),
     [
@@ -4799,7 +5008,6 @@ def show_categoric_split_preview_changes_div(n_clicks, n_clicks2, n_clicks3):
         return {}
     else:
         return {"display": "none"}
-   
 
 
 """
@@ -4807,6 +5015,8 @@ Interactive Binning Page:
 Show/Hide numerical adjust cutpoint control panel preview changes 
 when user clicks on the 'Adjust Cutpoints' button
 """
+
+
 @app.callback(
     Output("numeric_create_new_bin_preview_changes_div", "style"),
     [
@@ -4824,12 +5034,14 @@ def show_categoric_split_preview_changes_div(n_clicks, n_clicks2, n_clicks3):
     else:
         return {"display": "none"}
 
-    
+
 """
 Interactive Binning Page:
 Show/Hide numerical adjust cutpoint control panel preview changes 
 when user clicks on the 'Adjust Cutpoints' button
 """
+
+
 @app.callback(
     Output("numeric_adjust_cutpoints_panel_preview_changes_div", "style"),
     [
@@ -4846,13 +5058,15 @@ def show_categoric_split_preview_changes_div(n_clicks, n_clicks2, n_clicks3):
         return {}
     else:
         return {"display": "none"}
-    
-   
+
+
 """
 Interactive Binning Page:
 Show/Hide numerical rename control panel preview changes 
 when user clicks on the 'Rename bin' button
 """
+
+
 @app.callback(
     Output("numeric_rename_panel_preview_changes_div", "style"),
     [
@@ -4870,12 +5084,14 @@ def show_categoric_split_preview_changes_div(n_clicks, n_clicks2, n_clicks3):
     else:
         return {"display": "none"}
 
-    
+
 """
 Interactive Binning Page:
 Show/Hide numerical merge control panel preview changes 
 when user clicks on the 'Merge' button
 """
+
+
 @app.callback(
     Output("numeric_merge_panel_preview_changes_div", "style"),
     [
@@ -4892,13 +5108,15 @@ def show_categoric_split_preview_changes_div(n_clicks, n_clicks2, n_clicks3):
         return {}
     else:
         return {"display": "none"}
-    
+
 
 """
 Interactive Binning Page:
 Update selected bin info for categoric split panel
 based on user clicks
 """
+
+
 @app.callback(
     Output("categoric_split_panel_selected_bin_info", "children"),
     Input("mixed_chart", "clickData"),
@@ -4911,10 +5129,6 @@ def update_categoric_split_panel_selected_bin_info(click_data, temp_chart_info_d
     temp_chart_info = json.loads(temp_chart_info_data)
     temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
     return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=click_data, dtype="categorical")
-  
-    
-    
-
 
 
 """
@@ -4922,6 +5136,8 @@ Interactive Binning Page:
 Update selected bin info for categoric rename panel
 based on user clicks
 """
+
+
 @app.callback(
     Output("categoric_rename_panel_selected_bin_info", "children"),
     Input("mixed_chart", "clickData"),
@@ -4934,14 +5150,15 @@ def update_categoric_split_panel_selected_bin_info(click_data, temp_chart_info_d
     temp_chart_info = json.loads(temp_chart_info_data)
     temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
     return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=click_data, dtype="categorical")
- 
-    
-    
+
+
 """
 Interactive Binning Page:
 Update selected bin info for numeric adjust cutpoints panel
 based on user clicks
 """
+
+
 @app.callback(
     Output("numeric_adjust_cutpoints_panel_selected_bin_info_div", "children"),
     Input("mixed_chart", "clickData"),
@@ -4954,14 +5171,15 @@ def update_numeric_adjust_cutpoints_panel_selected_bin_info(click_data, temp_cha
     temp_chart_info = json.loads(temp_chart_info_data)
     temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
     return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=click_data, dtype="numerical")
-  
-    
-    
+
+
 """
 Interactive Binning Page:
 Update selected bin info for numeric adjust cutpoints panel
 based on user clicks
 """
+
+
 @app.callback(
     Output("numeric_rename_panel_selected_bin_info_div", "children"),
     Input("mixed_chart", "clickData"),
@@ -4974,16 +5192,16 @@ def update_numeric_adjust_cutpoints_panel_selected_bin_info(click_data, temp_cha
     temp_chart_info = json.loads(temp_chart_info_data)
     temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
     return generate_selected_bin_info_div_children(temp_chart_info=temp_chart_info, temp_col_bins_settings=temp_col_bins_settings, click_data=click_data, dtype="numerical")
-  
-    
-    
-    
+
+
 """
 Interactive Binning Page:
 Update categorical split control panel's dropdown 
 options and value when user changes the var to bin in predictor
 variable dropdown
 """
+
+
 @app.callback(
     [
         Output("categoric_split_panel_new_bin_name_input", "value"),
@@ -4996,22 +5214,24 @@ variable dropdown
 def update_categoric_create_new_bin_dropdown(click_data, temp_col_bins_settings_data):
     if click_data is None:
         return [convert_column_list_to_dropdown_options([]), []]
-    
+
     clicked_bin_name = click_data["points"][0]["x"]
     temp_col_bins_settings = json.loads(temp_col_bins_settings_data)
-    
+
     bin_elements = None
     for bin_def in temp_col_bins_settings["bins"]:
         if bin_def["name"] == clicked_bin_name:
             bin_elements = bin_def["elements"]
-    
+
     return ["", convert_column_list_to_dropdown_options(bin_elements), bin_elements]
-    
+
 
 """
 Interactive Binning Page:
 Add/Remove ranges from numerical create new bin control panel
 """
+
+
 @app.callback(
     Output("numeric_create_new_bin_panel_range_list", "children"),
     [
@@ -5028,7 +5248,7 @@ Add/Remove ranges from numerical create new bin control panel
 def edit_numeric_create_new_bin_panel_ranges(add_clicks, remove_clicks, submit_clicks, lower_list, upper_list, checkbox_list):
     triggered = [t["prop_id"] for t in dash.callback_context.triggered]
     submitting = len([i for i in triggered if i ==
-                 "numeric_create_new_bin_panel_submit_button.n_clicks"])
+                      "numeric_create_new_bin_panel_submit_button.n_clicks"])
     if submitting != 0:
         return []
     adding = len([i for i in triggered if i ==
@@ -5043,7 +5263,8 @@ def edit_numeric_create_new_bin_panel_ranges(add_clicks, remove_clicks, submit_c
         new_spec.append((0, 1, []))
     new_list = [
         html.Div([
-            html.P(str(idx+1) + ".", style={"float": "left", "marginRight": 10}),
+            html.P(str(idx+1) + ".",
+                   style={"float": "left", "marginRight": 10}),
             dcc.Input(
                 type="number",
                 value=lower,
@@ -5068,14 +5289,16 @@ def edit_numeric_create_new_bin_panel_ranges(add_clicks, remove_clicks, submit_c
         ], style={"display": "flex", "alignItems": "flex-end", "marginTop": 10},)
         for idx, (lower, upper, selected) in enumerate(new_spec)
     ]
-    
+
     return new_list
-    
-   
+
+
 """
 Interactive Binning Page:
 Add/Remove ranges from numerical adjust cutpoints control panel
 """
+
+
 @app.callback(
     Output("numeric_adjust_cutpoints_panel_range_list", "children"),
     [
@@ -5092,10 +5315,10 @@ Add/Remove ranges from numerical adjust cutpoints control panel
 def edit_numeric_create_new_bin_panel_ranges(add_clicks, remove_clicks, submit_clicks, lower_list, upper_list, checkbox_list):
     triggered = [t["prop_id"] for t in dash.callback_context.triggered]
     submitting = len([i for i in triggered if i ==
-                 "numeric_adjust_cutpoints_panel_submit_button.n_clicks"])
+                      "numeric_adjust_cutpoints_panel_submit_button.n_clicks"])
     if submitting != 0:
         return []
-    
+
     adding = len([i for i in triggered if i ==
                  "numeric_adjust_cutpoints_panel_add_button.n_clicks"])
     removing = len([i for i in triggered if i ==
@@ -5108,7 +5331,8 @@ def edit_numeric_create_new_bin_panel_ranges(add_clicks, remove_clicks, submit_c
         new_spec.append((0, 1, []))
     new_list = [
         html.Div([
-            html.P(str(idx+1) + ".", style={"float": "left", "marginRight": 10}),
+            html.P(str(idx+1) + ".",
+                   style={"float": "left", "marginRight": 10}),
             dcc.Input(
                 type="number",
                 value=lower,
@@ -5133,7 +5357,7 @@ def edit_numeric_create_new_bin_panel_ranges(add_clicks, remove_clicks, submit_c
         ], style={"display": "flex", "alignItems": "flex-end", "marginTop": 10},)
         for idx, (lower, upper, selected) in enumerate(new_spec)
     ]
-    
+
     return new_list
 
 
@@ -5141,6 +5365,8 @@ def edit_numeric_create_new_bin_panel_ranges(add_clicks, remove_clicks, submit_c
 Interactive Binning Page:
 Remove categoric rename bin panel input when submit button is clicked
 """
+
+
 @app.callback(
     Output("categoric_rename_panel_new_bin_name_input", "value"),
     Input("categoric_rename_panel_submit_button", "n_clicks"),
@@ -5148,10 +5374,13 @@ Remove categoric rename bin panel input when submit button is clicked
 def clear_categoric_rename_bin_panel_input(n_clicks):
     return ""
 
+
 """
 Interactive Binning Page:
 Remove categoric merge bin panel input when submit button is clicked
 """
+
+
 @app.callback(
     Output("categoric_merge_panel_new_bin_name_input", "value"),
     Input("categoric_merge_panel_submit_button", "n_clicks"),
@@ -5159,10 +5388,13 @@ Remove categoric merge bin panel input when submit button is clicked
 def clear_categoric_merge_bin_panel_input(n_clicks):
     return ""
 
+
 """
 Interactive Binning Page:
 Remove numeric rename bin panel input when submit button is clicked
 """
+
+
 @app.callback(
     Output("numeric_rename_panel_new_bin_name_input", "value"),
     Input("numeric_rename_panel_submit_button", "n_clicks"),
@@ -5170,10 +5402,13 @@ Remove numeric rename bin panel input when submit button is clicked
 def clear_numeric_rename_bin_panel_input(n_clicks):
     return ""
 
+
 """
 Interactive Binning Page:
 Remove numeric merge bin panel input when submit button is clicked
 """
+
+
 @app.callback(
     Output("numeric_merge_panel_new_bin_name_input", "value"),
     Input("numeric_merge_panel_submit_button", "n_clicks"),
@@ -5181,10 +5416,13 @@ Remove numeric merge bin panel input when submit button is clicked
 def clear_numeric_merge_bin_panel_input(n_clicks):
     return ""
 
+
 """
 Interactive Binning Page:
 Remove numeric create new bin panel input when submit button is clicked
 """
+
+
 @app.callback(
     Output("numeric_create_new_bin_panel_new_bin_name_input", "value"),
     Input("numeric_create_new_bin_panel_submit_button", "n_clicks"),
@@ -5197,6 +5435,8 @@ def clear_numeric_create_new_bin_panel_input(n_clicks):
 Interactive Binning Page:
 Remove numeric adjust cutpoints panel input when submit button is clicked
 """
+
+
 @app.callback(
     Output("numeric_adjust_cutpoints_panel_new_bin_name_input", "value"),
     Input("numeric_adjust_cutpoints_panel_submit_button", "n_clicks"),
@@ -5204,11 +5444,14 @@ Remove numeric adjust cutpoints panel input when submit button is clicked
 def clear_numeric_adjust_cutpoints_panel_input(n_clicks):
     return ""
 
+
 """
 Interactive Binning Page:
 Save temp_col_bins_settings to saved_settings when 
 confirm button is clicked on ib page
 """
+
+
 @app.callback(
     Output("saved_settings", "data"),
     Input("confirm_ib_button", "n_clicks"),
@@ -5218,10 +5461,13 @@ def save_temp_to_saved_settings(n_clicks, data):
     temp_col_bins_settings = json.loads(data)
     return json.dumps(temp_col_bins_settings)
 
+
 """
 Update bins_settings either triggered in 'confirm'
 input page, or 'interactive binning page'
 """
+
+
 @app.callback(
     Output("bins_settings", "data"),
     [
@@ -5232,40 +5478,45 @@ input page, or 'interactive binning page'
 )
 def save_bins_settings(temp_bins_data, saved_settings_data, bins_settings_data):
     triggered = dash.callback_context.triggered
-    
+
     if triggered[0]['prop_id'] == "temp_bins_settings.data":
         data = json.loads(temp_bins_data)
         return json.dumps(data)
     else:
         data = json.loads(saved_settings_data)
         bins_settings = json.loads(bins_settings_data)
-        
+
         for idx in range(len(bins_settings["variable"])):
             if bins_settings["variable"][idx]["column"] == data["column"]:
                 bins_settings["variable"][idx]["bins"] = data["bins"]
                 break
-        
+
         return json.dumps(bins_settings)
 
-    
 
 """
 Preview & Download Settings Page:
 Update preview data table with binned_df
 """
+
+
 @app.callback(
     Output("preview_datatable_div", "children"),
     Input("bins_settings", "data"),
 )
 def update_preview_data_table(bins_settings_data):
     bins_settings = json.loads(bins_settings_data)
-    binned_df = BinningMachine.perform_binning_on_whole_df(df.copy(), bins_settings["variable"])
+    binned_df = BinningMachine.perform_binning_on_whole_df(
+        df.copy(), bins_settings["variable"])
     return [DataTable(binned_df)]
-    
+
+
 """
 Preview & Download Settings Page:
 Update select variable dropdown based on bins settings
 """
+
+
 @app.callback(
     [
         Output("preview_page_select_var_dropdown", "options"),
@@ -5276,12 +5527,12 @@ Update select variable dropdown based on bins settings
 def update_select_var_dropdown_in_preview_page(bins_settings_data):
     bins_settings = json.loads(bins_settings_data)
     li = list()
-    
+
     for bin_def in bins_settings["variable"]:
         li.append(bin_def["column"])
-    
+
     return [convert_column_list_to_dropdown_options(li), li[0]]
-    
+
 
 """
 Preview & Download Settings:
@@ -5305,14 +5556,15 @@ def export_bin_settings(n_clicks, bins_settings_data, good_bad_def_data):
     settings["bins_settings"] = bins_settings
     settings["good_bad_def"] = [good_bad_def]
     return dict(content=json.dumps(settings), filename="ib_settings.json")
-    
-    
-    
+
+
 """
 Preview & Download Settings Page:
 update summary statistics table when user changes the 
 variable to preview from dropdown
 """
+
+
 @app.callback(
     [
         Output("preview_summary_stat_table_div", "children"),
@@ -5327,154 +5579,68 @@ variable to preview from dropdown
 def update_preview_stat_table(var_to_preview, bins_settings_data, good_bad_def_data):
     bins_settings = json.loads(bins_settings_data)
     good_bad_def = json.loads(good_bad_def_data)
-    
+
     col_bins_settings = None
     for var in bins_settings["variable"]:
         if var["column"] == var_to_preview:
             col_bins_settings = var
             break
-    
-    stat_df = StatCalculator.compute_summary_stat_table(df.copy(), col_bins_settings, good_bad_def)
-    
+
+    stat_df = StatCalculator.compute_summary_stat_table(
+        df.copy(), col_bins_settings, good_bad_def)
+
     # Prepare mixed chart
-    sorted_df = stat_df[stat_df['Bin']!='Total'].sort_values('WOE', ascending=False).loc[:, ['Bin', 'Total', 'Bad', 'WOE']]
+    sorted_df = stat_df[stat_df['Bin'] != 'Total'].sort_values(
+        'WOE', ascending=False).loc[:, ['Bin', 'Total', 'Bad', 'WOE']]
     result = list(sorted_df.to_records(index=False))
     bins, total, bad, woe = zip(*result)
-    
+
     unique_bins = list(bins)
     total_count_list = list(total)
     bad_count_list = list(bad)
     woe_list = list(woe)
-    
+
     return [[DataTable(stat_df, width=70)], generate_mixed_chart_fig(unique_bins=unique_bins, total_count_list=total_count_list, bad_count_list=bad_count_list, woe_list=woe_list)]
-    
+
+"""
+Interactive Binning Page:
+show saved message
+"""
+@app.callback(
+    Output("ib_saved_msg", "style"),
+    Input("confirm_ib_button", "n_clicks"),
+    prevent_initial_call=True,
+)
+def show_ib_page_saved_msg(n_clicks):
+    return {}
+
+"""
+Interactive Binning Page: 
+hide content if input dataset is not yet confirmed, and/or
+good bad definition is not yet defined
+"""
+@app.callback(
+    [
+        Output("ib_content_div", "style"),
+        Output("ib_error", "style"),
+    ],
+    Input("confirm_ib_button", "n_clicks"),
+    [
+        State("bins_settings", "data"),
+        State("good_bad_def", "data"),
+    ],
+)
+def enable_disable_ib_page(n_clicks, bins_settings_data, good_bad_def_data):
+    if bins_settings_data == None or good_bad_def_data == None:
+        return [{"display": "none"}, {}]
+    else:
+        return [{}, {"display": "none"}]
+
 ###########################################################################
 ############################ Debugging Purpose ############################
 ###########################################################################
 
-# Get bins settings
 
-
-@app.callback(
-    Output("text_bins_settings", "children"),
-    Input("bins_settings", "data"),
-)
-def update_bins_settings(data):
-    adict = json.loads(data)
-    alist = adict["variable"]
-    return "bins settings = " + str(alist)
-
-# Get numerical columns
-
-
-@app.callback(
-    Output("text_numerical_columns", "children"),
-    Input("numerical_columns", "data"),
-)
-def update_numerical_columns(data):
-    alist = json.loads(data)
-    return "numerical columns = " + str(alist)
-
-# Get categorical columns
-
-
-@app.callback(
-    Output("text_categorical_columns", "children"),
-    Input("categorical_columns", "data"),
-)
-def update_categorical_columns(data):
-    alist = json.loads(data)
-    return "categorical columns = " + str(alist)
-
-
-# Get good bad definition
-
-
-@app.callback(
-    Output("test_good_bad_def", "children"),
-    Input("good_bad_def", "data"),
-)
-def update_good_bad_def_text(data):
-    return "good bad def = " + str(json.loads(data))
-
-
-# Get bins settings in ib page
-
-
-@app.callback(
-    Output("ib_show_bins_settings_text", "children"),
-    Input("bins_settings", "data"),
-)
-def update_bins_settings_text_in_ib(data):
-    adict = json.loads(data)
-    return "bins settings = " + str(adict)
-
-# Get good bad def in ib page
-
-
-@app.callback(
-    Output("ib_show_good_bad_def_text", "children"),
-    Input("good_bad_def", "data")
-)
-def update_good_bad_def_text_in_ib(data):
-    return "good bad def = " + str(json.loads(data))
-
-# Get selected data info in ib page
-
-
-@app.callback(
-    Output("test_select", "children"),
-    Input("mixed_chart", "selectedData"),
-)
-def output_selected_data_info(selected_data):
-    return str(selected_data)
-
-# Get click data info in ib page
-
-
-@app.callback(
-    Output("test_click", "children"),
-    Input("mixed_chart", "clickData"),
-)
-def output_selected_data_info(click_data):
-    return str(click_data)
-
-
-# Get temp_col_bins_settings
-@app.callback(
-    Output("test_temp_col_bins_settings", "children"),
-    Input("temp_col_bins_settings", "data"),
-)
-def get_temp_col_bins_settings(data):
-    temp = json.loads(data)
-    return "temp_col_bins_settings: " + str(temp)
-
-
-# Get temp_col_bins_settings
-@app.callback(
-    Output("test_temp_chart_info", "children"),
-    Input("temp_chart_info", "data"),
-)
-def get_temp_col_bins_settings(data):
-    temp = json.loads(data)
-    return "temp_chart_info: " + str(temp)
-
-
-# Get saved_settings
-@app.callback(
-    Output("test_saved_settings", "children"),
-    Input("saved_settings", "data"),
-)
-def get_saved_settings(data):
-    data = json.loads(data)
-    return "saved_settings " + str(data)
-
-@app.callback(
-    Output("test_temp_df", "children"),
-    Input("temp_binned_col", "data"),
-)
-def test_temp_df(data):
-    pass
 
 ###########################################################################
 ############ Not important for our development after this line ############
