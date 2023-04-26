@@ -2105,7 +2105,7 @@ interactive_binning_page_layout = html.Div([
     html.Div(
         [
             html.P(
-                "Note: Binning & generating statistical tables may take some time, please wait patiently if applicable."),
+                "Note: Binning & generating statistical tables may take some time, please wait patiently.", style={"color": "blue"}),
             html.Div(
                 [
                     SectionHeading(
@@ -2872,7 +2872,7 @@ preview_download_page_layout = html.Div(
         NavBar(),
         Heading("Preview & Download Bins Settings"),
         SectionHeading("I. Preview Output Dataset"),
-        html.P("Note: It may take some time to perform binning on all columns, please wait patiently.", style={"color": "blue"}),
+        html.P("Note: It may take some time to perform binning on all columns & compute statistics table and chart, please wait patiently.", style={"color": "blue"}),
         html.Div([DataTable(df=pd.DataFrame({"Loading...": ["","","","","",""], "   ":["","","","","",""], "  ":["","","","","",""], " ":["","","","","",""], "":["","","","","",""]}), width=100)], id="preview_datatable_div"),
         SectionHeading("II. Preview Bins' Performance"),
         html.Div([
