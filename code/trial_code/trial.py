@@ -721,14 +721,78 @@ class GoodBadCounter:
 
 
 df = pd.read_excel("tests\\test_input_datasets\\credit_risk_dataset_generated.xlsx")
-var_to_preview = 'person_age'
+col_df = df.loc[:, ['person_age']]
 
-bins_settings = {'variable': [{'column': 'person_age', 'type': 'numerical', 'bins': {'algo': 'equal frequency', 'method': 'num_bins', 'value': 10}}, {'column': 'loan_status', 'type': 'categorical', 'bins': 'none'}]}
-good_bad_def = {'bad': {'numerical': [], 'categorical': [{'column': 'loan_status', 'elements': [1]}], 'weight': 1}, 'indeterminate': {'numerical': [], 'categorical': []}, 'good': {'weight': 1}}
-col_bins_settings = {'column': 'person_age', 'type': 'numerical', 'bins': {'algo': 'equal frequency', 'method': 'num_bins', 'value': 10}}
-stat_cal = StatCalculator(df.copy(), col_bins_settings, good_bad_def)
-stat_df = stat_cal.compute_summary_stat_table()
 
-print(stat_df)
-print(type(stat_df))
+def perform_numerical_custom_binning(col_df, bins_settings):
+        if len(col_df) == 0:
+            return (-1, -1)
+
+        binned_result = list()
+
+        for _, row in col_df.iterrows():
+            val = row.iloc[0]
+            has_assigned_bin = False
+            for a_bin in bins_settings:
+                for r in a_bin["ranges"]:
+                    if val >= r[0] and val < r[1]:
+                        binned_result.append(a_bin["name"])
+                        has_assigned_bin = True
+                        break
+
+            if has_assigned_bin == False:  # does not belongs to any bin
+                binned_result.append("Missing")
+
+        return (bins_settings, pd.Series(binned_result))
+
+print(perform_numerical_custom_binning(col_df, [{'name': 'Haha', 'ranges': [[22.0, 23.0]]}, {'name': '[[26.0, 27.0)]', 'ranges': [[26.0, 27.0]]}, {'name': '[[29.0, 32.0)]', 'ranges': [[29.0, 32.0]]}, {'name': '[[36.0, 144.0001)]', 'ranges': [[36.0, 144.0001]]}, {'name': '[[24.0, 25.0)]', 'ranges': [[24.0, 25.0]]}, {'name': '[[25.0, 26.0)]', 'ranges': [[25.0, 26.0]]}, {'name': '[[19.999, 22.0)]', 'ranges': [[19.999, 22.0]]}, {'name': '[[32.0, 36.0)]', 'ranges': [[32.0, 36.0]]}, {'name': '[[23.0, 24.0)]', 'ranges': [[23.0, 24.0]]}, {'name': '[[27.0, 29.0)]', 'ranges': [[27.0, 29.0]]}]))
+
+# var_to_preview = 'person_age'
+
+# bins_settings = {'variable': [{'column': 'person_age', 'type': 'numerical', 'bins': {'algo': 'equal frequency', 'method': 'num_bins', 'value': 10}}, {'column': 'loan_status', 'type': 'categorical', 'bins': 'none'}]}
+# good_bad_def = {'bad': {'numerical': [], 'categorical': [{'column': 'loan_status', 'elements': [1]}], 'weight': 1}, 'indeterminate': {'numerical': [], 'categorical': []}, 'good': {'weight': 1}}
+# col_bins_settings = {'column': 'person_age', 'type': 'numerical', 'bins': {'algo': 'equal frequency', 'method': 'num_bins', 'value': 10}}
+# stat_cal = StatCalculator(df.copy(), col_bins_settings, good_bad_def)
+# stat_df = stat_cal.compute_summary_stat_table()
+
+# print(stat_df)
+# print(type(stat_df))
     
+    
+"""
+Preview & Download Settings Page:
+update summary statistics table when user changes the 
+variable to preview from dropdown
+"""
+@app.callback(
+    Output("preview_summary_stat_table_div", "children"),
+    Input("preview_page_select_var_dropdown", "value"),
+    [
+        State("bins_settings", "data"),
+        State("good_bad_def", "data"),
+    ],
+)
+def update_preview_stat_table(var_to_preview, bins_settings_data, good_bad_def_data):
+    bins_settings = json.loads(bins_settings_data)
+    good_bad_def = json.loads(good_bad_def_data)
+    
+    col_bins_settings = None
+    for var in bins_settings["variable"]:
+        if var["column"] == var_to_preview:
+            col_bins_settings = var
+            break
+    
+    def_li, _ = BinningMachine.perform_binning_on_col(df.loc[:,[col_bins_settings["column"]]], col_bins_settings)
+    col_bins_settings["bins"] = def_li
+    
+    stat_cal2 = StatCalculator(df.copy(), col_bins_settings, good_bad_def)
+    #stat_df = stat_cal.compute_summary_stat_table()
+    
+    return [html.P(str(col_bins_settings))]
+
+
+
+
+
+
+

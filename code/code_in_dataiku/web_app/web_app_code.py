@@ -555,27 +555,22 @@ Interactive Binning Page
 """
 # A class to calculate statistical values for displaying the mixed chart & statistical tables
 class StatCalculator:
-    def __init__(self, df, col_bins_settings, good_bad_def) -> None:
-        # for binning & good bad calculation, need whole df (OR only columns to be binned & columns involved in good bad def)
-        self.df = df
-        self.col_bins_settings = col_bins_settings  # for binning
-        self.good_bad_def = good_bad_def  # for good bad calculation
-
     # Output - a dataframe representing the summary statistics table of the column
-    def compute_summary_stat_table(self):
-        if len(self.df) == 0 or self.col_bins_settings == None or self.good_bad_def == None:
+    @staticmethod
+    def compute_summary_stat_table(df, col_bins_settings, good_bad_def):
+        if len(df) == 0 or col_bins_settings == None or good_bad_def == None:
             return None
         """
         1. Binning
         """
-        col_to_bin = self.col_bins_settings["column"]  # get the name of column to be binned
+        col_to_bin = col_bins_settings["column"]  # get the name of column to be binned
 
-        col_df = self.df.loc[:, [col_to_bin]]  # get a single column
+        col_df = df.loc[:, [col_to_bin]]  # get a single column
 
         # perform binning
         _, binned_series = BinningMachine.perform_binning_on_col(
-            col_df, self.col_bins_settings)
-        self.df.insert(loc=0, column=col_to_bin+"_binned", value=binned_series)
+            col_df, col_bins_settings)
+        df.insert(loc=0, column=col_to_bin+"_binned", value=binned_series)
 
         """
         2. Compute Summary Statistic Table
@@ -587,21 +582,21 @@ class StatCalculator:
                                        "Total", "Good%", "Bad%", "Total%", "Info_Odds", "WOE", "MC"]
 
         # Get and save a list of unique bin_name
-        bin_name_list = self.df.iloc[:, 0].unique().tolist()
+        bin_name_list = df.iloc[:, 0].unique().tolist()
 
         # Get total good & bad
         _, _, _, _, _, total_good_count, total_bad_count = GoodBadCounter.get_statistics(
-            self.df, self.good_bad_def)
+            df, good_bad_def)
 
         # For each bin_name in the list (i.e. loop nbin times)
         for bin_name in bin_name_list:
             # Get a DataFrame which filtered out rows that does not belong to the bin
             if bin_name == None:
-                bin_df = self.df.loc[self.df.iloc[:, 0].isna()]
+                bin_df = df.loc[df.iloc[:, 0].isna()]
             else:
-                bin_df = self.df.loc[self.df.iloc[:, 0] == bin_name]
+                bin_df = df.loc[df.iloc[:, 0] == bin_name]
             # Call compute_bin_stats(var_df : pd.DataFrame, total_num_records : Integer, bin_name : String) and save as bin_stats_list
-            bin_stats_list = self.__compute_bin_stats__(
+            bin_stats_list = StatCalculator.__compute_bin_stats__(good_bad_def,
                 bin_df, bin_name, total_good_count, total_bad_count)
             # Add an element in the dictionary, with bin_name as the key, and bin_stats_list as the value
             summary_dict[bin_name] = bin_stats_list
@@ -611,7 +606,7 @@ class StatCalculator:
             summary_dict, orient='index', columns=summary_table_col_name_list)
 
         # Call compute_var_stats(var_df: pd.DataFrame, var_summary_df : pd.DataFrame, total_num_records : Integer) and save the list
-        var_stats_list = self.__compute_var_stats__(
+        var_stats_list = StatCalculator.__compute_var_stats__(
             var_summary_df, total_good_count, total_bad_count)
 
         # Create a dictionary using "all" as the key, and the list created as the value
@@ -635,28 +630,29 @@ class StatCalculator:
 
         return var_summary_df
 
-    def __compute_bin_stats__(self, bin_df, bin_name, total_good, total_bad):
+    @staticmethod
+    def __compute_bin_stats__(good_bad_def, bin_df, bin_name, total_good, total_bad):
         # Initialize an empty list (e.g., bin_stats_list) for storing the statistics for a bin
         bin_stats_list = list()
 
         # Compute bin good & bad count
         _, _, _, _, _, good, bad = GoodBadCounter.get_statistics(
-            bin_df, self.good_bad_def)
+            bin_df, good_bad_def)
         # Compute bin total count
         total = good + bad
         # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., good%)
-        good_pct = self.compute_pct(good, total_good)
+        good_pct = StatCalculator.compute_pct(good, total_good)
         # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., bad%)
-        bad_pct = self.compute_pct(bad, total_bad)
+        bad_pct = StatCalculator.compute_pct(bad, total_bad)
         # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., total%)
-        total_pct = self.compute_pct(total, total_good + total_bad)
+        total_pct = StatCalculator.compute_pct(total, total_good + total_bad)
         # Call compute_odds(good_pct : Float, bad_pct : Float) and save the returned value
-        odds = self.compute_odds(good, bad)
-        info_odds = self.compute_info_odds(good_pct, bad_pct)
+        odds = StatCalculator.compute_odds(good, bad)
+        info_odds = StatCalculator.compute_info_odds(good_pct, bad_pct)
         # Call compute_woe(df : pd.DataFrame) using df and save the returned value
-        woe = self.compute_woe(info_odds)
+        woe = StatCalculator.compute_woe(info_odds)
         # Call compute_info_val(good_pct : Float, bad_pct : Float, woe : Float) and save the returned value
-        mc = self.compute_mc(good_pct, bad_pct, woe)
+        mc = StatCalculator.compute_mc(good_pct, bad_pct, woe)
 
         # Append all statistics to the bin_stats_list in order
         bin_stats_row = [bin_name, good, bad, odds, total, good_pct *100 if good_pct != None else None, bad_pct*100 if bad_pct != None else None, total_pct*100 if total_pct != None else None, info_odds, woe, mc]
@@ -665,7 +661,8 @@ class StatCalculator:
         # Return list
         return bin_stats_list
 
-    def __compute_var_stats__(self, var_summary_df, total_good, total_bad):
+    @staticmethod
+    def __compute_var_stats__(var_summary_df, total_good, total_bad):
         # Create an empty list for storing the statistics for the whole dataset
         var_stats_list = list()
 
@@ -676,13 +673,13 @@ class StatCalculator:
         # Call compute_total(df : pd.DataFrame) using df and save the returned value
         total = good + bad
         # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., good%)
-        good_pct = self.compute_pct(good, total_good)
+        good_pct = StatCalculator.compute_pct(good, total_good)
         # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., bad%)
-        bad_pct = self.compute_pct(bad, total_bad)
+        bad_pct = StatCalculator.compute_pct(bad, total_bad)
         # Call compute_pct(value : Integer, total_value : Integer) and save the returned value (i.e., total%)
         total_pct = 1
         # Call compute_odds(good_pct : Float, bad_pct : Float) and save the returned value
-        odds = self.compute_odds(good, bad)
+        odds = StatCalculator.compute_odds(good, bad)
         info_odds = None
         # Empty woe
         woe = None
@@ -2839,6 +2836,7 @@ interactive_binning_page_layout = html.Div([
     html.P(id="test_click"),
     html.P(id="test_temp_col_bins_settings"),
     html.P(id="test_temp_chart_info"),
+    html.Div([], id="test_temp_df"),
     html.Div([], style={"width": "100%", "height": 25, "clear": "left"}),
     html.Div(
         [
@@ -2888,7 +2886,7 @@ preview_download_page_layout = html.Div(
         ], style={"display": "flex", "alignItems": "center"}),
         html.Div(style={"height": 10}),
         html.P("Summary Statistics Table", style={"textDecoration": "underline"}),
-        html.Div(id="preview_summary_stat_table_div"),
+        html.Div([DataTable(df=pd.DataFrame({"Loading...": ["","","","","",""], "   ":["","","","","",""], "  ":["","","","","",""], " ":["","","","","",""], "":["","","","","",""]}), width=100)], id="preview_summary_stat_table_div"),
         html.P("Mixed Chart", style={"textDecoration": "underline"}),
         
         SectionHeading("III. Download Bins Settings"),
@@ -4189,8 +4187,7 @@ def update_stat_tables_on_var_to_bin_change(temp_col_bins_settings_data, good_ba
 
     good_bad_def = json.loads(good_bad_def_data)
 
-    stat_cal = StatCalculator(df.copy(), col_bins_settings, good_bad_def)
-    stat_df = stat_cal.compute_summary_stat_table()
+    stat_df = StatCalculator.compute_summary_stat_table(df.copy(), col_bins_settings, good_bad_def)
 
     return [stat_table_after, [DataTable(stat_df, width=70)]]
 
@@ -5258,7 +5255,7 @@ Update preview data table with binned_df
 )
 def update_preview_data_table(bins_settings_data):
     bins_settings = json.loads(bins_settings_data)
-    binned_df = BinningMachine.perform_binning_on_whole_df(df, bins_settings["variable"])
+    binned_df = BinningMachine.perform_binning_on_whole_df(df.copy(), bins_settings["variable"])
     return [DataTable(binned_df)]
     
 """
@@ -5304,6 +5301,35 @@ def export_bin_settings(n_clicks, bins_settings_data, good_bad_def_data):
     settings["bins_settings"] = bins_settings
     settings["good_bad_def"] = [good_bad_def]
     return dict(content=json.dumps(settings), filename="ib_settings.json")
+    
+    
+    
+"""
+Preview & Download Settings Page:
+update summary statistics table when user changes the 
+variable to preview from dropdown
+"""
+@app.callback(
+    Output("preview_summary_stat_table_div", "children"),
+    Input("preview_page_select_var_dropdown", "value"),
+    [
+        State("bins_settings", "data"),
+        State("good_bad_def", "data"),
+    ],
+)
+def update_preview_stat_table(var_to_preview, bins_settings_data, good_bad_def_data):
+    bins_settings = json.loads(bins_settings_data)
+    good_bad_def = json.loads(good_bad_def_data)
+    
+    col_bins_settings = None
+    for var in bins_settings["variable"]:
+        if var["column"] == var_to_preview:
+            col_bins_settings = var
+            break
+    
+    stat_df = StatCalculator.compute_summary_stat_table(df.copy(), col_bins_settings, good_bad_def)
+    
+    return [DataTable(stat_df, width=70)]
     
 ###########################################################################
 ############################ Debugging Purpose ############################
@@ -5426,6 +5452,12 @@ def get_saved_settings(data):
     data = json.loads(data)
     return "saved_settings " + str(data)
 
+@app.callback(
+    Output("test_temp_df", "children"),
+    Input("temp_binned_col", "data"),
+)
+def test_temp_df(data):
+    pass
 
 ###########################################################################
 ############ Not important for our development after this line ############
