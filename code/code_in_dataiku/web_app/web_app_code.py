@@ -1982,7 +1982,8 @@ confirm_input_dataset_page_layout = html.Div(
         html.Div(
             [
                 SectionHeading("I. Select the columns you would like to bin:"),
-                html.P("Please also include the column(s) if you would like to have it in the good bad definitions."),
+                html.P(
+                    "Please also include the column(s) if you would like to have it in the good bad definitions."),
                 dcc.Dropdown(
                     options=convert_column_list_to_dropdown_options(
                         df.columns.to_list()
@@ -2050,7 +2051,8 @@ good_bad_def_page_layout = html.Div(
                 [
                     html.Ul(
                         [
-                            html.Li("Numerical Variables", style={"fontSize": 16}),
+                            html.Li("Numerical Variables",
+                                    style={"fontSize": 16}),
                             html.Ol(
                                 [],
                                 style={"listStyleType": "lower-roman",
@@ -2112,7 +2114,8 @@ good_bad_def_page_layout = html.Div(
                 [
                     html.Ul(
                         [
-                            html.Li("Numerical Variables", style={"fontSize": 16}),
+                            html.Li("Numerical Variables",
+                                    style={"fontSize": 16}),
                             html.Ol(
                                 [],
                                 style={"listStyleType": "lower-roman",
@@ -2158,15 +2161,18 @@ good_bad_def_page_layout = html.Div(
             html.P(
                 "Weight of good", style={"marginTop": 8, "float": "left", "marginRight": 10}
             ),
-            dcc.Input(type="number", min=0, value=1, id="weight_of_good_input"),
+            dcc.Input(type="number", min=0, value=1,
+                      id="weight_of_good_input"),
             html.Div([], style={"height": 50}),
             # Confirm Definitions
             SectionHeading("IV. Confirm the Definitions: ", inline=True),
-            SaveButton("Confirm", marginLeft=15, id="confirm_good_bad_def_button"),
+            SaveButton("Confirm", marginLeft=15,
+                       id="confirm_good_bad_def_button"),
             html.P("", id="good_bad_def_error_msg",
                    style={"color": "red", "marginTop": 10}),
             html.Div([
-                html.P("Saved!", style={"color": "blue", "fontWeight": "bold"}),
+                html.P("Saved!", style={
+                       "color": "blue", "fontWeight": "bold"}),
             ], id="good_bad_def_saved_msg", style={"display": "none"}),
             html.Div([], style={"height": 50}),
             # Show Statistics
@@ -2174,7 +2180,8 @@ good_bad_def_page_layout = html.Div(
             html.Div([], style={"height": 50, "clear": "left"}),
         ], id="good_bad_def_content_div", style={"display": "none"}),
         html.Div([
-            html.P("Please confirm your input dataset first before defining the good bad definitions.", style={"color": "red"})
+            html.P("Please confirm your input dataset first before defining the good bad definitions.", style={
+                   "color": "red"})
         ], id="good_bad_def_error_div", style={"display": "none"}),
         html.Div([], style={"height": 100}),
     ]
@@ -2210,9 +2217,10 @@ interactive_binning_page_layout = html.Div([
                             value=[],
                             style={"display": "inline", "marginLeft": 10},
                         ),
-                        
+
                         html.Div([], style={"height": 10}),
-                        html.P(["Kind Reminder: Sorting by Information Value (IV) will take quite a long time to refresh the page as well as to save the interactive binning result later on (it depends on how many variables you want to bin as declared in 'Confirm Input Dataset' page) & ", html.Span("the unsaved binning will be reset when you clicked on the checkbox", style={"color": "blue", "fontSize": 14}), "."], style={"fontSize": 12}),
+                        html.P(["Kind Reminder: Sorting by Information Value (IV) will take quite a long time to refresh the page as well as to save the interactive binning result later on (it depends on how many variables you want to bin as declared in 'Confirm Input Dataset' page) & ", html.Span(
+                            "the unsaved binning will be reset when you clicked on the checkbox", style={"color": "blue", "fontSize": 14}), "."], style={"fontSize": 12}),
                     ],
                     style=purple_panel_style,
                 ),
@@ -2368,7 +2376,8 @@ interactive_binning_page_layout = html.Div([
                         ),
                         html.Div([], style={"marginBottom": 25}),
                         SaveButton("Refresh", id="auto_bin_refresh_button"),
-                        html.P(id="auto_bin_error_msg", style={"color": "red", "marginTop": 10}),
+                        html.P(id="auto_bin_error_msg", style={
+                               "color": "red", "marginTop": 10}),
                         html.P(
                             style={"marginTop": 20},
                             id="auto_bin_algo_description",
@@ -2400,7 +2409,8 @@ interactive_binning_page_layout = html.Div([
                         [
                             SectionHeading("Create a New Bin",
                                            center=True, bold=True),
-                            html.P("Instructions", style={"fontWeight": "bold"}),
+                            html.P("Instructions", style={
+                                   "fontWeight": "bold"}),
                             html.Ul([
                                 html.Li("Enter the name of the new bin in the text input area", style={
                                         "fontSize": 14}),
@@ -2467,7 +2477,8 @@ interactive_binning_page_layout = html.Div([
                         [
                             SectionHeading("Add Elements to the Bin",
                                            center=True, bold=True),
-                            html.P("Instructions", style={"fontWeight": "bold"}),
+                            html.P("Instructions", style={
+                                   "fontWeight": "bold"}),
                             html.Ul([
                                 html.Li("Enter the new bin name in the text input area, if it is empty, the bin name will remain the same", style={
                                         "fontSize": 14}),
@@ -2542,7 +2553,8 @@ interactive_binning_page_layout = html.Div([
                         [
                             SectionHeading("Split an Existing Bin",
                                            center=True, bold=True),
-                            html.P("Instructions", style={"fontWeight": "bold"}),
+                            html.P("Instructions", style={
+                                   "fontWeight": "bold"}),
                             html.Ul([
                                 html.Li("Enter the new bin name in the text input area, if it is empty, the elements included in the bin will be used as the bin name", style={
                                         "fontSize": 14}),
@@ -2556,7 +2568,8 @@ interactive_binning_page_layout = html.Div([
                             html.P("Selected Bin Info: ", style={
                                    "fontWeight": "bold"}),
                             # TODO: extract this out
-                            html.Div(id="categoric_split_panel_selected_bin_info"),
+                            html.Div(
+                                id="categoric_split_panel_selected_bin_info"),
 
                             html.P("Enter the new bin name: ",
                                    style={"fontWeight": "bold"}),
@@ -2615,8 +2628,10 @@ interactive_binning_page_layout = html.Div([
                     ]),
                     html.Div(
                         [
-                            SectionHeading("Rename Bin", center=True, bold=True),
-                            html.P("Instructions", style={"fontWeight": "bold"}),
+                            SectionHeading(
+                                "Rename Bin", center=True, bold=True),
+                            html.P("Instructions", style={
+                                   "fontWeight": "bold"}),
                             html.Ul([
                                 html.Li("Enter the new bin name in the text input area", style={
                                         "fontSize": 14}),
@@ -2630,7 +2645,8 @@ interactive_binning_page_layout = html.Div([
                             html.P("Selected Bin Info: ", style={
                                    "fontWeight": "bold"}),
                             # TODO: extract this out
-                            html.Div(id="categoric_rename_panel_selected_bin_info"),
+                            html.Div(
+                                id="categoric_rename_panel_selected_bin_info"),
 
                             html.P("Enter the new bin name: ",
                                    style={"fontWeight": "bold"}),
@@ -2671,8 +2687,10 @@ interactive_binning_page_layout = html.Div([
                 html.Div([
                     html.Div(
                         [
-                            SectionHeading("Merge Bins", center=True, bold=True),
-                            html.P("Instructions", style={"fontWeight": "bold"}),
+                            SectionHeading(
+                                "Merge Bins", center=True, bold=True),
+                            html.P("Instructions", style={
+                                   "fontWeight": "bold"}),
                             html.Ul([
                                 html.Li("Enter the new bin name in the text input area", style={
                                         "fontSize": 14}),
@@ -2727,7 +2745,8 @@ interactive_binning_page_layout = html.Div([
                         [
                             SectionHeading("Create a New Bin",
                                            center=True, bold=True),
-                            html.P("Instructions", style={"fontWeight": "bold"}),
+                            html.P("Instructions", style={
+                                   "fontWeight": "bold"}),
                             html.Ul([
                                 html.Li("Enter the name of the new bin in the text input area", style={
                                         "fontSize": 14}),
@@ -2749,7 +2768,8 @@ interactive_binning_page_layout = html.Div([
 
                             html.Ol(
                                 [], style={"fontSize": 14}, id="numeric_create_new_bin_panel_range_list"),
-                            html.Div([], style={"height": 10, "clear": "both"}),
+                            html.Div(
+                                [], style={"height": 10, "clear": "both"}),
 
                             SaveButton("Add", inline=True,
                                        id="numeric_create_new_bin_panel_add_button"),
@@ -2789,7 +2809,8 @@ interactive_binning_page_layout = html.Div([
                 # Numerical Adjust Cutpoints Control Panel
                 html.Div([
                     html.Div([
-                        SaveButton("Adjust Cutpoints", inline=True, width="16.5%"),
+                        SaveButton("Adjust Cutpoints",
+                                   inline=True, width="16.5%"),
                         SaveButton("Rename Bin", inline=True,
                                    width="16.5%", marginLeft="1%", id="numeric_adjust_cutpoints_panel_rename_nav_button"),
                     ]),
@@ -2797,7 +2818,8 @@ interactive_binning_page_layout = html.Div([
                         [
                             SectionHeading(
                                 "Adjust Cutpoints of the Bin", center=True, bold=True),
-                            html.P("Instructions", style={"fontWeight": "bold"}),
+                            html.P("Instructions", style={
+                                   "fontWeight": "bold"}),
                             html.Ul([
                                 html.Li("Enter the new bin name in the text input area, if it is empty, the bin name will remain the same", style={
                                         "fontSize": 14}),
@@ -2825,7 +2847,8 @@ interactive_binning_page_layout = html.Div([
 
                             html.Ol(
                                 [], style={"fontSize": 14}, id="numeric_adjust_cutpoints_panel_range_list"),
-                            html.Div([], style={"height": 10, "clear": "both"}),
+                            html.Div(
+                                [], style={"height": 10, "clear": "both"}),
 
                             # TODO!! --> Add dynamic range list
                             SaveButton(
@@ -2873,8 +2896,10 @@ interactive_binning_page_layout = html.Div([
                     ]),
                     html.Div(
                         [
-                            SectionHeading("Rename Bin", center=True, bold=True),
-                            html.P("Instructions", style={"fontWeight": "bold"}),
+                            SectionHeading(
+                                "Rename Bin", center=True, bold=True),
+                            html.P("Instructions", style={
+                                   "fontWeight": "bold"}),
                             html.Ul([
                                 html.Li("Enter the new bin name in the text input area", style={
                                         "fontSize": 14}),
@@ -2930,8 +2955,10 @@ interactive_binning_page_layout = html.Div([
                 html.Div([
                     html.Div(
                         [
-                            SectionHeading("Merge Bins", center=True, bold=True),
-                            html.P("Instructions", style={"fontWeight": "bold"}),
+                            SectionHeading(
+                                "Merge Bins", center=True, bold=True),
+                            html.P("Instructions", style={
+                                   "fontWeight": "bold"}),
                             html.Ul([
                                 html.Li("Enter the new bin name in the text input area", style={
                                         "fontSize": 14}),
@@ -2954,7 +2981,8 @@ interactive_binning_page_layout = html.Div([
                                 "Merge Bins", id="numeric_merge_panel_merge_button"),
                             html.Div(style={"height": 13}),
                             html.Div([
-                                html.Div([], id="numeric_merge_panel_changes_div"),
+                                html.Div(
+                                    [], id="numeric_merge_panel_changes_div"),
                                 html.Div([
                                     SaveButton("Submit", inline=True,
                                                id="numeric_merge_panel_submit_button"),
@@ -2983,7 +3011,8 @@ interactive_binning_page_layout = html.Div([
         html.Div(
             [
                 SectionHeading("IV. Monitor Bins Performance (Before)"),
-                dcc.Loading(children=[html.Div([], id="stat_table_before")], color="purple", type="dot"),
+                dcc.Loading(
+                    children=[html.Div([], id="stat_table_before")], color="purple", type="dot"),
             ],
             style=grey_full_width_panel_style,
         ),
@@ -2991,7 +3020,8 @@ interactive_binning_page_layout = html.Div([
         html.Div(
             [
                 SectionHeading("V. Monitor Bins Performance (After)"),
-                dcc.Loading(children=[html.Div([], id="stat_table_after")], color="purple", type="dot"),
+                dcc.Loading(
+                    children=[html.Div([], id="stat_table_after")], color="purple", type="dot"),
             ],
             style=green_full_width_panel_style,
         ),
@@ -3010,9 +3040,10 @@ interactive_binning_page_layout = html.Div([
         ], id="ib_saved_msg", style={"display": "none"}),
     ], id="ib_content_div", style={"display": "none"}),
     html.Div([
-        html.P("Please confirm your input dataset, and define your good bad definitions first before performing interactive binning.", style={"color": "red"})
+        html.P("Please confirm your input dataset, and define your good bad definitions first before performing interactive binning.", style={
+               "color": "red"})
     ], id="ib_error", style={"display": "none"}),
-    
+
     html.Div(style={"height": 100}),
 ])
 
@@ -3026,7 +3057,7 @@ preview_download_page_layout = html.Div(
             html.P("Note: It may take some time to perform binning on all columns & compute statistics table and chart, please wait patiently.", style={
                    "color": "blue"}),
             dcc.Loading(children=[html.Div([DataTable(df=pd.DataFrame({"Loading...": ["", "", "", "", "", ""], "   ":["", "", "", "", "", ""], "  ":[
-                     "", "", "", "", "", ""], " ":["", "", "", "", "", ""], "":["", "", "", "", "", ""]}), width=100)], id="preview_datatable_div"),], color="purple", type="dot"),
+                "", "", "", "", "", ""], " ":["", "", "", "", "", ""], "":["", "", "", "", "", ""]}), width=100)], id="preview_datatable_div"),], color="purple", type="dot"),
             SectionHeading("II. Preview Bins' Performance"),
             html.Div([
                 html.P("Select variable to preview: ", style={}),
@@ -3041,7 +3072,7 @@ preview_download_page_layout = html.Div(
             html.P("Summary Statistics Table", style={
                    "textDecoration": "underline"}),
             dcc.Loading(children=[html.Div([DataTable(df=pd.DataFrame({"Loading...": ["", "", "", "", "", ""], "   ":["", "", "", "", "", ""], "  ":[
-                     "", "", "", "", "", ""], " ":["", "", "", "", "", ""], "":["", "", "", "", "", ""]}), width=100)], id="preview_summary_stat_table_div"),], color="purple", type="dot"),
+                "", "", "", "", "", ""], " ":["", "", "", "", "", ""], "":["", "", "", "", "", ""]}), width=100)], id="preview_summary_stat_table_div"),], color="purple", type="dot"),
             html.Div([], style={"height": 20}),
             html.P("Mixed Chart", style={"textDecoration": "underline"}),
             dcc.Loading(children=[dcc.Graph(
@@ -3056,9 +3087,10 @@ preview_download_page_layout = html.Div(
             dcc.Download(id="download_json"),
             html.Div([], style={"height": 20}),
             html.P("After download the ib_settings.json file, you could replace it with the one in the Dataiku flow, re-run the flow, and bin the dataset there. You could see the same statistics table and mixed chart in the dashboard too."),
-        ], id="pd_content_div", style={"display":"none"}),
+        ], id="pd_content_div", style={"display": "none"}),
         html.Div([
-            html.P("Please confirm your input dataset, and define your good bad definitions first before you preview the output dataset and download the bin settings.", style={"color": "red"})
+            html.P("Please confirm your input dataset, and define your good bad definitions first before you preview the output dataset and download the bin settings.", style={
+                   "color": "red"})
         ], id="pd_error_div", style={"display": "none"}),
         html.Div(style={"height": 100}),
     ]
@@ -3716,7 +3748,7 @@ def show_good_bad_def_error_msg(n_clicks, bad_numerical_column_list, bad_numeric
     style = {}
     if error_msg != "":
         style = {"display": "none"}
-        
+
     return [error_msg, style]
 
 
@@ -3802,30 +3834,32 @@ Binning page is updated
 )
 def update_ib_predictor_var_dropdown(numerical_col, categorical_col, should_sort_by_iv, bins_settings_data, good_bad_def_data):
     triggered = dash.callback_context.triggered
-    
+
     if (triggered[0]['prop_id'] == "ib_sort_by_iv_checkbox.value" or triggered[0]['prop_id'] == "bins_settings.data") and should_sort_by_iv == ["sort"]:
         bins_settings = json.loads(bins_settings_data)
         good_bad_def = json.loads(good_bad_def_data)
         iv_li = list()
         for var_def in bins_settings["variable"]:
-            stat_df = StatCalculator.compute_summary_stat_table(df.copy(), var_def, good_bad_def)
+            stat_df = StatCalculator.compute_summary_stat_table(
+                df.copy(), var_def, good_bad_def)
             iv_li.append((var_def["column"], stat_df.iloc[-1]['MC']))
-                
-        iv_li = sorted(iv_li, key=lambda x: x[1] if x[1] is not None else float('-inf'), reverse=True)
+
+        iv_li = sorted(iv_li, key=lambda x: x[1] if x[1] is not None else float(
+            '-inf'), reverse=True)
         sorted_name_li, sorted_iv_li = zip(*iv_li)
 
         option_li = list()
         for idx in range(len(sorted_name_li)):
-            option_li.append({"label": f"{sorted_name_li[idx]} (IV={sorted_iv_li[idx]})", "value": sorted_name_li[idx]})
-        
+            option_li.append(
+                {"label": f"{sorted_name_li[idx]} (IV={sorted_iv_li[idx]})", "value": sorted_name_li[idx]})
+
         return [option_li, sorted_name_li[0]]
-    
+
     else:
         var_to_be_bin_list = json.loads(
             numerical_col) + json.loads(categorical_col)
         return [convert_column_list_to_dropdown_options(var_to_be_bin_list), var_to_be_bin_list[0]]
 
-    
 
 """
 Interactive Binning Page:
@@ -4177,7 +4211,7 @@ def update_temp_bins_settings(var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clic
         if var["column"] == var_to_bin:
             col_bins_settings = var
             break
-       
+
     if triggered[0]['prop_id'] == 'auto_bin_refresh_button.n_clicks':
         if auto_bin_algo == "equal width":
             if equal_width_method == "width":
@@ -4190,7 +4224,8 @@ def update_temp_bins_settings(var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clic
                         "value": width,
                     }
             else:
-                num_unique_val = len(df[col_bins_settings["column"]].unique().tolist())
+                num_unique_val = len(
+                    df[col_bins_settings["column"]].unique().tolist())
                 if not isinstance(ew_num_bins, int) or ew_num_bins <= 0:
                     raise PreventUpdate
                 elif not isinstance(ew_num_bins, int) or ew_num_bins > num_unique_val:
@@ -4215,7 +4250,8 @@ def update_temp_bins_settings(var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clic
                         "value": freq,
                     }
             else:
-                num_unique_val = len(df[col_bins_settings["column"]].unique().tolist())
+                num_unique_val = len(
+                    df[col_bins_settings["column"]].unique().tolist())
                 if not isinstance(ef_num_bins, int) or ef_num_bins <= 0:
                     raise PreventUpdate
                 elif not isinstance(ef_num_bins, int) or ef_num_bins > num_unique_val:
@@ -4243,6 +4279,8 @@ def update_temp_bins_settings(var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clic
 Interactive Binning Page:
 Show error message for automated binning
 """
+
+
 @app.callback(
     Output("auto_bin_error_msg", "children"),
     [
@@ -4261,10 +4299,10 @@ Show error message for automated binning
 )
 def update_error_message_for_auto_bin(n_clicks, auto_bin_algo, equal_width_method, equal_freq_method, var_to_bin, width, ew_num_bins, freq, ef_num_bins):
     triggered = dash.callback_context.triggered
-    
+
     if triggered[0]['prop_id'] == "auto_bin_algo_dropdown.value" or triggered[0]['prop_id'] == "equal_width_radio_button.value" or triggered[0]['prop_id'] == "equal_freq_radio_button.value":
         return ""
-    
+
     if auto_bin_algo == "equal width":
         if equal_width_method == "width":
             if not isinstance(width, (int, float)) or width <= 0:
@@ -4298,6 +4336,7 @@ def update_error_message_for_auto_bin(n_clicks, auto_bin_algo, equal_width_metho
                 return ""
     else:  # none
         return ""
+
 
 """
 Interactive Binning Page:
@@ -4480,10 +4519,11 @@ def update_stat_tables_on_var_to_bin_change(temp_col_bins_settings_data, good_ba
         df.copy(), col_bins_settings, good_bad_def)
 
     if stat_table_after != []:
-        old_after_stat_table = pd.DataFrame(stat_table_after[0]['props']['data'])
+        old_after_stat_table = pd.DataFrame(
+            stat_table_after[0]['props']['data'])
         if old_after_stat_table.equals(stat_df):
             raise PreventUpdate
-        
+
     return [stat_table_after, [DataTable(stat_df, width=70)]]
 
 
@@ -5731,10 +5771,13 @@ def update_preview_stat_table(var_to_preview, bins_settings_data, good_bad_def_d
 
     return [[DataTable(stat_df, width=70)], generate_mixed_chart_fig(unique_bins=unique_bins, total_count_list=total_count_list, bad_count_list=bad_count_list, woe_list=woe_list)]
 
+
 """
 Interactive Binning Page:
 show saved message
 """
+
+
 @app.callback(
     Output("ib_saved_msg", "style"),
     [
@@ -5760,11 +5803,14 @@ def show_ib_page_saved_msg(n_clicks, val, n1, n2, n3, n4, n5, n6, n7, n8, n9, n1
     else:
         return {"display": "none"}
 
+
 """
 Interactive Binning Page: 
 hide content if input dataset is not yet confirmed, and/or
 good bad definition is not yet defined
 """
+
+
 @app.callback(
     [
         Output("ib_content_div", "style"),
@@ -5782,10 +5828,13 @@ def enable_disable_ib_page(n_clicks, bins_settings_data, good_bad_def_data):
     else:
         return [{}, {"display": "none"}]
 
+
 """
 Good Bad Definition Page:
 hide content if input dataset is not yet confirmed
 """
+
+
 @app.callback(
     [
         Output("good_bad_def_content_div", "style"),
@@ -5800,12 +5849,14 @@ def enable_disable_good_bad_def_page(n_clicks, bins_settings_data):
     else:
         return [{}, {"display": "none"}]
 
-  
+
 """
 Interactive Binning Page: 
 hide content if input dataset is not yet confirmed, and/or
 good bad definition is not yet defined
 """
+
+
 @app.callback(
     [
         Output("pd_content_div", "style"),
@@ -5828,11 +5879,9 @@ def enable_disable_ib_page(n_clicks, bins_settings_data, good_bad_def_data):
 ###########################################################################
 
 
-
 ###########################################################################
 ############ Not important for our development after this line ############
 ###########################################################################
-
 
 """
 Setup web application layout & callbacks for navigation (can ignore this part)
