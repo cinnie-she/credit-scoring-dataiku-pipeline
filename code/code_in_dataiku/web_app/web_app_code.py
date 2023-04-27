@@ -2196,14 +2196,22 @@ interactive_binning_page_layout = html.Div([
                             "I. Select a predictor variable to bin"),
                         dcc.Dropdown(
                             options=convert_column_list_to_dropdown_options(
-                                df.columns.to_list()
+                                []
                             ),
-                            value=df.columns.to_list()[0],
-                            style={"marginBottom": 30},
+                            value="",
                             clearable=False,
                             searchable=False,
                             id="predictor_var_ib_dropdown",
                         ),
+                        dcc.Checklist(
+                            id="ib_sort_by_iv_checkbox",
+                            options=[{"label": "sort by IV", "value": "sort"}],
+                            value=[],
+                            style={"display": "inline", "marginLeft": 10},
+                        ),
+                        
+                        html.Div([], style={"height": 10}),
+                        html.P("Kind Reminder: Sorting by Information Value (IV) will take quite a long time depending on how many variables you want to bin as declared in 'Confirm Input Dataset' page.", style={"fontSize": 12}),
                     ],
                     style=purple_panel_style,
                 ),
@@ -3787,13 +3795,36 @@ Binning page is updated
     [
         Input("numerical_columns", "data"),
         Input("categorical_columns", "data"),
-    ]
+        Input("ib_sort_by_iv_checkbox", "value"),
+        Input("confirm_ib_button", "n_clicks"),
+    ],
+    [
+        State("bins_settings", "data"),
+        State("good_bad_def", "data"),
+    ],
 )
-def update_ib_predictor_var_dropdown(numerical_col, categorical_col):
-    var_to_be_bin_list = json.loads(
-        numerical_col) + json.loads(categorical_col)
-    return [convert_column_list_to_dropdown_options(var_to_be_bin_list), var_to_be_bin_list[0]]
+def update_ib_predictor_var_dropdown(numerical_col, categorical_col, should_sort_by_iv, n_clicks, bins_settings_data, good_bad_def_data):
+    triggered = dash.callback_context.triggered
+    
+    if (triggered[0]['prop_id'] == "ib_sort_by_iv_checkbox.value" or triggered[0]['prop_id'] == "confirm_ib_button.n_clicks") and should_sort_by_iv == ["sort"]:
+        bins_settings = json.loads(bins_settings_data)
+        good_bad_def = json.loads(good_bad_def_data)
+        iv_li = list()
+        for var_def in bins_settings["variable"]:
+            stat_df = StatCalculator.compute_summary_stat_table(df.copy(), var_def, good_bad_def)
+            iv_li.append((var_def["column"], stat_df.iloc[-1]['MC']))
 
+        iv_li = sorted(iv_li, key=lambda x: x[1] if x[1] is not None else float('-inf'), reverse=True)
+        sorted_name_li, sorted_iv_li = zip(*iv_li)
+
+        return [convert_column_list_to_dropdown_options(sorted_name_li), sorted_name_li[0]]
+    
+    else:
+        var_to_be_bin_list = json.loads(
+            numerical_col) + json.loads(categorical_col)
+        return [convert_column_list_to_dropdown_options(var_to_be_bin_list), var_to_be_bin_list[0]]
+
+    
 
 """
 Interactive Binning Page:
@@ -4302,7 +4333,7 @@ def save_temp_chart_info(temp_binned_col_data, good_bad_def_data):
         zip(unique_bins, total_count_list, bad_count_list, woe_list))
 
     sorted_combined_info = sorted(
-        combined_info, key=lambda x: x[3], reverse=True)
+        combined_info, key=lambda x: x[3] if x[3] is not None else float('-inf'), reverse=True)
 
     sorted_unique_bins, sorted_total_count_list, sorted_bad_count_list, sorted_woe_list = zip(
         *sorted_combined_info)
