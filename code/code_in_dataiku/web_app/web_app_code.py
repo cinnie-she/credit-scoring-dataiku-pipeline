@@ -2043,133 +2043,138 @@ good_bad_def_page_layout = html.Div(
         NavBar(),
         Heading("Define Good & Bad Definitions"),
         # Define Bad Definition
-        SectionHeading("I. Define Bad Definition"),
-        html.Div(
-            [
-                html.Ul(
-                    [
-                        html.Li("Numerical Variables", style={"fontSize": 16}),
-                        html.Ol(
-                            [],
-                            style={"listStyleType": "lower-roman",
-                                   "fontSize": 16},
-                            id="bad_numeric_def_list",
-                        ),
-                        SaveButton(
-                            "Add",
-                            marginTop=0,
-                            marginLeft=30,
-                            id="add_bad_numeric_def_button",
-                        ),
-                        SaveButton("Remove", marginLeft=10,
-                                   id="bad_numeric_def_remove_button"),
-                        html.Li(
-                            "Categorical Variables",
-                            style={"fontSize": 16, "marginTop": 15},
-                        ),
-                        html.Ol(
-                            [],
-                            style={"listStyleType": "lower-roman",
-                                   "fontSize": 16},
-                            id="bad_categoric_def_list",
-                        ),
-                        SaveButton(
-                            "Add",
-                            marginTop=0,
-                            marginLeft=30,
-                            id="add_bad_categoric_def_button",
-                        ),
-                        SaveButton("Remove", marginLeft=10,
-                                   id="bad_categoric_def_remove_button"),
-                    ],
-                    style={"listStyleType": "disc"},
-                ),
-                html.Div(
-                    [
-                        html.P(
-                            "Weight of bad", style={"float": "left", "marginRight": 10}
-                        ),
-                        dcc.Input(
-                            type="number", min=0, value=1, id="weight_of_bad_input"
-                        ),
-                    ],
-                    style={
-                        "marginTop": 15,
-                        "display": "flex",
-                        "alignItems": "flex-end",
-                    },
-                ),
-            ],
-            style={"marginLeft": 10},
-            id="define_bad_def_section",
-        ),
-        html.Div([], style={"height": 50}),
-        # Define Indeterminate Definition
-        SectionHeading("II. Define Indeterminate Definition"),
-        html.Div(
-            [
-                html.Ul(
-                    [
-                        html.Li("Numerical Variables", style={"fontSize": 16}),
-                        html.Ol(
-                            [],
-                            style={"listStyleType": "lower-roman",
-                                   "fontSize": 16},
-                            id="indeterminate_numeric_def_list",
-                        ),
-                        SaveButton(
-                            "Add",
-                            marginTop=0,
-                            marginLeft=30,
-                            id="add_indeterminate_numeric_def_button",
-                        ),
-                        SaveButton("Remove", marginLeft=10,
-                                   id="indeterminate_numeric_def_remove_button"),
-                        html.Li(
-                            "Categorical Variables",
-                            style={"fontSize": 16, "marginTop": 15},
-                        ),
-                        html.Ol(
-                            [],
-                            style={"listStyleType": "lower-roman",
-                                   "fontSize": 16},
-                            id="indeterminate_categoric_def_list",
-                        ),
-                        SaveButton(
-                            "Add",
-                            marginTop=0,
-                            marginLeft=30,
-                            id="add_indeterminate_categoric_def_button",
-                        ),
-                        SaveButton("Remove", marginLeft=10,
-                                   id="indeterminate_categoric_def_remove_button"),
-                    ],
-                    style={"listStyleType": "disc"},
-                ),
-            ],
-            style={"marginLeft": 10},
-            id="define_indeterminate_def_section",
-        ),
-        html.Div([], style={"height": 50}),
-        # Define Good Definition
-        SectionHeading("III. Define Good Definition"),
-        html.P(
-            "Weight of good", style={"marginTop": 8, "float": "left", "marginRight": 10}
-        ),
-        dcc.Input(type="number", min=0, value=1, id="weight_of_good_input"),
-        html.Div([], style={"height": 50}),
-        # Confirm Definitions
-        SectionHeading("IV. Confirm the Definitions: ", inline=True),
-        SaveButton("Confirm", marginLeft=15, id="confirm_good_bad_def_button"),
-        html.P("", id="good_bad_def_error_msg",
-               style={"color": "red", "marginTop": 10}),
         html.Div([
-            html.P("Saved!", style={"color": "blue", "fontWeight": "bold"}),
-        ], id="good_bad_def_saved_msg", style={"display": "none"}),
-        html.Div([], style={"height": 50}),
-        # Show Statistics
-        html.Div([], id="good_bad_stat_section"),
-        html.Div([], style={"height": 50, "clear": "left"}),
+            SectionHeading("I. Define Bad Definition"),
+            html.Div(
+                [
+                    html.Ul(
+                        [
+                            html.Li("Numerical Variables", style={"fontSize": 16}),
+                            html.Ol(
+                                [],
+                                style={"listStyleType": "lower-roman",
+                                       "fontSize": 16},
+                                id="bad_numeric_def_list",
+                            ),
+                            SaveButton(
+                                "Add",
+                                marginTop=0,
+                                marginLeft=30,
+                                id="add_bad_numeric_def_button",
+                            ),
+                            SaveButton("Remove", marginLeft=10,
+                                       id="bad_numeric_def_remove_button"),
+                            html.Li(
+                                "Categorical Variables",
+                                style={"fontSize": 16, "marginTop": 15},
+                            ),
+                            html.Ol(
+                                [],
+                                style={"listStyleType": "lower-roman",
+                                       "fontSize": 16},
+                                id="bad_categoric_def_list",
+                            ),
+                            SaveButton(
+                                "Add",
+                                marginTop=0,
+                                marginLeft=30,
+                                id="add_bad_categoric_def_button",
+                            ),
+                            SaveButton("Remove", marginLeft=10,
+                                       id="bad_categoric_def_remove_button"),
+                        ],
+                        style={"listStyleType": "disc"},
+                    ),
+                    html.Div(
+                        [
+                            html.P(
+                                "Weight of bad", style={"float": "left", "marginRight": 10}
+                            ),
+                            dcc.Input(
+                                type="number", min=0, value=1, id="weight_of_bad_input"
+                            ),
+                        ],
+                        style={
+                            "marginTop": 15,
+                            "display": "flex",
+                            "alignItems": "flex-end",
+                        },
+                    ),
+                ],
+                style={"marginLeft": 10},
+                id="define_bad_def_section",
+            ),
+            html.Div([], style={"height": 50}),
+            # Define Indeterminate Definition
+            SectionHeading("II. Define Indeterminate Definition"),
+            html.Div(
+                [
+                    html.Ul(
+                        [
+                            html.Li("Numerical Variables", style={"fontSize": 16}),
+                            html.Ol(
+                                [],
+                                style={"listStyleType": "lower-roman",
+                                       "fontSize": 16},
+                                id="indeterminate_numeric_def_list",
+                            ),
+                            SaveButton(
+                                "Add",
+                                marginTop=0,
+                                marginLeft=30,
+                                id="add_indeterminate_numeric_def_button",
+                            ),
+                            SaveButton("Remove", marginLeft=10,
+                                       id="indeterminate_numeric_def_remove_button"),
+                            html.Li(
+                                "Categorical Variables",
+                                style={"fontSize": 16, "marginTop": 15},
+                            ),
+                            html.Ol(
+                                [],
+                                style={"listStyleType": "lower-roman",
+                                       "fontSize": 16},
+                                id="indeterminate_categoric_def_list",
+                            ),
+                            SaveButton(
+                                "Add",
+                                marginTop=0,
+                                marginLeft=30,
+                                id="add_indeterminate_categoric_def_button",
+                            ),
+                            SaveButton("Remove", marginLeft=10,
+                                       id="indeterminate_categoric_def_remove_button"),
+                        ],
+                        style={"listStyleType": "disc"},
+                    ),
+                ],
+                style={"marginLeft": 10},
+                id="define_indeterminate_def_section",
+            ),
+            html.Div([], style={"height": 50}),
+            # Define Good Definition
+            SectionHeading("III. Define Good Definition"),
+            html.P(
+                "Weight of good", style={"marginTop": 8, "float": "left", "marginRight": 10}
+            ),
+            dcc.Input(type="number", min=0, value=1, id="weight_of_good_input"),
+            html.Div([], style={"height": 50}),
+            # Confirm Definitions
+            SectionHeading("IV. Confirm the Definitions: ", inline=True),
+            SaveButton("Confirm", marginLeft=15, id="confirm_good_bad_def_button"),
+            html.P("", id="good_bad_def_error_msg",
+                   style={"color": "red", "marginTop": 10}),
+            html.Div([
+                html.P("Saved!", style={"color": "blue", "fontWeight": "bold"}),
+            ], id="good_bad_def_saved_msg", style={"display": "none"}),
+            html.Div([], style={"height": 50}),
+            # Show Statistics
+            html.Div([], id="good_bad_stat_section"),
+            html.Div([], style={"height": 50, "clear": "left"}),
+        ], id="good_bad_def_content_div", style={"display": "none"}),
+        html.Div([
+            html.P("Please confirm your input dataset first before defining the good bad definitions.", style={"color": "red"})
+        ], id="good_bad_def_error_div", style={"display": "none"}),
         html.Div([], style={"height": 100}),
     ]
 )
@@ -2994,10 +2999,10 @@ interactive_binning_page_layout = html.Div([
         html.Div([
             html.P("Saved!", style={"color": "blue", "fontWeight": "bold"}),
         ], id="ib_saved_msg", style={"display": "none"}),
-    ], id="ib_content_div"),
+    ], id="ib_content_div", style={"display": "none"}),
     html.Div([
         html.P("Please confirm your input dataset, and define your good bad definitions first before performing interactive binning.", style={"color": "red"})
-    ], id="ib_error"),
+    ], id="ib_error", style={"display": "none"}),
     
     html.Div(style={"height": 100}),
 ])
@@ -3006,41 +3011,46 @@ interactive_binning_page_layout = html.Div([
 preview_download_page_layout = html.Div(
     [
         NavBar(),
-        Heading("Preview & Download Bins Settings"),
-        SectionHeading("I. Preview Output Dataset"),
-        html.P("Note: It may take some time to perform binning on all columns & compute statistics table and chart, please wait patiently.", style={
-               "color": "blue"}),
-        html.Div([DataTable(df=pd.DataFrame({"Loading...": ["", "", "", "", "", ""], "   ":["", "", "", "", "", ""], "  ":[
-                 "", "", "", "", "", ""], " ":["", "", "", "", "", ""], "":["", "", "", "", "", ""]}), width=100)], id="preview_datatable_div"),
-        SectionHeading("II. Preview Bins' Performance"),
+        Heading("Preview & Download Bin Settings"),
         html.Div([
-            html.P("Select variable to preview: ", style={}),
-            dcc.Dropdown(
-                clearable=False,
-                searchable=False,
-                style={"width": 200, "paddingLeft": 15},
-                id="preview_page_select_var_dropdown",
+            SectionHeading("I. Preview Output Dataset"),
+            html.P("Note: It may take some time to perform binning on all columns & compute statistics table and chart, please wait patiently.", style={
+                   "color": "blue"}),
+            html.Div([DataTable(df=pd.DataFrame({"Loading...": ["", "", "", "", "", ""], "   ":["", "", "", "", "", ""], "  ":[
+                     "", "", "", "", "", ""], " ":["", "", "", "", "", ""], "":["", "", "", "", "", ""]}), width=100)], id="preview_datatable_div"),
+            SectionHeading("II. Preview Bins' Performance"),
+            html.Div([
+                html.P("Select variable to preview: ", style={}),
+                dcc.Dropdown(
+                    clearable=False,
+                    searchable=False,
+                    style={"width": 200, "paddingLeft": 15},
+                    id="preview_page_select_var_dropdown",
+                ),
+            ], style={"display": "flex", "alignItems": "center"}),
+            html.Div(style={"height": 10}),
+            html.P("Summary Statistics Table", style={
+                   "textDecoration": "underline"}),
+            html.Div([DataTable(df=pd.DataFrame({"Loading...": ["", "", "", "", "", ""], "   ":["", "", "", "", "", ""], "  ":[
+                     "", "", "", "", "", ""], " ":["", "", "", "", "", ""], "":["", "", "", "", "", ""]}), width=100)], id="preview_summary_stat_table_div"),
+            html.Div([], style={"height": 20}),
+            html.P("Mixed Chart", style={"textDecoration": "underline"}),
+            dcc.Graph(
+                figure=generate_mixed_chart_fig(),
+                id="preview_mixed_chart",
             ),
-        ], style={"display": "flex", "alignItems": "center"}),
-        html.Div(style={"height": 10}),
-        html.P("Summary Statistics Table", style={
-               "textDecoration": "underline"}),
-        html.Div([DataTable(df=pd.DataFrame({"Loading...": ["", "", "", "", "", ""], "   ":["", "", "", "", "", ""], "  ":[
-                 "", "", "", "", "", ""], " ":["", "", "", "", "", ""], "":["", "", "", "", "", ""]}), width=100)], id="preview_summary_stat_table_div"),
-        html.Div([], style={"height": 20}),
-        html.P("Mixed Chart", style={"textDecoration": "underline"}),
-        dcc.Graph(
-            figure=generate_mixed_chart_fig(),
-            id="preview_mixed_chart",
-        ),
-        SectionHeading("III. Download Bins Settings"),
-        SaveButton(
-            title="Download Bins Settings",
-            id="download_bin_settings_button",
-        ),
-        dcc.Download(id="download_json"),
-        html.Div([], style={"height": 20}),
-        html.P("After download the bins_settings.json file, you could replace it with the one in the Dataiku flow, re-run the flow, and bin the dataset there. You could see the same statistical table and mixed chart in the dashboard too."),
+            SectionHeading("III. Download Bins Settings"),
+            SaveButton(
+                title="Download Bin Settings",
+                id="download_bin_settings_button",
+            ),
+            dcc.Download(id="download_json"),
+            html.Div([], style={"height": 20}),
+            html.P("After download the ib_settings.json file, you could replace it with the one in the Dataiku flow, re-run the flow, and bin the dataset there. You could see the same statistics table and mixed chart in the dashboard too."),
+        ], id="pd_content_div", style={"display":"none"}),
+        html.Div([
+            html.P("Please confirm your input dataset, and define your good bad definitions first before you preview the output dataset and download the bin settings.", style={"color": "red"})
+        ], id="pd_error_div", style={"display": "none"}),
         html.Div(style={"height": 100}),
     ]
 )
@@ -5625,6 +5635,47 @@ good bad definition is not yet defined
         Output("ib_error", "style"),
     ],
     Input("confirm_ib_button", "n_clicks"),
+    [
+        State("bins_settings", "data"),
+        State("good_bad_def", "data"),
+    ],
+)
+def enable_disable_ib_page(n_clicks, bins_settings_data, good_bad_def_data):
+    if bins_settings_data == None or good_bad_def_data == None:
+        return [{"display": "none"}, {}]
+    else:
+        return [{}, {"display": "none"}]
+
+"""
+Good Bad Definition Page:
+hide content if input dataset is not yet confirmed
+"""
+@app.callback(
+    [
+        Output("good_bad_def_content_div", "style"),
+        Output("good_bad_def_error_div", "style"),
+    ],
+    Input("confirm_good_bad_def_button", "n_clicks"),
+    State("bins_settings", "data"),
+)
+def enable_disable_good_bad_def_page(n_clicks, bins_settings_data):
+    if bins_settings_data == None:
+        return [{"display": "none"}, {}]
+    else:
+        return [{}, {"display": "none"}]
+
+  
+"""
+Interactive Binning Page: 
+hide content if input dataset is not yet confirmed, and/or
+good bad definition is not yet defined
+"""
+@app.callback(
+    [
+        Output("pd_content_div", "style"),
+        Output("pd_error_div", "style"),
+    ],
+    Input("download_bin_settings_button", "n_clicks"),
     [
         State("bins_settings", "data"),
         State("good_bad_def", "data"),
