@@ -1982,6 +1982,7 @@ confirm_input_dataset_page_layout = html.Div(
         html.Div(
             [
                 SectionHeading("I. Select the columns you would like to bin:"),
+                html.P("Please also include the column(s) if you would like to have it in the good bad definitions."),
                 dcc.Dropdown(
                     options=convert_column_list_to_dropdown_options(
                         df.columns.to_list()
@@ -2194,7 +2195,7 @@ interactive_binning_page_layout = html.Div([
                     [
                         SectionHeading(
                             "I. Select a predictor variable to bin"),
-                        dcc.Dropdown(
+                        dcc.Loading(children=[dcc.Dropdown(
                             options=convert_column_list_to_dropdown_options(
                                 []
                             ),
@@ -2202,7 +2203,7 @@ interactive_binning_page_layout = html.Div([
                             clearable=False,
                             searchable=False,
                             id="predictor_var_ib_dropdown",
-                        ),
+                        ),], color="purple", type="dot"),
                         dcc.Checklist(
                             id="ib_sort_by_iv_checkbox",
                             options=[{"label": "sort by IV", "value": "sort"}],
@@ -2211,11 +2212,11 @@ interactive_binning_page_layout = html.Div([
                         ),
                         
                         html.Div([], style={"height": 10}),
-                        html.P("Kind Reminder: Sorting by Information Value (IV) will take quite a long time depending on how many variables you want to bin as declared in 'Confirm Input Dataset' page.", style={"fontSize": 12}),
+                        html.P(["Kind Reminder: Sorting by Information Value (IV) will take quite a long time depending on how many variables you want to bin as declared in 'Confirm Input Dataset' page & ", html.Span("the unsaved binning will be reset", style={"color": "blue", "fontSize": 14}), "."], style={"fontSize": 12}),
                     ],
                     style=purple_panel_style,
                 ),
-                html.Div(
+                dcc.Loading(children=[html.Div(
                     [
                         SectionHeading(
                             "II. Select the automated binning algorithm for initial binning"
@@ -2373,8 +2374,7 @@ interactive_binning_page_layout = html.Div([
                             id="auto_bin_algo_description",
                         ),
                     ],
-                    style=grey_panel_style,
-                ),
+                ),], color="purple", type="dot", parent_style=grey_panel_style),
             ]
         ),
         html.Div([], style={"width": "100%", "height": 25, "clear": "left"}),
@@ -2983,7 +2983,7 @@ interactive_binning_page_layout = html.Div([
         html.Div(
             [
                 SectionHeading("IV. Monitor Bins Performance (Before)"),
-                html.Div([], id="stat_table_before"),
+                dcc.Loading(children=[html.Div([], id="stat_table_before")], color="purple", type="dot"),
             ],
             style=grey_full_width_panel_style,
         ),
@@ -2991,7 +2991,7 @@ interactive_binning_page_layout = html.Div([
         html.Div(
             [
                 SectionHeading("V. Monitor Bins Performance (After)"),
-                html.Div([], id="stat_table_after"),
+                dcc.Loading(children=[html.Div([], id="stat_table_after")], color="purple", type="dot"),
             ],
             style=green_full_width_panel_style,
         ),
@@ -3025,29 +3025,29 @@ preview_download_page_layout = html.Div(
             SectionHeading("I. Preview Output Dataset"),
             html.P("Note: It may take some time to perform binning on all columns & compute statistics table and chart, please wait patiently.", style={
                    "color": "blue"}),
-            html.Div([DataTable(df=pd.DataFrame({"Loading...": ["", "", "", "", "", ""], "   ":["", "", "", "", "", ""], "  ":[
-                     "", "", "", "", "", ""], " ":["", "", "", "", "", ""], "":["", "", "", "", "", ""]}), width=100)], id="preview_datatable_div"),
+            dcc.Loading(children=[html.Div([DataTable(df=pd.DataFrame({"Loading...": ["", "", "", "", "", ""], "   ":["", "", "", "", "", ""], "  ":[
+                     "", "", "", "", "", ""], " ":["", "", "", "", "", ""], "":["", "", "", "", "", ""]}), width=100)], id="preview_datatable_div"),], color="purple", type="dot"),
             SectionHeading("II. Preview Bins' Performance"),
             html.Div([
                 html.P("Select variable to preview: ", style={}),
-                dcc.Dropdown(
+                dcc.Loading(children=[dcc.Dropdown(
                     clearable=False,
                     searchable=False,
                     style={"width": 200, "paddingLeft": 15},
                     id="preview_page_select_var_dropdown",
-                ),
+                ),], color="purple", type="dot"),
             ], style={"display": "flex", "alignItems": "center"}),
             html.Div(style={"height": 10}),
             html.P("Summary Statistics Table", style={
                    "textDecoration": "underline"}),
-            html.Div([DataTable(df=pd.DataFrame({"Loading...": ["", "", "", "", "", ""], "   ":["", "", "", "", "", ""], "  ":[
-                     "", "", "", "", "", ""], " ":["", "", "", "", "", ""], "":["", "", "", "", "", ""]}), width=100)], id="preview_summary_stat_table_div"),
+            dcc.Loading(children=[html.Div([DataTable(df=pd.DataFrame({"Loading...": ["", "", "", "", "", ""], "   ":["", "", "", "", "", ""], "  ":[
+                     "", "", "", "", "", ""], " ":["", "", "", "", "", ""], "":["", "", "", "", "", ""]}), width=100)], id="preview_summary_stat_table_div"),], color="purple", type="dot"),
             html.Div([], style={"height": 20}),
             html.P("Mixed Chart", style={"textDecoration": "underline"}),
-            dcc.Graph(
+            dcc.Loading(children=[dcc.Graph(
                 figure=generate_mixed_chart_fig(),
                 id="preview_mixed_chart",
-            ),
+            ),], color="purple", type="dot"),
             SectionHeading("III. Download Bins Settings"),
             SaveButton(
                 title="Download Bin Settings",
@@ -3816,7 +3816,7 @@ def update_ib_predictor_var_dropdown(numerical_col, categorical_col, should_sort
 
         option_li = list()
         for idx in range(len(sorted_name_li)):
-            option_li.append({"label": f"{sorted_name_li[idx]} ({sorted_iv_li[idx]})", "value": sorted_name_li[idx]})
+            option_li.append({"label": f"{sorted_name_li[idx]} (IV={sorted_iv_li[idx]})", "value": sorted_name_li[idx]})
         
         return [option_li, sorted_name_li[0]]
     
