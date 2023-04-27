@@ -2359,6 +2359,7 @@ interactive_binning_page_layout = html.Div([
                         ),
                         html.Div([], style={"marginBottom": 25}),
                         SaveButton("Refresh", id="auto_bin_refresh_button"),
+                        html.P(id="auto_bin_error_msg", style={"color": "red", "marginTop": 10}),
                         html.P(
                             style={"marginTop": 20},
                             id="auto_bin_algo_description",
@@ -4144,34 +4145,55 @@ def update_temp_bins_settings(var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clic
         if var["column"] == var_to_bin:
             col_bins_settings = var
             break
-
+       
     if triggered[0]['prop_id'] == 'auto_bin_refresh_button.n_clicks':
         if auto_bin_algo == "equal width":
             if equal_width_method == "width":
-                col_bins_settings["bins"] = {
-                    "algo": "equal width",
-                    "method": "width",
-                    "value": width,
-                }
+                if not isinstance(width, (int, float)) or width <= 0:
+                    raise PreventUpdate
+                else:
+                    col_bins_settings["bins"] = {
+                        "algo": "equal width",
+                        "method": "width",
+                        "value": width,
+                    }
             else:
-                col_bins_settings["bins"] = {
-                    "algo": "equal width",
-                    "method": "num_bins",
-                    "value": ew_num_bins,
-                }
+                num_unique_val = len(df[col_bins_settings["column"]].unique().tolist())
+                if not isinstance(ew_num_bins, int) or ew_num_bins <= 0:
+                    raise PreventUpdate
+                elif not isinstance(ew_num_bins, int) or ew_num_bins > num_unique_val:
+                    raise PreventUpdate
+                else:
+                    col_bins_settings["bins"] = {
+                        "algo": "equal width",
+                        "method": "num_bins",
+                        "value": ew_num_bins,
+                    }
         elif auto_bin_algo == "equal frequency":
             if equal_freq_method == "frequency":
-                col_bins_settings["bins"] = {
-                    "algo": "equal frequency",
-                    "method": "freq",
-                    "value": freq,
-                }
+                num_samples = len(df)
+                if not isinstance(freq, int) or freq <= 0:
+                    raise PreventUpdate
+                elif not isinstance(freq, int) or freq > num_samples:
+                    raise PreventUpdate
+                else:
+                    col_bins_settings["bins"] = {
+                        "algo": "equal frequency",
+                        "method": "freq",
+                        "value": freq,
+                    }
             else:
-                col_bins_settings["bins"] = {
-                    "algo": "equal frequency",
-                    "method": "num_bins",
-                    "value": ef_num_bins,
-                }
+                num_unique_val = len(df[col_bins_settings["column"]].unique().tolist())
+                if not isinstance(ef_num_bins, int) or ef_num_bins <= 0:
+                    raise PreventUpdate
+                elif not isinstance(ef_num_bins, int) or ef_num_bins > num_unique_val:
+                    raise PreventUpdate
+                else:
+                    col_bins_settings["bins"] = {
+                        "algo": "equal frequency",
+                        "method": "num_bins",
+                        "value": ef_num_bins,
+                    }
         else:  # none
             col_bins_settings["bins"] = "none"
 
@@ -4184,6 +4206,66 @@ def update_temp_bins_settings(var_to_bin, n_clicks, n_clicks2, n_clicks3, n_clic
 
     return [json.dumps(col_bins_settings), json.dumps(temp_df.to_dict())]
 
+
+"""
+Interactive Binning Page:
+Show error message for automated binning
+"""
+@app.callback(
+    Output("auto_bin_error_msg", "children"),
+    [
+        Input("auto_bin_refresh_button", "n_clicks"),
+        Input("auto_bin_algo_dropdown", "value"),
+        Input("equal_width_radio_button", "value"),
+        Input("equal_freq_radio_button", "value"),
+    ],
+    [
+        State("predictor_var_ib_dropdown", "value"),
+        State("equal_width_width_input", "value"),
+        State("equal_width_num_bin_input", "value"),
+        State("equal_freq_freq_input", "value"),
+        State("equal_freq_num_bin_input", "value"),
+    ],
+)
+def update_error_message_for_auto_bin(n_clicks, auto_bin_algo, equal_width_method, equal_freq_method, var_to_bin, width, ew_num_bins, freq, ef_num_bins):
+    triggered = dash.callback_context.triggered
+    
+    if triggered[0]['prop_id'] == "auto_bin_algo_dropdown.value" or triggered[0]['prop_id'] == "equal_width_radio_button.value" or triggered[0]['prop_id'] == "equal_freq_radio_button.value":
+        return ""
+    
+    if auto_bin_algo == "equal width":
+        if equal_width_method == "width":
+            if not isinstance(width, (int, float)) or width <= 0:
+                return "Error: The width must be a positive number"
+            else:
+                return ""
+        else:
+            num_unique_val = len(df[var_to_bin].unique().tolist())
+            if not isinstance(ew_num_bins, int) or ew_num_bins <= 0:
+                return "Error: The number of bins must be a positive integer."
+            elif not isinstance(ew_num_bins, int) or ew_num_bins > num_unique_val:
+                return "Error: The number of bins needs to be a positive integer smaller than or equal to the number of unique values in the column, which is " + str(num_unique_val) + "."
+            else:
+                return ""
+    elif auto_bin_algo == "equal frequency":
+        if equal_freq_method == "frequency":
+            num_samples = len(df)
+            if not isinstance(freq, int) or freq <= 0:
+                return "Error: The frequency must be a positive integer."
+            elif not isinstance(freq, int) or freq > num_samples:
+                return "Error: The frequency must be smaller or equal to the total number of samples in the dataset, which is " + str(num_samples) + "."
+            else:
+                return ""
+        else:
+            num_unique_val = len(df[var_to_bin].unique().tolist())
+            if not isinstance(ef_num_bins, int) or ef_num_bins <= 0:
+                return "Error: The number of bins must be a positive integer."
+            elif not isinstance(ef_num_bins, int) or ef_num_bins > num_unique_val:
+                return "Error: The number of bins needs to be a positive integer smaller than or equal to the number of unique values in the column, which is " + str(num_unique_val) + "."
+            else:
+                return ""
+    else:  # none
+        return ""
 
 """
 Interactive Binning Page:
