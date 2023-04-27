@@ -2212,7 +2212,7 @@ interactive_binning_page_layout = html.Div([
                         ),
                         
                         html.Div([], style={"height": 10}),
-                        html.P(["Kind Reminder: Sorting by Information Value (IV) will take quite a long time depending on how many variables you want to bin as declared in 'Confirm Input Dataset' page & ", html.Span("the unsaved binning will be reset", style={"color": "blue", "fontSize": 14}), "."], style={"fontSize": 12}),
+                        html.P(["Kind Reminder: Sorting by Information Value (IV) will take quite a long time to refresh the page as well as to save the interactive binning result later on (it depends on how many variables you want to bin as declared in 'Confirm Input Dataset' page) & ", html.Span("the unsaved binning will be reset when you clicked on the checkbox", style={"color": "blue", "fontSize": 14}), "."], style={"fontSize": 12}),
                     ],
                     style=purple_panel_style,
                 ),
@@ -5737,11 +5737,28 @@ show saved message
 """
 @app.callback(
     Output("ib_saved_msg", "style"),
-    Input("confirm_ib_button", "n_clicks"),
+    [
+        Input("confirm_ib_button", "n_clicks"),
+        Input("predictor_var_ib_dropdown", "value"),
+        Input("auto_bin_refresh_button", "n_clicks"),
+        Input("categoric_create_new_bin_submit_button", "n_clicks"),
+        Input("categoric_add_elements_panel_submit_button", "n_clicks"),
+        Input("categoric_split_panel_submit_button", "n_clicks"),
+        Input("categoric_rename_panel_submit_button", "n_clicks"),
+        Input("categoric_merge_panel_submit_button", "n_clicks"),
+        Input("numeric_create_new_bin_panel_submit_button", "n_clicks"),
+        Input("numeric_adjust_cutpoints_panel_submit_button", "n_clicks"),
+        Input("numeric_rename_panel_submit_button", "n_clicks"),
+        Input("numeric_merge_panel_submit_button", "n_clicks"),
+    ],
     prevent_initial_call=True,
 )
-def show_ib_page_saved_msg(n_clicks):
-    return {}
+def show_ib_page_saved_msg(n_clicks, val, n1, n2, n3, n4, n5, n6, n7, n8, n9, n10):
+    triggered = dash.callback_context.triggered
+    if triggered[0]['prop_id'] == 'confirm_ib_button.n_clicks':
+        return {}
+    else:
+        return {"display": "none"}
 
 """
 Interactive Binning Page: 
