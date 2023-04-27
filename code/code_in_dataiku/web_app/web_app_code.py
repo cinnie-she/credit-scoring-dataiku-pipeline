@@ -3796,28 +3796,29 @@ Binning page is updated
         Input("numerical_columns", "data"),
         Input("categorical_columns", "data"),
         Input("ib_sort_by_iv_checkbox", "value"),
-        Input("confirm_ib_button", "n_clicks"),
+        Input("bins_settings", "data"),
     ],
-    [
-        State("bins_settings", "data"),
-        State("good_bad_def", "data"),
-    ],
+    State("good_bad_def", "data"),
 )
-def update_ib_predictor_var_dropdown(numerical_col, categorical_col, should_sort_by_iv, n_clicks, bins_settings_data, good_bad_def_data):
+def update_ib_predictor_var_dropdown(numerical_col, categorical_col, should_sort_by_iv, bins_settings_data, good_bad_def_data):
     triggered = dash.callback_context.triggered
     
-    if (triggered[0]['prop_id'] == "ib_sort_by_iv_checkbox.value" or triggered[0]['prop_id'] == "confirm_ib_button.n_clicks") and should_sort_by_iv == ["sort"]:
+    if (triggered[0]['prop_id'] == "ib_sort_by_iv_checkbox.value" or triggered[0]['prop_id'] == "bins_settings.data") and should_sort_by_iv == ["sort"]:
         bins_settings = json.loads(bins_settings_data)
         good_bad_def = json.loads(good_bad_def_data)
         iv_li = list()
         for var_def in bins_settings["variable"]:
             stat_df = StatCalculator.compute_summary_stat_table(df.copy(), var_def, good_bad_def)
             iv_li.append((var_def["column"], stat_df.iloc[-1]['MC']))
-
+                
         iv_li = sorted(iv_li, key=lambda x: x[1] if x[1] is not None else float('-inf'), reverse=True)
         sorted_name_li, sorted_iv_li = zip(*iv_li)
 
-        return [convert_column_list_to_dropdown_options(sorted_name_li), sorted_name_li[0]]
+        option_li = list()
+        for idx in range(len(sorted_name_li)):
+            option_li.append({"label": f"{sorted_name_li[idx]} ({sorted_iv_li[idx]})", "value": sorted_name_li[idx]})
+        
+        return [option_li, sorted_name_li[0]]
     
     else:
         var_to_be_bin_list = json.loads(
@@ -4478,6 +4479,11 @@ def update_stat_tables_on_var_to_bin_change(temp_col_bins_settings_data, good_ba
     stat_df = StatCalculator.compute_summary_stat_table(
         df.copy(), col_bins_settings, good_bad_def)
 
+    if stat_table_after != []:
+        old_after_stat_table = pd.DataFrame(stat_table_after[0]['props']['data'])
+        if old_after_stat_table.equals(stat_df):
+            raise PreventUpdate
+        
     return [stat_table_after, [DataTable(stat_df, width=70)]]
 
 
